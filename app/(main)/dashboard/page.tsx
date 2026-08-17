@@ -1,26 +1,8 @@
+"use client"
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
-
-const summaryCards = [
-  { label: 'ເອກກະສານທັງໝົດ', value: '1,250', trend: '+12% ຈາກເດືອນກ່ອນ', tone: 'emerald' },
-  { label: 'ເອກກະສານມື້ນີ້', value: '+12', trend: 'ມື້ນີ້', tone: 'blue' },
-  { label: 'ເອກກະສານເດືອນນີ້', value: '+145', trend: 'ເດືອນນີ້', tone: 'amber' },
-  { label: 'ລໍຖ້າອະນຸມັດ', value: '5', trend: 'ເອກກະສານ', tone: 'violet' },
-];
-
-const recentActivities = [
-  { text: 'ທ້າວ ສົມຊາຍ ອັບໂຫຼດເອກກະສານ: ຄຳສັ່ງເລກທີ 012/ສນ', time: '10 ນາທີກ່ອນ' },
-  { text: 'ນາງ ສົມສີ ອະນຸມັດເອກກະສານ: ແຈ້ງການປະຊຸມ', time: '1 ຊົ່ວໂມງກ່ອນ' },
-  { text: 'ທ່ານ ອານັນ ດາວໂຫຼດ: ສັນຍາການວ່າຈ້າງ', time: '2 ຊົ່ວໂມງກ່ອນ' },
-];
-
-const recentDocuments = [
-  { name: 'ເອກະສານຄຳສັ່ງຊື້ 012/ສນ', category: 'ຄຳສັ່ງ', date: '2026-08-10', status: 'ອະນຸມັດ' },
-  { name: 'ແຈ້ງການປະຊຸມຫ້າມະຫາສະຫມຸດ', category: 'ແຈ້ງການ', date: '2026-08-09', status: 'ລໍຖ້າອະນຸມັດ' },
-  { name: 'ສັນຍາການວ່າຈ້າງ', category: 'ສັນຍາ', date: '2026-08-08', status: 'ຮ່າງ' },
-  { name: 'ລາຍງານກິດຈະກຳປະຈໍາເດືອນ', category: 'ລາຍງານ', date: '2026-08-07', status: 'ອະນຸມັດ' },
-  { name: 'ຂາເຂົ້າລະຫວ່າງບໍລິສັດ', category: 'ຂາເຂົ້າ', date: '2026-08-06', status: 'ເກັບເຂົ້າຄັງ' },
-];
+import { useDMS } from '../_dms-context';
 
 const statusStyles: Record<string, string> = {
   'ຮ່າງ': 'bg-slate-100 text-slate-700',
@@ -29,7 +11,38 @@ const statusStyles: Record<string, string> = {
   'ເກັບເຂົ້າຄັງ': 'bg-gray-200 text-gray-700',
 };
 
+const statusLabelMap: Record<string, string> = {
+  draft: 'ຮ່າງ',
+  pending: 'ລໍຖ້າອະນຸມັດ',
+  approved: 'ອະນຸມັດ',
+  archived: 'ເກັບເຂົ້າຄັງ',
+};
+
 export default function DashboardPage() {
+  const { documents } = useDMS();
+
+  const active = useMemo(() => documents.filter((d) => !d.deleted), [documents]);
+
+  const summaryCards = useMemo(() => {
+    const total = active.length;
+    const inbound = active.filter((d) => d.category === 'ຂາເຂົ້າ').length;
+    const outbound = active.filter((d) => d.category === 'ຂາອອກ').length;
+    const pending = active.filter((d) => d.status === 'pending').length;
+
+    return [
+      { label: 'ເອກກະສານທັງໝົດ', value: String(total), trend: 'ຢູ່ໃນລະບົບ', tone: 'emerald' },
+      { label: 'ຂາເຂົ້າ', value: String(inbound), trend: 'ເອກະສານ', tone: 'blue' },
+      { label: 'ຂາອອກ', value: String(outbound), trend: 'ເອກະສານ', tone: 'amber' },
+      { label: 'ລໍຖ້າອະນຸມັດ', value: String(pending), trend: 'ເອກະສານ', tone: 'violet' },
+    ];
+  }, [active]);
+
+  const recentDocuments = useMemo(() => {
+    return [...active]
+      .sort((a, b) => (a.uploadDate < b.uploadDate ? 1 : -1))
+      .slice(0, 5);
+  }, [active]);
+
   return (
     <DashboardLayout title="ໜ້າຫຼັກ">
       <main className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -70,14 +83,17 @@ export default function DashboardPage() {
 
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-bold text-gray-900">ກິດຈະກຳທີ່ຜ່ານມາ</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">ສະຫຼຸບຕາມສະຖານະ</h2>
             <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.text} className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
-                  <span className="text-sm text-gray-600">{activity.text}</span>
-                  <span className="shrink-0 text-xs text-gray-400">{activity.time}</span>
-                </div>
-              ))}
+              {(['pending', 'approved', 'draft', 'archived'] as const).map((status) => {
+                const count = active.filter((d) => d.status === status).length;
+                return (
+                  <div key={status} className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
+                    <span className="text-sm text-gray-600">{statusLabelMap[status]}</span>
+                    <span className="text-sm font-semibold text-gray-900">{count} ເອກະສານ</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -94,32 +110,29 @@ export default function DashboardPage() {
                     <th className="px-4 py-3">ໝວດໝູ່</th>
                     <th className="px-4 py-3">ວັນທີ</th>
                     <th className="px-4 py-3">ສະຖານະ</th>
-                    <th className="px-4 py-3 text-center">ການກະທຳ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentDocuments.map((doc) => (
-                    <tr key={doc.name} className="border-t border-gray-100">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{doc.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{doc.category}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{doc.date}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
-                          {doc.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
-                          <button type="button" className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
-                            ເບິ່ງ
-                          </button>
-                          <button type="button" className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
-                            ດາວໂຫຼດ
-                          </button>
-                        </div>
+                  {recentDocuments.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400">
+                        ຍັງບໍ່ມີເອກະສານ
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    recentDocuments.map((doc) => (
+                      <tr key={doc.id} className="border-t border-gray-100">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{doc.title}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{doc.category}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadDate}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[statusLabelMap[doc.status]]}`}>
+                            {statusLabelMap[doc.status]}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

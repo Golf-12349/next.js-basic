@@ -42,7 +42,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
       id: 'DOC-001',
       title: 'ເອກະສານຂາເຂົ້າທີ່ກ່ຽວກັບຄຳສັ່ງຊື້',
       docNumber: 'K-2026-001',
-      category: 'ຂາເຂົ້າ',
+      category: 'ຂາເຂົ້າ',  
       status: 'approved',
       fileType: 'pdf',
       fileSize: '2.4 MB',

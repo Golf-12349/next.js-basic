@@ -28,3 +28,20 @@ body {
   color: var(--foreground);
   font-family: var(--font-noto-sans), var(--font-noto-sans-lao), sans-serif;
 }
+
+/* ---------- Print styles ---------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
