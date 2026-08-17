@@ -7,6 +7,7 @@ import { useDMS } from '../_dms-context'
 import Modal from '@/app/components/ui/Modal'
 import PDFPlaceholder from '@/app/components/ui/PDFPlaceholder'
 import { pushToast } from '@/app/components/ui/Toast'
+import { Settings, Trash2, Tag } from 'lucide-react'
 
 const statusStyles: Record<DocumentStatus, string> = {
   draft: 'bg-slate-100 text-slate-700',
@@ -23,12 +24,14 @@ const statusLabels: Record<DocumentStatus, string> = {
 }
 
 export default function DocumentsPage() {
-  const { documents, setDocuments, categories } = useDMS()
+  const { documents, setDocuments, categories, addCategory, removeCategory } = useDMS()
   const [query, setQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
+  const [manageCategoryOpen, setManageCategoryOpen] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
 
   useEffect(() => {
     // ensure categories include special 'ທັງໝົດ'
@@ -77,6 +80,29 @@ export default function DocumentsPage() {
     pushToast({ title: 'ເອກະສານຖືກປະຕິເສດ' })
   }
 
+  function countDocsInCategory(category: string) {
+    return documents.filter((d) => d.category === category && !d.deleted).length
+  }
+
+  function handleAddCategory() {
+    if (!newCategoryName.trim()) return
+    addCategory(newCategoryName)
+    setNewCategoryName('')
+    pushToast({ title: 'ເພີ່ມໝວດໝູ່ສຳເລັດ' })
+  }
+
+  function handleRemoveCategory(c: string) {
+    const count = countDocsInCategory(c)
+    if (count > 0) {
+      pushToast({ title: `ບໍ່ສາມາດລຶບໄດ້ ຍັງມີ ${count} ເອກະສານໃຊ້ໝວດໝູ່ນີ້ຢູ່` })
+      return
+    }
+    removeCategory(c)
+    if (filterCategory === c) {
+      setFilterCategory('ທັງໝົດ')
+    }
+  }
+
   return (
     <DashboardLayout title="ເອກກະສານທັງໝົດ">
       <main className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -108,7 +134,16 @@ export default function DocumentsPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">ໝວດໝູ່</label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">ໝວດໝູ່</label>
+                <button
+                  onClick={() => setManageCategoryOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                >
+                  <Settings size={14} />
+                  ຈັດການ
+                </button>
+              </div>
               <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
                 <option>ທັງໝົດ</option>
                 {categories.map((c) => (
@@ -222,6 +257,57 @@ export default function DocumentsPage() {
             <div className="flex justify-end gap-2">
               <button onClick={() => setConfirmDelete(null)} className="px-3 py-2 rounded bg-gray-100">ຍົກເລີກ</button>
               <button onClick={confirmDeleteNow} className="px-3 py-2 rounded bg-rose-600 text-white">ຢືນຢັນລົບ</button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal open={manageCategoryOpen} onClose={() => setManageCategoryOpen(false)} title="ຈັດການໝວດໝູ່">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddCategory() }}
+                placeholder="ຊື່ໝວດໝູ່ໃໝ່"
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+              />
+              <button
+                onClick={handleAddCategory}
+                className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                <Tag size={14} />
+                ເພີ່ມ
+              </button>
+            </div>
+
+            {categories.length === 0 ? (
+              <p className="py-6 text-center text-sm text-gray-400">ຍັງບໍ່ມີໝວດໝູ່</p>
+            ) : (
+              <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+                {categories.map((c) => (
+                  <li key={c} className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm font-medium text-gray-800">
+                      {c} <span className="text-gray-400">({countDocsInCategory(c)})</span>
+                    </span>
+                    <button
+                      onClick={() => handleRemoveCategory(c)}
+                      title="ລຶບໝວດໝູ່"
+                      className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setManageCategoryOpen(false)}
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+              >
+                ປິດ
+              </button>
             </div>
           </div>
         </Modal>
