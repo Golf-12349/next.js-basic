@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import secureLocalStorage from 'react-secure-storage';
 import {
   Archive,
   BarChart3,
   Bell,
+  ChevronDown,
   Clock3,
   FileText,
   FolderOpen,
@@ -18,6 +20,7 @@ import {
   Settings,
   Trash2,
   Upload,
+  UserCog,
   Users,
 } from 'lucide-react';
 
@@ -57,18 +60,38 @@ const menuSections: MenuSection[] = [
       { name: 'ຄັງເກັບເອກກະສານ', href: '/documents/archive', icon: Archive },
     ],
   },
-      {
-        title: 'SYSTEM',
-        items: [
-          { name: 'ຈັດການຜູ້ໃຊ້ງານ', href: '/users', icon: Users },
-          { name: 'ຖັງຂີ້ເຫຍື້ອ', href: '/documents/trash', icon: Trash2 },
-          { name: 'ການຕັ້ງຄ່າ', href: '/settings', icon: Settings },
-        ],
-      },
+  {
+    title: 'SYSTEM',
+    items: [
+      { name: 'ຈັດການຜູ້ໃຊ້ງານ', href: '/users', icon: Users },
+      { name: 'ຖັງຂີ້ເຫຍື້ອ', href: '/documents/trash', icon: Trash2 },
+    ],
+  },
 ];
 
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function handleLogout() {
+    // Clear local auth state
+    secureLocalStorage.removeItem('token');
+    secureLocalStorage.removeItem('data');
+    router.push('/');
+  }
 
   return (
     <div
@@ -144,6 +167,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
 
           <button
             type="button"
+            onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-rose-400"
           >
             <LogOut className="h-4 w-4" />
@@ -171,13 +195,86 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
               <Bell className="h-5 w-5" />
               <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500"></span>
             </button>
-            <div className="flex items-center gap-3 border-l border-gray-200 pl-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
-                JD
-              </div>
-              <div className="hidden text-left sm:block">
-                <p className="text-sm font-semibold leading-none">John Doe</p>
-                <p className="mt-1 text-xs text-gray-500">ຜູ້ບໍລິຫານລະບົບ</p>
+
+            <div className="relative border-l border-gray-200 pl-4" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setProfileOpen((open) => !open)}
+                className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-gray-50"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+                  JD
+                </div>
+                <div className="hidden text-left sm:block">
+                  <p className="text-sm font-semibold leading-none">John Doe</p>
+                  <p className="mt-1 text-xs text-gray-500">ຜູ້ບໍລິຫານລະບົບ</p>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-gray-400 transition-transform duration-300 ${
+                    profileOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              <div
+                className={`absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 ease-out ${
+                  profileOpen
+                    ? 'pointer-events-auto scale-100 opacity-100'
+                    : 'pointer-events-none scale-95 opacity-0'
+                }`}
+              >
+                {/* User header */}
+                <div className="border-b border-gray-100 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+                      JD
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-gray-900">John Doe</p>
+                      <p className="text-xs text-gray-500">ຜູ້ບໍລິຫານລະບົບ</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu items */}
+                <div className="p-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      router.push('/settings');
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    <UserCog className="h-4 w-4 text-gray-400" />
+                    ແກ້ໄຂໂປຣໄຟລ໌
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      router.push('/settings');
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    <Settings className="h-4 w-4 text-gray-400" />
+                    ຕັ້ງຄ່າລະບົບ
+                  </button>
+                </div>
+
+                <div className="mx-3 my-1 border-t border-gray-100" />
+
+                {/* Logout */}
+                <div className="p-1.5 pb-2">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    ອອກຈາກລະບົບ
+                  </button>
+                </div>
               </div>
             </div>
           </div>
