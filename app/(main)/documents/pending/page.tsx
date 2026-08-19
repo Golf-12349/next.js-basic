@@ -1,8 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDMS } from '../../_dms-context'
 import { pushToast } from '@/app/components/ui/Toast'
+import Modal from '@/app/components/ui/Modal'
+import PDFPlaceholder from '@/app/components/ui/PDFPlaceholder'
+import type { Document } from '@/types/document'
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 
 const categoryBadgeStyles: Record<string, string> = {
@@ -31,6 +35,7 @@ function CategoryBadge({ category }: { category: string }) {
 
 export default function PendingDocumentsPage() {
   const { documents, setDocuments } = useDMS()
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const list = documents.filter((d) => d.status === 'pending' && !d.deleted)
 
   function approve(id: string) {
@@ -80,6 +85,9 @@ export default function PendingDocumentsPage() {
                     <td className="px-4 py-3 text-sm text-gray-700">{d.uploadedBy}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => setPreviewDoc(d)} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                          ເບິ່ງ
+                        </button>
                         <button onClick={() => approve(d.id)} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">ອະນຸມັດ</button>
                         <button onClick={() => reject(d.id)} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">ປະຕິເສດ</button>
                       </div>
@@ -90,6 +98,38 @@ export default function PendingDocumentsPage() {
             </table>
           </div>
         </div>
+
+        <Modal open={!!previewDoc} onClose={() => setPreviewDoc(null)} title={previewDoc?.title}>
+          {previewDoc && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-gray-500">ເລກທີ</div>
+                  <div className="font-semibold">{previewDoc.docNumber}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ໝວດໝູ່</div>
+                  <div className="font-semibold">{previewDoc.category}</div>
+                </div>
+              </div>
+              <PDFPlaceholder title={previewDoc.title} />
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { approve(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
+                    ອະນຸມັດ
+                  </button>
+                  <button onClick={() => { reject(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100">
+                    ປະຕິເສດ
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
+                  <button onClick={() => { pushToast({ title: 'ດາວໂຫຼດເອກະສານ' }) }} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
       </main>
     </DashboardLayout>
   )

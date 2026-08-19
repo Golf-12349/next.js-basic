@@ -21,6 +21,7 @@ import {
   UserCog,
   Users,
 } from 'lucide-react';
+import { useDMS } from '../(main)/_dms-context';
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -51,7 +52,7 @@ const menuSections: MenuSection[] = [
     title: 'DOCUMENTS',
     items: [
       { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
-      { name: 'ລໍຖ້າອະນຸມັດ', href: '/documents/pending', icon: Clock3, badge: '3' },
+      { name: 'ລໍຖ້າອະນຸມັດ', href: '/documents/pending', icon: Clock3 },
       { name: 'ອັບໂຫຼດເອກກະສານ', href: '/documents/upload', icon: Upload },
       { name: 'ຄັງເກັບເອກກະສານ', href: '/documents/archive', icon: Archive },
     ],
@@ -68,6 +69,8 @@ const menuSections: MenuSection[] = [
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { documents } = useDMS();
+  const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -121,6 +124,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                   {section.items.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
+                    const itemBadge = item.href === '/documents/pending' && pendingCount > 0 ? String(pendingCount) : item.badge;
 
                     return (
                       <Link
@@ -136,9 +140,9 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                           <Icon className="h-4 w-4" />
                           {item.name}
                         </span>
-                        {item.badge ? (
+                        {itemBadge ? (
                           <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
-                            {item.badge}
+                            {itemBadge}
                           </span>
                         ) : null}
                       </Link>
