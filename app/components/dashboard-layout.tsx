@@ -280,7 +280,9 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
           </div>
         </header>
 
-        {children}
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
       </div>
     </div>
   );
