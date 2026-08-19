@@ -3,6 +3,31 @@
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDMS } from '../../_dms-context'
 import { pushToast } from '@/app/components/ui/Toast'
+import { ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+
+const categoryBadgeStyles: Record<string, string> = {
+  'ຂາເຂົ້າ': 'bg-blue-100 text-blue-800',
+  'ຂາອອກ': 'bg-violet-100 text-violet-800',
+}
+
+const categoryBadgeIcons: Record<string, typeof ArrowDownLeft> = {
+  'ຂາເຂົ້າ': ArrowDownLeft,
+  'ຂາອອກ': ArrowUpRight,
+}
+
+function CategoryBadge({ category }: { category: string }) {
+  const Icon = categoryBadgeIcons[category]
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+        categoryBadgeStyles[category] ?? 'bg-slate-100 text-slate-700'
+      }`}
+    >
+      {Icon ? <Icon className="h-3 w-3" /> : null}
+      {category}
+    </span>
+  )
+}
 
 export default function PendingDocumentsPage() {
   const { documents, setDocuments } = useDMS()
@@ -31,7 +56,7 @@ export default function PendingDocumentsPage() {
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="px-4 py-3">ເອກະສານ</th>
-                  <th className="px-4 py-3">ໝວດໝູ່</th>
+                  <th className="px-4 py-3">ສະຖານະ</th>
                   <th className="px-4 py-3">ວັນທີ</th>
                   <th className="px-4 py-3">ຜູ້ອັບໂຫຼດ</th>
                   <th className="px-4 py-3 text-center">ການກະທຳ</th>
@@ -40,8 +65,17 @@ export default function PendingDocumentsPage() {
               <tbody>
                 {list.map((d) => (
                   <tr key={d.id} className="border-t border-gray-100">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{d.title}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{d.category}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{d.title}</span>
+                        <CategoryBadge category={d.category} />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                        ລໍຖ້າອະນຸມັດ
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{d.uploadDate}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{d.uploadedBy}</td>
                     <td className="px-4 py-3">
