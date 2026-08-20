@@ -48,7 +48,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
       fileSize: '2.4 MB',
       uploadDate: '2026-08-08',
       uploadedBy: 'ນາງ ທຳມະເພກ',
-      fileUrl: '#',
+      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     },
     {
       id: 'DOC-002',
@@ -60,7 +60,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
       fileSize: '840 KB',
       uploadDate: '2026-08-07',
       uploadedBy: 'ທ້າວ ອາລີ',
-      fileUrl: '#',
+      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     },
     {
       id: 'DOC-003',
@@ -72,7 +72,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
       fileSize: '1.1 MB',
       uploadDate: '2026-08-05',
       uploadedBy: 'ນາງ ຄຳນາ',
-      fileUrl: '#',
+      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     },
     {
       id: 'DOC-004',
@@ -84,7 +84,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
       fileSize: '3.2 MB',
       uploadDate: '2026-08-04',
       uploadedBy: 'ທ້າວ ລະມາ',
-      fileUrl: '#',
+      fileUrl: 'https://picsum.photos/800/1000',
     },
     {
       id: 'DOC-005',
@@ -96,7 +96,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
       fileSize: '1.7 MB',
       uploadDate: '2026-08-02',
       uploadedBy: 'ທ້າວ ຊົມບູລີ',
-      fileUrl: '#',
+      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     },
   ])
 

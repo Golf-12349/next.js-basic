@@ -30,11 +30,17 @@ export default function UploadDocumentPage() {
   const [category, setCategory] = useState<DocumentCategory>('ຂາເຂົ້າ')
   const [uploadDate, setUploadDate] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (file) setSelectedFile(file)
+    if (file) {
+      // ສ້າງ preview URL ຈາກໄຟລ໌ທີ່ເລືອກ ເພື່ອໃຊ້ສະແດງຕົວຢ່າງໃນ DocumentPreview
+      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
+      setSelectedFile(file)
+      setFilePreviewUrl(URL.createObjectURL(file))
+    }
   }
 
   function handleUpload() {
@@ -53,11 +59,12 @@ export default function UploadDocumentPage() {
       fileSize: selectedFile ? formatFileSize(selectedFile.size) : '0 KB',
       uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
       uploadedBy: 'John Doe', // TODO: ປ່ຽນເປັນ user ທີ່ login ຢູ່ ເມື່ອມີລະບົບ Auth ແທ້
-      fileUrl: '#',
+      fileUrl: filePreviewUrl || '#',
+      fileName: selectedFile?.name,
     })
 
     pushToast({ title: 'ອັບໂຫຼດເອກະສານສຳເລັດ' })
-    router.push('/documents')
+    router.push('/documents/pending')
   }
 
   return (

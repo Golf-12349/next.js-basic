@@ -20,5 +20,7 @@ export type Document = {
   uploadDate: string;
   uploadedBy: string;
   fileUrl: string;
+  fileName?: string;
+  pdfUrl?: string;
   deleted?: boolean;
 };

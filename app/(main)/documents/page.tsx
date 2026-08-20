@@ -5,7 +5,7 @@ import type { Document, DocumentStatus } from '@/types/document'
 import { useEffect, useMemo, useState } from 'react'
 import { useDMS } from '../_dms-context'
 import Modal from '@/app/components/ui/Modal'
-import PDFPlaceholder from '@/app/components/ui/PDFPlaceholder'
+import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
 import { Settings, Trash2, Tag } from 'lucide-react'
 
@@ -242,7 +242,7 @@ export default function DocumentsPage() {
                   <div className="font-semibold">{previewDoc.category}</div>
                 </div>
               </div>
-              <PDFPlaceholder title={previewDoc.title} />
+              <DocumentPreview doc={previewDoc} />
               <div className="flex items-center justify-end gap-2">
                 <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
                 <button onClick={() => { pushToast({ title: 'ດາວໂຫຼດເອກະສານ' }) }} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
