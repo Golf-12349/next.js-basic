@@ -1,0 +1,5237 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+app/
+  (auth)/
+    layout.tsx
+    page.tsx
+  (main)/
+    dashboard/
+      page.tsx
+    documents/
+      [id]/
+        page.tsx
+      archive/
+        page.tsx
+      pending/
+        page.tsx
+      trash/
+        page.tsx
+      upload/
+        page.tsx
+      page.tsx
+    reports/
+      page.tsx
+    settings/
+      page.tsx
+    users/
+      page.tsx
+    _dms-context.tsx
+    guard.tsx
+    layout.tsx
+  components/
+    archive/
+      ArchiveModals.tsx
+      CabinetView.tsx
+      DocumentView.tsx
+      FolderView.tsx
+      useArchive.ts
+    documents/
+      ManageCategoryModal.tsx
+    login/
+      login-form.tsx
+    ui/
+      DocumentPreview.tsx
+      Modal.tsx
+      PDFPlaceholder.tsx
+      Toast.tsx
+    users/
+      UserModals.tsx
+    dashboard-layout.tsx
+    dashboard.tsx
+    inex.tsx
+  favicon.ico
+  globals.css
+  layout.tsx
+config/
+  axiosClient.tsx
+public/
+  file.svg
+  globe.svg
+  next.svg
+  vercel.svg
+  window.svg
+types/
+  document.ts
+  user.ts
+.gitignore
+AGENTS.md
+CLAUDE.md
+eslint.config.mjs
+next.config.ts
+package.json
+postcss.config.mjs
+README.md
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/components/archive/ArchiveModals.tsx">
+"use client"
+import { useState } from 'react'
+import Modal from '@/app/components/ui/Modal'
+import DocumentPreview from '@/app/components/ui/DocumentPreview'
+import { Download, Plus } from 'lucide-react'
+import type { Document } from '@/types/document'
+
+// ── Shared types ─────────────────────────────────────────────
+export type DeleteTarget = {
+  type: 'cabinet' | 'folder' | 'document';
+  id: string;
+  name: string;
+};
+
+// ── Options ──────────────────────────────────────────────────
+export const colorOptions = [
+  { label: 'ສີຂຽວ', value: 'from-emerald-500 to-teal-600' },
+  { label: 'ສີຟ້າ', value: 'from-indigo-500 to-blue-600' },
+  { label: 'ສີສົ້ມ', value: 'from-amber-500 to-orange-600' },
+  { label: 'ສີບົວ', value: 'from-pink-500 to-rose-600' },
+  { label: 'ສີມ່ວງ', value: 'from-purple-500 to-violet-600' },
+  { label: 'ສີຟ້າທະເລ', value: 'from-cyan-500 to-sky-600' },
+];
+
+export const departmentOptions = [
+  'ພະແນກບໍລິຫານ & ຈັດຕັ້ງ',
+  'ພະແນກການເງິນ & ບັນຊີ',
+  'ພະແນກໄອທີ & ເຕັກໂນໂລຊີ',
+  'ພະແນກການຕະຫຼາດ & ຂາຍ',
+  'ພະແນກແຜນການ & ໂຄງການ',
+];
+
+// ── Page Header ──────────────────────────────────────────────
+interface PageHeaderProps {
+  showCreateButton?: boolean;
+  onCreate?: () => void;
+}
+
+export function PageHeader({ showCreateButton, onCreate }: PageHeaderProps) {
+  return (
+    <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">ຄັງເກັບເອກກະສານ</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          ຈັດລະບຽບເອກະສານແບບ 3 ລະດັບ: ຕູ້ເອກະສານ ➡️ ແຟ້ມ ➡️ ເອກະສານ
+        </p>
+      </div>
+
+      {showCreateButton && (
+        <button
+          onClick={onCreate}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
+        >
+          <Plus size={16} />
+          + ສ້າງຕູ້ເອກະສານໄໝ່
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Create Cabinet Modal ─────────────────────────────────────
+interface CreateCabinetModalProps {
+  open: boolean;
+  onClose: () => void;
+  onCreate: (data: { name: string; color: string; department: string; description: string }) => void;
+}
+
+export function CreateCabinetModal({ open, onClose, onCreate }: CreateCabinetModalProps) {
+  const [name, setName] = useState('');
+  const [color, setColor] = useState(colorOptions[0].value);
+  const [department, setDepartment] = useState('');
+  const [description, setDescription] = useState('');
+
+  function handleSubmit() {
+    if (!name.trim()) return;
+    onCreate({
+      name: name.trim(),
+      color,
+      department: department || '—',
+      description: description.trim() || 'ບໍ່ມີລາຍລະອຽດ',
+    });
+    setName('');
+    setDescription('');
+    setDepartment('');
+    setColor(colorOptions[0].value);
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="ສ້າງຕູ້ເອກະສານໃໝ່">
+      <div className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            ຊື່ຕູ້ເອກະສານ <span className="text-red-500">*</span>
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="ເຊັ່ນ: ການເງິນ, ສັນຍາ..."
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">ພະແນກ</label>
+          <select
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          >
+            <option value="">— ເລືອກພະແນກ —</option>
+            {departmentOptions.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">ສີຕູ້ເອກະສານ</label>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {colorOptions.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setColor(c.value)}
+                className={`h-12 rounded-xl bg-gradient-to-br ${c.value} transition ${
+                  color === c.value
+                    ? 'ring-2 ring-gray-900 ring-offset-2'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+                title={c.label}
+              />
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-gray-400">ເລືອກສີທີ່ທ່ານຕ້ອງການ</p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">ລາຍລະອຽດ</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="ອະທິບາຍເອກະສານທີ່ຈະເກັບໃນຕູ້ນີ້..."
+            className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          >
+            ຍົກເລີກ
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            ສ້າງຕູ້ເອກະສານ
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Create Folder Modal ──────────────────────────────────────
+interface CreateFolderModalProps {
+  open: boolean;
+  onClose: () => void;
+  cabinetName?: string;
+  onCreate: (data: { name: string; description: string }) => void;
+}
+
+export function CreateFolderModal({ open, onClose, cabinetName, onCreate }: CreateFolderModalProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  function handleSubmit() {
+    if (!name.trim()) return;
+    onCreate({
+      name: name.trim(),
+      description: description.trim() || 'ບໍ່ມີລາຍລະອຽດ',
+    });
+    setName('');
+    setDescription('');
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={`ສ້າງແຟ້ມໄໝ່ໃນ 🗄️ ${cabinetName ?? ''}`}>
+      <div className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            ຊື່ແຟ້ມ <span className="text-red-500">*</span>
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="ເຊັ່ນ: ໄບສັ່ງຊື້, ໄບຮັບເງິນ..."
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">ລາຍລະອຽດ</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="ອະທິບາຍເອກະສານທີ່ຈະເກັບໃນແຟ້ມນີ້..."
+            className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          >
+            ຍົກເລີກ
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            ສ້າງແຟ້ມ
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Confirm Delete Modal ─────────────────────────────────────
+interface ConfirmDeleteModalProps {
+  target: DeleteTarget | null;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+export function ConfirmDeleteModal({ target, onClose, onConfirm }: ConfirmDeleteModalProps) {
+  return (
+    <Modal open={!!target} onClose={onClose} title="ຢືນຢັນການລົບ">
+      {target && (
+        <div>
+          <p className="mb-4 text-sm text-gray-600">
+            ທ່ານຕ້ອງການລົບ{' '}
+            <span className="font-semibold text-gray-900">
+              {target.type === 'cabinet'
+                ? `ຕູ້ "${target.name}"`
+                : target.type === 'folder'
+                  ? `ແຟ້ມ "${target.name}"`
+                  : `ເອກະສານ "${target.name}"`}
+            </span>{' '}
+            ແທ້ບໍ?
+            {target.type === 'cabinet' && ' ເອກະສານທັງໝົດໃນຕູ້ຈະຖືກຍ້າຍອອກຈາກການຈັດລະບຽບ.'}
+            {target.type === 'document' && ' ເອກະສານຈະເຂົ້າໄປຢູ່ Trash.'}
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              ຍົກເລີກ
+            </button>
+            <button
+              onClick={onConfirm}
+              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700"
+            >
+              ຢືນຢັນລົບ
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// ── Document Preview Modal ───────────────────────────────────
+interface DocumentPreviewModalProps {
+  doc: Document | null;
+  onClose: () => void;
+  onDownload: (doc: Document) => void;
+}
+
+export function DocumentPreviewModal({ doc, onClose, onDownload }: DocumentPreviewModalProps) {
+  return (
+    <Modal open={!!doc} onClose={onClose} title={doc?.title}>
+      {doc && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div>
+              <div className="text-xs text-gray-500">ເລກທີ</div>
+              <div className="text-sm font-semibold">{doc.docNumber}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500">ໝວດໝູ່</div>
+              <div className="text-sm font-semibold">{doc.category}</div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500">ທີ່ຕັ້ງ</div>
+              <div className="text-sm font-semibold">
+                🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+              </div>
+            </div>
+          </div>
+          <DocumentPreview doc={doc} />
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              ປິດ
+            </button>
+            <button
+              onClick={() => onDownload(doc)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              <Download size={14} />
+              ດາວໂຫຼດ
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+</file>
+
+<file path="app/components/archive/CabinetView.tsx">
+"use client"
+import { Plus, Trash2 } from 'lucide-react'
+import type { Cabinet, Document, Folder } from '@/types/document'
+
+// ── Cabinet Card ─────────────────────────────────────────────
+interface CabinetCardProps {
+  cabinet: Cabinet;
+  folderCount: number;
+  docCount: number;
+  onOpen: () => void;
+  onDelete: () => void;
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr + 'T00:00:00')
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function CabinetCard({ cabinet, folderCount, docCount, onOpen, onDelete }: CabinetCardProps) {
+  return (
+    <div
+      onClick={onOpen}
+      className="group cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <div className={`bg-gradient-to-br ${cabinet.color} px-5 py-6`}>
+        <div className="flex items-start justify-between">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-2xl backdrop-blur-sm">
+            🗄️
+          </div>
+          <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            {folderCount} ແຟ້ມ
+          </span>
+        </div>
+        <h2 className="mt-4 text-xl font-bold text-white">{cabinet.name}</h2>
+        <p className="mt-1 text-xs text-white/80">{cabinet.department}</p>
+      </div>
+      <div className="p-5">
+        <p className="text-sm text-gray-600 line-clamp-2">
+          {cabinet.description || 'ບໍ່ມີລາຍລະອຽດ'}
+        </p>
+        <div className="mt-4 flex items-center justify-between">
+          <span className="text-xs text-gray-400">ສ້າງເມື່ອ {formatDate(cabinet.createdAt)}</span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+              {docCount} ເອກະສານ
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
+              title="ລຶບຕູ້"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty State ──────────────────────────────────────────────
+interface EmptyStateProps {
+  icon: string;
+  message: string;
+  subMessage?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  href?: string;
+}
+
+function EmptyState({ icon, message, subMessage, actionLabel, onAction, href }: EmptyStateProps) {
+  const actionButton = actionLabel && (
+    onAction ? (
+      <button
+        onClick={onAction}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+      >
+        <Plus size={16} /> {actionLabel}
+      </button>
+    ) : href ? (
+      <a
+        href={href}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+      >
+        <Plus size={16} /> {actionLabel}
+      </a>
+    ) : null
+  );
+
+  return (
+    <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center">
+      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl">
+        {icon}
+      </div>
+      <p className="text-gray-500">{message}</p>
+      {subMessage && <p className="mt-1 text-xs text-gray-400">{subMessage}</p>}
+      {actionButton}
+    </div>
+  );
+}
+
+// ── Cabinet View ─────────────────────────────────────────────
+interface CabinetViewProps {
+  cabinets: Cabinet[];
+  folders: Folder[];
+  documents: Document[];
+  onCreate: () => void;
+  onOpen: (cabinetId: string) => void;
+  onDelete: (cabinet: Cabinet) => void;
+}
+
+export default function CabinetView({ cabinets, folders, documents, onCreate, onOpen, onDelete }: CabinetViewProps) {
+  if (cabinets.length === 0) {
+    return (
+      <EmptyState
+        icon="🗄️"
+        message="ຍັງບໍ່ມີຕູ້ເອກະສານ"
+        actionLabel="ສ້າງຕູ້ເອກະສານໄໝ່"
+        onAction={onCreate}
+      />
+    );
+  }
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {cabinets.map((cabinet) => (
+        <CabinetCard
+          key={cabinet.id}
+          cabinet={cabinet}
+          folderCount={folders.filter((f) => f.cabinetId === cabinet.id).length}
+          docCount={documents.filter((d) => d.cabinetId === cabinet.id && !d.deleted).length}
+          onOpen={() => onOpen(cabinet.id)}
+          onDelete={() => onDelete(cabinet)}
+        />
+      ))}
+    </div>
+  );
+}
+</file>
+
+<file path="app/components/archive/DocumentView.tsx">
+"use client"
+import Link from 'next/link'
+import { ChevronRight, Download, Eye, FileText, Home, Plus, Trash2 } from 'lucide-react'
+import type { Cabinet, Document, Folder } from '@/types/document'
+import type { ViewState } from './useArchive'
+
+// ── Breadcrumbs ──────────────────────────────────────────────
+interface BreadcrumbsProps {
+  view: ViewState;
+  activeCabinet?: Cabinet;
+  activeFolder?: Folder;
+  onNavigate: (view: ViewState) => void;
+}
+
+function Breadcrumbs({ view, activeCabinet, activeFolder, onNavigate }: BreadcrumbsProps) {
+  return (
+    <nav className="flex flex-wrap items-center gap-1.5 text-sm">
+      <button
+        onClick={() => onNavigate({ level: 'cabinets' })}
+        className={`inline-flex items-center gap-1 font-medium transition ${
+          view.level === 'cabinets'
+            ? 'text-indigo-700'
+            : 'text-gray-500 hover:text-indigo-700'
+        }`}
+      >
+        <Home size={14} />
+        ຕູ້ເອກະສານທັງໝົດ
+      </button>
+
+      {activeCabinet && (
+        <>
+          <ChevronRight size={14} className="text-gray-400" />
+          <button
+            onClick={() => onNavigate({ level: 'folders', cabinetId: activeCabinet.id })}
+            className={`inline-flex items-center gap-1 font-medium transition ${
+              view.level === 'folders'
+                ? 'text-indigo-700'
+                : 'text-gray-500 hover:text-indigo-700'
+            }`}
+          >
+            🗄️ {activeCabinet.name}
+          </button>
+        </>
+      )}
+
+      {activeFolder && (
+        <>
+          <ChevronRight size={14} className="text-gray-400" />
+          <span className="font-medium text-gray-800">📁 {activeFolder.name}</span>
+        </>
+      )}
+    </nav>
+  );
+}
+
+// ── Back Button ──────────────────────────────────────────────
+interface BackButtonProps {
+  onClick: () => void;
+}
+
+function BackButton({ onClick }: BackButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-50"
+    >
+      <ChevronRight size={14} className="rotate-180" />
+      ກັບຄືນ
+    </button>
+  );
+}
+
+// ── Document List ────────────────────────────────────────────
+interface DocumentListProps {
+  documents: Document[];
+  onPreview: (doc: Document) => void;
+  onDownload: (doc: Document) => void;
+  onDelete: (doc: Document) => void;
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr + 'T00:00:00')
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function DocumentList({ documents, onPreview, onDownload, onDelete }: DocumentListProps) {
+  if (documents.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-2xl">
+          📄
+        </div>
+        <p className="text-gray-500">ຍັງບໍ່ມີເອກະສານໃນແຟ້ມນີ້</p>
+        <p className="mt-1 text-xs text-gray-400">ສາມາດອັບໂຫຼດເອກະສານເຂົ້າມາກ່ອນໄດ້</p>
+        <Link
+          href="/documents/upload"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
+          <Plus size={16} /> ອັບໂຫຼດເອກະສານ
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {documents.map((doc) => (
+        <div
+          key={doc.id}
+          className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-indigo-200 hover:shadow-md lg:flex-row lg:items-center"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <FileText size={22} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold text-gray-900">{doc.title}</h3>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                {doc.docNumber}
+              </span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 uppercase">
+                {doc.fileType}
+              </span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+              <span>{formatDate(doc.uploadDate)}</span>
+              <span>{doc.fileSize}</span>
+              <span>ໂດຍ: {doc.uploadedBy}</span>
+              <span>{doc.category}</span>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => onPreview(doc)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-100"
+            >
+              <Eye size={14} />
+              ເບິ່ງ
+            </button>
+            <button
+              onClick={() => onDownload(doc)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+            >
+              <Download size={14} />
+              ດາວໂຫຼດ
+            </button>
+            <button
+              onClick={() => onDelete(doc)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 transition hover:bg-rose-100"
+            >
+              <Trash2 size={14} />
+              ລົບ
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Document View ────────────────────────────────────────────
+interface DocumentViewProps {
+  cabinet: Cabinet;
+  folder: Folder;
+  documents: Document[];
+  onPreview: (doc: Document) => void;
+  onDownload: (doc: Document) => void;
+  onDelete: (doc: Document) => void;
+}
+
+export default function DocumentView({ cabinet, folder, documents, onPreview, onDownload, onDelete }: DocumentViewProps) {
+  return (
+    <>
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-xl">
+            📁
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">{folder.name}</h2>
+            <p className="text-xs text-gray-500">
+              ຢູ່ໃນ 🗄️ {cabinet.name} · ສ້າງເມື່ອ {formatDate(folder.createdAt)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <DocumentList
+        documents={documents}
+        onPreview={onPreview}
+        onDownload={onDownload}
+        onDelete={onDelete}
+      />
+    </>
+  );
+}
+
+export { Breadcrumbs, BackButton };
+</file>
+
+<file path="app/components/archive/FolderView.tsx">
+"use client"
+import { FileText, Plus, Trash2 } from 'lucide-react'
+import type { Cabinet, Document, Folder } from '@/types/document'
+
+// ── Folder Card ──────────────────────────────────────────────
+interface FolderCardProps {
+  folder: Folder;
+  docCount: number;
+  onOpen: () => void;
+  onDelete: () => void;
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr + 'T00:00:00')
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function FolderCard({ folder, docCount, onOpen, onDelete }: FolderCardProps) {
+  return (
+    <div
+      onClick={onOpen}
+      className="group cursor-pointer rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-2xl transition group-hover:scale-105">
+          📁
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
+          title="ລຶບແຟ້ມ"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+      <h3 className="mt-4 text-lg font-bold text-gray-900">{folder.name}</h3>
+      <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+        {folder.description || 'ບໍ່ມີລາຍລະອຽດ'}
+      </p>
+      <div className="mt-4 flex items-center justify-between">
+        <span className="text-xs text-gray-400">ສ້າງເມື່ອ {formatDate(folder.createdAt)}</span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+          <FileText size={12} />
+          {docCount} ເອກະສານ
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Empty State ──────────────────────────────────────────────
+interface EmptyStateProps {
+  icon: string;
+  message: string;
+  subMessage?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  href?: string;
+}
+
+function EmptyState({ icon, message, subMessage, actionLabel, onAction, href }: EmptyStateProps) {
+  const actionButton = actionLabel && (
+    onAction ? (
+      <button
+        onClick={onAction}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+      >
+        <Plus size={16} /> {actionLabel}
+      </button>
+    ) : href ? (
+      <a
+        href={href}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+      >
+        <Plus size={16} /> {actionLabel}
+      </a>
+    ) : null
+  );
+
+  return (
+    <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center">
+      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl">
+        {icon}
+      </div>
+      <p className="text-gray-500">{message}</p>
+      {subMessage && <p className="mt-1 text-xs text-gray-400">{subMessage}</p>}
+      {actionButton}
+    </div>
+  );
+}
+
+// ── Folder View ──────────────────────────────────────────────
+interface FolderViewProps {
+  cabinet: Cabinet;
+  folders: Folder[];
+  documents: Document[];
+  onCreate: () => void;
+  onOpen: (folderId: string) => void;
+  onDelete: (folder: Folder) => void;
+}
+
+export default function FolderView({ cabinet, folders, documents, onCreate, onOpen, onDelete }: FolderViewProps) {
+  return (
+    <>
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${cabinet.color} text-xl`}>
+            🗄️
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">{cabinet.name}</h2>
+            <p className="text-xs text-gray-500">{cabinet.department}</p>
+          </div>
+        </div>
+        <button
+          onClick={onCreate}
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
+        >
+          <Plus size={16} />
+          + ສ້າງແຟ້ມໄໝ່
+        </button>
+      </div>
+
+      {folders.length === 0 ? (
+        <EmptyState
+          icon="📁"
+          message="ຍັງບໍ່ມີແຟ້ມໃນຕູ້ນີ້"
+          actionLabel="ສ້າງແຟ້ມໄໝ່"
+          onAction={onCreate}
+        />
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {folders.map((folder) => (
+            <FolderCard
+              key={folder.id}
+              folder={folder}
+              docCount={documents.filter((d) => d.folderId === folder.id && !d.deleted).length}
+              onOpen={() => onOpen(folder.id)}
+              onDelete={() => onDelete(folder)}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+</file>
+
+<file path="app/components/archive/useArchive.ts">
+"use client"
+import { useState } from 'react'
+import { pushToast } from '@/app/components/ui/Toast'
+import type { Cabinet, Document, Folder } from '@/types/document'
+import type { DeleteTarget } from './ArchiveModals'
+
+export type ViewState =
+  | { level: 'cabinets' }
+  | { level: 'folders'; cabinetId: string }
+  | { level: 'documents'; cabinetId: string; folderId: string };
+
+interface ArchiveActions {
+  createCabinet: (data: { name: string; color: string; department: string; description: string }) => void;
+  createFolder: (data: { cabinetId: string; name: string; description: string }) => void;
+  deleteCabinet: (id: string) => void;
+  deleteFolder: (id: string) => void;
+  deleteDocument: (id: string) => void;
+}
+
+export function useArchive(
+  cabinets: Cabinet[],
+  folders: Folder[],
+  documents: Document[],
+  actions: ArchiveActions
+) {
+  const [view, setView] = useState<ViewState>({ level: 'cabinets' });
+  const [cabinetModalOpen, setCabinetModalOpen] = useState(false);
+  const [folderModalOpen, setFolderModalOpen] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
+
+  const activeCabinet: Cabinet | undefined =
+    view.level === 'cabinets' ? undefined : cabinets.find((c) => c.id === view.cabinetId);
+
+  const activeFolder: Folder | undefined =
+    view.level === 'documents' ? folders.find((f) => f.id === view.folderId) : undefined;
+
+  const cabinetFolders = activeCabinet
+    ? folders.filter((f) => f.cabinetId === activeCabinet.id)
+    : [];
+
+  const folderDocuments =
+    view.level === 'documents'
+      ? documents.filter((d) => d.folderId === view.folderId && !d.deleted)
+      : [];
+
+  function handleCreateCabinet(data: { name: string; color: string; department: string; description: string }) {
+    actions.createCabinet(data);
+    setCabinetModalOpen(false);
+    pushToast({ title: 'ສ້າງຕູ້ເອກະສານສຳເລັດ' });
+  }
+
+  function handleCreateFolder(data: { name: string; description: string }) {
+    if (!activeCabinet) return;
+    actions.createFolder({ cabinetId: activeCabinet.id, ...data });
+    setFolderModalOpen(false);
+    pushToast({ title: 'ສ້າງແຟ້ມສຳເລັດ' });
+  }
+
+  function handleDelete(type: 'cabinet' | 'folder' | 'document', id: string, name: string) {
+    setConfirmDelete({ type, id, name });
+  }
+
+  function confirmDeleteNow() {
+    if (!confirmDelete) return;
+    const { type, id, name } = confirmDelete;
+
+    if (type === 'cabinet') {
+      actions.deleteCabinet(id);
+      setView({ level: 'cabinets' });
+      pushToast({ title: `ລຶບຕູ້ "${name}" ສຳເລັດ` });
+    } else if (type === 'folder') {
+      actions.deleteFolder(id);
+      if (view.level === 'folders') {
+        setView({ level: 'folders', cabinetId: view.cabinetId });
+      }
+      pushToast({ title: `ລຶບແຟ້ມ "${name}" ສຳເລັດ` });
+    } else if (type === 'document') {
+      actions.deleteDocument(id);
+      pushToast({ title: `ຍ້າຍ "${name}" ໄປ Trash` });
+    }
+    setConfirmDelete(null);
+  }
+
+  function handleDownload(doc: Document) {
+    const url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || '#';
+    if (url && url !== '#') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      pushToast({ title: 'ກຳລັງດາວໂຫຼດເອກະສານ' });
+    } else {
+      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' });
+    }
+  }
+
+  function handleBack() {
+    if (view.level === 'documents') {
+      setView({ level: 'folders', cabinetId: activeCabinet!.id });
+    } else {
+      setView({ level: 'cabinets' });
+    }
+  }
+
+  return {
+    view,
+    setView,
+    cabinetModalOpen,
+    setCabinetModalOpen,
+    folderModalOpen,
+    setFolderModalOpen,
+    previewDoc,
+    setPreviewDoc,
+    confirmDelete,
+    setConfirmDelete,
+    activeCabinet,
+    activeFolder,
+    cabinetFolders,
+    folderDocuments,
+    handleCreateCabinet,
+    handleCreateFolder,
+    handleDelete,
+    confirmDeleteNow,
+    handleDownload,
+    handleBack,
+  };
+}
+</file>
+
+<file path="app/components/documents/ManageCategoryModal.tsx">
+"use client"
+import { useState } from 'react'
+import Modal from '@/app/components/ui/Modal'
+import { Tag, Trash2 } from 'lucide-react'
+
+interface ManageCategoryModalProps {
+  open: boolean;
+  onClose: () => void;
+  categories: string[];
+  onAdd: (name: string) => void;
+  onRemove: (category: string) => void;
+  countDocs: (category: string) => number;
+}
+
+export default function ManageCategoryModal({ open, onClose, categories, onAdd, onRemove, countDocs }: ManageCategoryModalProps) {
+  const [newCategoryName, setNewCategoryName] = useState('')
+
+  function handleAdd() {
+    if (!newCategoryName.trim()) return
+    onAdd(newCategoryName)
+    setNewCategoryName('')
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="ຈັດການໝວດໝູ່">
+      <div className="space-y-4">
+        <div className="flex gap-2">
+          <input
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleAdd() }}
+            placeholder="ຊື່ໝວດໝູ່ໃໝ່"
+            className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+          <button
+            onClick={handleAdd}
+            className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            <Tag size={14} />
+            ເພີ່ມ
+          </button>
+        </div>
+
+        {categories.length === 0 ? (
+          <p className="py-6 text-center text-sm text-gray-400">ຍັງບໍ່ມີໝວດໝູ່</p>
+        ) : (
+          <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
+            {categories.map((c) => (
+              <li key={c} className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm font-medium text-gray-800">
+                  {c} <span className="text-gray-400">({countDocs(c)})</span>
+                </span>
+                <button
+                  onClick={() => onRemove(c)}
+                  title="ລຶບໝວດໝູ່"
+                  className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          >
+            ປິດ
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+</file>
+
+<file path="app/components/users/UserModals.tsx">
+"use client"
+import { useEffect, useState } from 'react'
+import Modal from '@/app/components/ui/Modal'
+import { AlertTriangle, Building2, BadgeCheck, CalendarDays, Mail } from 'lucide-react'
+import type { User, UserRole, UserStatus } from '@/types/user'
+
+// ── Options ──────────────────────────────────────────────────
+export const roleOptions: UserRole[] = ['SuperAdmin', 'Admin', 'User']
+
+export const departmentOptions = [
+  'ພະແນກບໍລິຫານ & ຈັດຕັ້ງ',
+  'ພະແນກການເງິນ & ບັນຊີ',
+  'ພະແນກໄອທີ & ເຕັກໂນໂລຊີ',
+  'ພະແນກການຕະຫຼາດ & ຂາຍ',
+  'ພະແນກແຜນການ & ໂຄງການ',
+]
+
+// ສີ avatar ທີ່ຈະສຸ່ມໃຫ້ຜູ້ໃຊ້ໃໝ່ (ຂຽນເປັນ class ເຕັມເພື່ອໃຫ້ Tailwind ເກັບໄດ້)
+export const avatarPalette = [
+  'bg-rose-500',
+  'bg-purple-500',
+  'bg-emerald-500',
+  'bg-indigo-500',
+  'bg-amber-500',
+  'bg-cyan-500',
+  'bg-teal-500',
+  'bg-blue-500',
+]
+
+export function randomAvatarColor() {
+  return avatarPalette[Math.floor(Math.random() * avatarPalette.length)]
+}
+
+// ── Shared helpers ───────────────────────────────────────────
+export function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2)
+  return `${parts[0][0]}${parts[1][0]}`
+}
+
+export const roleBadgeClass: Record<UserRole, string> = {
+  SuperAdmin: 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
+  Admin: 'bg-purple-50 text-purple-700 ring-1 ring-purple-200',
+  User: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+}
+
+export function RoleBadge({ role }: { role: UserRole }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${roleBadgeClass[role]}`}>
+      {role}
+    </span>
+  )
+}
+
+export function StatusBadge({ status }: { status: UserStatus }) {
+  const active = status === 'active'
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+        active ? 'bg-green-50 text-green-700 ring-1 ring-green-200' : 'bg-gray-100 text-gray-600 ring-1 ring-gray-200'
+      }`}
+    >
+      <span className="relative flex h-2 w-2">
+        {active && (
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+        )}
+        <span className={`relative inline-flex h-2 w-2 rounded-full ${active ? 'bg-green-500' : 'bg-gray-400'}`} />
+      </span>
+      {active ? 'ເປີດໃຊ້ງານ' : 'ປິດໃຊ້ງານ'}
+    </span>
+  )
+}
+
+export function Avatar({ user, size = 'md' }: { user: User; size?: 'md' | 'lg' }) {
+  const sizeClass = size === 'lg' ? 'h-20 w-20 text-2xl' : 'h-10 w-10 text-sm'
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center rounded-full font-bold uppercase text-white shadow-sm ${sizeClass} ${
+        user.avatarColor ?? 'bg-indigo-500'
+      }`}
+    >
+      {getInitials(user.name)}
+    </div>
+  )
+}
+
+// ── Form state shared by Add / Edit ──────────────────────────
+export type UserFormValues = {
+  name: string
+  email: string
+  role: UserRole
+  department: string
+  position: string
+}
+
+const emptyForm: UserFormValues = {
+  name: '',
+  email: '',
+  role: 'User',
+  department: '',
+  position: '',
+}
+
+const inputClass =
+  'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:bg-white'
+
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string
+  required?: boolean
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-gray-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      {children}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
+  )
+}
+
+function validate(values: UserFormValues) {
+  const errors: Partial<Record<keyof UserFormValues, string>> = {}
+  if (!values.name.trim()) errors.name = 'ກະລຸນາປ້ອນຊື່'
+  if (!values.email.trim()) errors.email = 'ກະລຸນາປ້ອນອີເມວ'
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) errors.email = 'ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ'
+  if (!values.department) errors.department = 'ກະລຸນາເລືອກພະແນກ'
+  return errors
+}
+
+function UserForm({
+  values,
+  setValues,
+  errors,
+}: {
+  values: UserFormValues
+  setValues: React.Dispatch<React.SetStateAction<UserFormValues>>
+  errors: Partial<Record<keyof UserFormValues, string>>
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="ຊື່ ແລະ ນາມສະກຸນ" required error={errors.name}>
+          <input
+            value={values.name}
+            onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
+            placeholder="ເຊັ່ນ: ທ້າວ ສົມພອນ"
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="ອີເມວ" required error={errors.email}>
+          <input
+            type="email"
+            value={values.email}
+            onChange={(e) => setValues((v) => ({ ...v, email: e.target.value }))}
+            placeholder="name@company.com"
+            className={inputClass}
+          />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="ສິດການນຳໃຊ້ (Role)" required>
+          <select
+            value={values.role}
+            onChange={(e) => setValues((v) => ({ ...v, role: e.target.value as UserRole }))}
+            className={inputClass}
+          >
+            {roleOptions.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="ພະແນກ" required error={errors.department}>
+          <select
+            value={values.department}
+            onChange={(e) => setValues((v) => ({ ...v, department: e.target.value }))}
+            className={inputClass}
+          >
+            <option value="">— ເລືອກພະແນກ —</option>
+            {departmentOptions.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <Field label="ຕຳແໜ່ງ">
+        <input
+          value={values.position}
+          onChange={(e) => setValues((v) => ({ ...v, position: e.target.value }))}
+          placeholder="ເຊັ່ນ: ພະນັກງານທຸລະການ"
+          className={inputClass}
+        />
+      </Field>
+    </div>
+  )
+}
+
+// ── User Detail Modal ────────────────────────────────────────
+interface UserDetailModalProps {
+  user: User | null
+  onClose: () => void
+}
+
+export function UserDetailModal({ user, onClose }: UserDetailModalProps) {
+  return (
+    <Modal open={!!user} onClose={onClose} title="ຂໍ້ມູນຜູ້ໃຊ້ງານ">
+      {user && (
+        <div>
+          {/* Profile header */}
+          <div className="flex flex-col items-center gap-3 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 p-6 text-center">
+            <Avatar user={user} size="lg" />
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">{user.name}</h3>
+              <p className="text-sm text-gray-500">{user.email}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <RoleBadge role={user.role} />
+              <StatusBadge status={user.status} />
+            </div>
+          </div>
+
+          {/* Details */}
+          <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-100 bg-white p-3">
+              <dt className="flex items-center gap-1.5 text-xs text-gray-500">
+                <Building2 size={14} /> ພະແນກ
+              </dt>
+              <dd className="mt-1 text-sm font-semibold text-gray-900">{user.department || '—'}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-100 bg-white p-3">
+              <dt className="flex items-center gap-1.5 text-xs text-gray-500">
+                <BadgeCheck size={14} /> ຕຳແໜ່ງ
+              </dt>
+              <dd className="mt-1 text-sm font-semibold text-gray-900">{user.position || '—'}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-100 bg-white p-3">
+              <dt className="flex items-center gap-1.5 text-xs text-gray-500">
+                <Mail size={14} /> ອີເມວ
+              </dt>
+              <dd className="mt-1 break-all text-sm font-semibold text-gray-900">{user.email}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-100 bg-white p-3">
+              <dt className="flex items-center gap-1.5 text-xs text-gray-500">
+                <CalendarDays size={14} /> ວັນທີ່ສ້າງ
+              </dt>
+              <dd className="mt-1 text-sm font-semibold text-gray-900">{user.createdAt || '—'}</dd>
+            </div>
+          </dl>
+
+          <div className="mt-5 flex justify-end">
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              ປິດ
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+// ── Add User Modal ───────────────────────────────────────────
+interface AddUserModalProps {
+  open: boolean
+  onClose: () => void
+  onSubmit: (values: UserFormValues) => void
+}
+
+export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
+  const [values, setValues] = useState<UserFormValues>(emptyForm)
+  const [errors, setErrors] = useState<Partial<Record<keyof UserFormValues, string>>>({})
+
+  useEffect(() => {
+    if (open) {
+      setValues(emptyForm)
+      setErrors({})
+    }
+  }, [open])
+
+  function handleSubmit() {
+    const nextErrors = validate(values)
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+    onSubmit({
+      ...values,
+      name: values.name.trim(),
+      email: values.email.trim(),
+      position: values.position.trim(),
+    })
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="ເພີ່ມຜູ້ໃຊ້ງານໃໝ່">
+      <div className="space-y-4">
+        <UserForm values={values} setValues={setValues} errors={errors} />
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          >
+            ຍົກເລີກ
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            ບັນທຶກ
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Edit User Modal ──────────────────────────────────────────
+interface EditUserModalProps {
+  user: User | null
+  onClose: () => void
+  onSubmit: (values: UserFormValues) => void
+}
+
+export function EditUserModal({ user, onClose, onSubmit }: EditUserModalProps) {
+  const [values, setValues] = useState<UserFormValues>(emptyForm)
+  const [errors, setErrors] = useState<Partial<Record<keyof UserFormValues, string>>>({})
+
+  useEffect(() => {
+    if (user) {
+      setValues({
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        position: user.position ?? '',
+      })
+      setErrors({})
+    }
+  }, [user])
+
+  function handleSubmit() {
+    const nextErrors = validate(values)
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+    onSubmit({
+      ...values,
+      name: values.name.trim(),
+      email: values.email.trim(),
+      position: values.position.trim(),
+    })
+  }
+
+  return (
+    <Modal open={!!user} onClose={onClose} title="ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານ">
+      {user && (
+        <div className="space-y-4">
+          <UserForm values={values} setValues={setValues} errors={errors} />
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              ຍົກເລີກ
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              ບັນທຶກການແກ້ໄຂ
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+// ── Delete User Modal ────────────────────────────────────────
+interface DeleteUserModalProps {
+  user: User | null
+  onClose: () => void
+  onConfirm: () => void
+}
+
+export function DeleteUserModal({ user, onClose, onConfirm }: DeleteUserModalProps) {
+  return (
+    <Modal open={!!user} onClose={onClose} title="ຢືນຢັນການລຶບຜູ້ໃຊ້ງານ">
+      {user && (
+        <div>
+          <div className="flex items-start gap-3 rounded-lg bg-rose-50 p-4">
+            <AlertTriangle className="mt-0.5 shrink-0 text-rose-600" size={20} />
+            <div>
+              <p className="text-sm text-gray-700">
+                ທ່ານຕ້ອງການລຶບຜູ້ໃຊ້ງານ{' '}
+                <span className="font-semibold text-gray-900">{user.name}</span> ({user.email}) ແທ້ບໍ?
+              </p>
+              <p className="mt-1 text-xs text-rose-600">ການລຶບນີ້ບໍ່ສາມາດກູ້ຄືນໄດ້.</p>
+            </div>
+          </div>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              ຍົກເລີກ
+            </button>
+            <button
+              onClick={onConfirm}
+              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700"
+            >
+              ຢືນຢັນລຶບ
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+</file>
+
+<file path="app/(auth)/layout.tsx">
+import React from 'react'
+type Props = {
+  children: React.ReactNode
+}
+
+const Layout = ({ children }: Props) => {
+  return (
+    <div className="min-h-screen w-full bg-white">
+        {children}
+    </div>
+  )
+}
+
+export default Layout
+</file>
+
+<file path="app/(auth)/page.tsx">
+import LoginForm from "../components/login/login-form";
+
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
+      <LoginForm />
+    </main>
+  );
+}
+</file>
+
+<file path="app/(main)/documents/[id]/page.tsx">
+"use client"
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
+import { DashboardLayout } from '@/app/components/dashboard-layout'
+import type { Document, DocumentStatus } from '@/types/document'
+import { useDMS } from '../../_dms-context'
+import { pushToast } from '@/app/components/ui/Toast'
+
+const statusStyles: Record<DocumentStatus, string> = {
+  draft: 'bg-slate-100 text-slate-700',
+  pending: 'bg-amber-100 text-amber-700',
+  approved: 'bg-emerald-100 text-emerald-700',
+  archived: 'bg-gray-200 text-gray-700',
+}
+
+const statusLabels: Record<DocumentStatus, string> = {
+  draft: 'ຮ່າງ',
+  pending: 'ລໍຖ້າອະນຸມັດ',
+  approved: 'ອະນຸມັດ',
+  archived: 'ເກັບເຂົ້າຄັງ',
+}
+
+export default function DocumentDetailPage() {
+  const params = useParams()
+  const id = (params as any)?.id
+  const { documents, setDocuments } = useDMS()
+  const doc = documents.find((d) => d.id === id) as Document | undefined
+
+  if (!doc) {
+    return (
+      <DashboardLayout title="ເອກະສານ">
+        <main className="p-6">
+          <div className="text-gray-500">ບໍ່ພົບເອກະສານ</div>
+        </main>
+      </DashboardLayout>
+    )
+  }
+
+  function handleDelete() {
+    setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, deleted: true } : d)))
+    pushToast({ title: 'ເອກະສານຖືກນໍາໄປ Trash' })
+  }
+
+  function handleApprove() {
+    setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, status: 'approved' } : d)))
+    pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
+  }
+
+  return (
+    <DashboardLayout title="ເອກະສານ">
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">ລາຍລະອຽດເອກະສານ</h1>
+            <p className="mt-1 text-sm text-gray-500">ຂໍ້ມູນເອກະສານທີ່ລະບົບໄດ້ບັນທຶກໄວ້</p>
+          </div>
+
+          <Link href="/documents" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+            ← ກັບໄປລາຍການ
+          </Link>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-indigo-600">{doc.category}</div>
+                <h2 className="mt-2 text-2xl font-bold text-gray-900">{doc.title}</h2>
+              </div>
+              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
+                {statusLabels[doc.status]}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-3xl text-indigo-600">PDF</div>
+              <div className="text-lg font-semibold text-gray-900">{doc.docNumber}</div>
+              <div className="mt-2 text-sm text-gray-500">{doc.fileSize} • {doc.fileType.toUpperCase()}</div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl bg-gray-50 p-4">
+                <div className="text-xs uppercase tracking-wide text-gray-500">ເລກທີ</div>
+                <div className="mt-2 font-semibold text-gray-900">{doc.docNumber}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-4">
+                <div className="text-xs uppercase tracking-wide text-gray-500">ວັນທີອັບໂຫຼດ</div>
+                <div className="mt-2 font-semibold text-gray-900">{doc.uploadDate}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-4">
+                <div className="text-xs uppercase tracking-wide text-gray-500">ຜູ້ອັບໂຫຼດ</div>
+                <div className="mt-2 font-semibold text-gray-900">{doc.uploadedBy}</div>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-4">
+                <div className="text-xs uppercase tracking-wide text-gray-500">ຮູບແບບໄຟລ໌</div>
+                <div className="mt-2 font-semibold text-gray-900 uppercase">{doc.fileType}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900">ການກະທຳ</h3>
+              <div className="mt-4 space-y-3">
+                <button onClick={() => pushToast({ title: 'ເບິ່ງເອກະສານ' })} type="button" className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">ເບິ່ງໄຟລ໌</button>
+                <button onClick={() => pushToast({ title: 'ດາວໂຫຼດເອກະສານ' })} type="button" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100">ດາວໂຫຼດ</button>
+                <button onClick={handleDelete} type="button" className="w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 hover:bg-rose-100">ລົບເອກະສານ</button>
+                {doc.status === 'pending' && <button onClick={handleApprove} className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">ອະນຸມັດ</button>}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900">ຂໍ້ມູນເພີ່ມເຕີມ</h3>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">ຄຳອະທິບາຍ</dt>
+                  <dd className="text-right text-gray-900">{doc.title}</dd>
+                </div>
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">ໝວດໝູ່</dt>
+                  <dd className="text-right text-gray-900">{doc.category}</dd>
+                </div>
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">ຂະໜາດ</dt>
+                  <dd className="text-right text-gray-900">{doc.fileSize}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </main>
+    </DashboardLayout>
+  )
+}
+</file>
+
+<file path="app/(main)/documents/trash/page.tsx">
+'use client'
+import { DashboardLayout } from '@/app/components/dashboard-layout'
+import { useDMS } from '../../_dms-context'
+import Modal from '@/app/components/ui/Modal'
+import { useState } from 'react'
+import { pushToast } from '@/app/components/ui/Toast'
+
+export default function TrashPage() {
+  const { documents, setDocuments } = useDMS()
+  const [confirm, setConfirm] = useState<string | null>(null)
+
+  const trash = documents.filter((d) => d.deleted)
+
+  function restore(id: string) {
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: false } : d)))
+    pushToast({ title: 'ການກູ້ຄືນສຳເລັດ' })
+  }
+
+  function permDelete(id: string) {
+    setDocuments((prev) => prev.filter((d) => d.id !== id))
+    pushToast({ title: 'ເອກະສານຖືກລຶບຢ່າງຖາວອນ' })
+    setConfirm(null)
+  }
+
+  return (
+    <DashboardLayout title="Trash">
+      <main className="p-6">
+        <h1 className="text-2xl font-bold mb-2">ຖົງຂະຫນາດ (Trash)</h1>
+        <p className="text-sm text-gray-500 mb-4">ຂໍ້ມູນເອກະສານທີ່ຖືກນໍາໄວ້</p>
+
+        <div className="rounded bg-white border p-4">
+          {trash.length === 0 ? (
+            <div className="text-gray-500">ບໍ່ມີເອກະສານໃນ Trash</div>
+          ) : (
+            <div className="space-y-3">
+              {trash.map((t) => (
+                <div key={t.id} className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{t.title}</div>
+                    <div className="text-xs text-gray-500">{t.id} • {t.uploadDate}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => restore(t.id)} className="px-3 py-1 rounded bg-emerald-50 border text-emerald-700">ກູ້ຄືນ</button>
+                    <button onClick={() => setConfirm(t.id)} className="px-3 py-1 rounded bg-rose-50 border text-rose-700">ລຶບຖາວອນ</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Modal open={!!confirm} onClose={() => setConfirm(null)} title="ຢືນຢັນການລຶບ">
+          <div>
+            <p className="mb-4">ທ່ານຕ້ອງການລຶບເອກະສານນີ້ຢ່າງຖາວອນແທ້ບໍ? ການນີ້ຈະບໍ່ສາມາດກູ້ຄືນໄດ້.</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirm(null)} className="px-3 py-2 rounded bg-gray-100">ຍົກເລີກ</button>
+              <button onClick={() => permDelete(confirm!)} className="px-3 py-2 rounded bg-rose-600 text-white">ຢືນຢັນລຶບ</button>
+            </div>
+          </div>
+        </Modal>
+      </main>
+    </DashboardLayout>
+  )
+}
+</file>
+
+<file path="app/(main)/guard.tsx">
+import React from 'react'
+
+type Props = {
+  children: React.ReactNode
+}
+
+const Guard = ({ children }: Props) => {
+
+    
+  return (
+    <div className="min-h-screen w-full bg-white">
+      {children}
+    </div>
+  )
+}
+
+export default Guard
+</file>
+
+<file path="app/(main)/layout.tsx">
+import React from 'react'
+import Guard from './guard'
+
+type Props = {
+  children: React.ReactNode
+}
+
+const Layout = ({ children }: Props) => {
+  return (
+    <div className="min-h-screen w-full bg-white">
+      <Guard>
+        {children}
+      </Guard>
+    </div>
+  )
+}
+
+export default Layout
+</file>
+
+<file path="app/components/login/login-form.tsx">
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+import { useRouter } from "next/navigation";
+import { Noto_Sans_Lao } from "next/font/google";
+import React, { useState } from "react";
+import apiClient from "@/config/axiosClient";
+import toast from 'react-hot-toast';
+import secureLocalStorage from 'react-secure-storage';
+
+// Noto Sans Lao ຮອງຮັບພາສາລາວ, ໃຫ້ import ໄວ້ນອກ component
+const notoSansLao = Noto_Sans_Lao({
+  subsets: ["lao"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+type LoginForm = {
+  email: string;
+  password: string;
+};
+
+type LoginErrors = {
+  email?: string | null;
+  password?: string | null;
+};
+
+type PasswordStrengthChecks = {
+  length: boolean;
+  lowercase: boolean;
+  uppercase: boolean;
+  number: boolean;
+  special: boolean;
+};
+
+type PasswordStrengthKey = keyof PasswordStrengthChecks;
+
+type SubmitStatus = "success" | "error" | null;
+
+type APIResponse = {
+  success: boolean;
+  message: string;
+  token: string;
+  data: UserData;
+};
+
+type UserData = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+};
+
+function LoginForm() {
+  const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
+  const [errors, setErrors] = useState<LoginErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  // ກວດສອບຄວາມປອດໄພຂອງ password
+  const checkPasswordStrength = (
+    pwd: string,
+  ): {
+    checks: PasswordStrengthChecks;
+    score: number;
+    label: string;
+    color: string;
+    barColor: string;
+  } => {
+    const checks: PasswordStrengthChecks = {
+      length: pwd.length >= 8,
+      lowercase: /[a-z]/.test(pwd),
+      uppercase: /[A-Z]/.test(pwd),
+      number: /[0-9]/.test(pwd),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+    };
+    const score = Object.values(checks).filter(Boolean).length;
+
+    let label = "";
+    let color = "";
+    let barColor = "";
+    if (pwd.length > 0) {
+      if (score <= 2) {
+        label = "ອ່ອນ";
+        color = "text-red-600";
+        barColor = "bg-red-500";
+      } else if (score <= 4) {
+        label = "ປານກາງ";
+        color = "text-amber-600";
+        barColor = "bg-amber-500";
+      } else {
+        label = "ແຂງແຮງ";
+        color = "text-emerald-600";
+        barColor = "bg-emerald-500";
+      }
+    }
+    return { checks, score, label, color, barColor };
+  };
+
+  const strength = checkPasswordStrength(form.password);
+
+  const handleChange =
+    (field: keyof LoginForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
+      if (submitStatus) setSubmitStatus(null);
+    };
+
+  // ຟັງຊັນກວດສອບຄວາມຖືກຕ້ອງຂອງຟອມ
+  const validateForm = () => {
+    const newErrors: LoginErrors = {};
+
+    if (!form.email.trim()) {
+      newErrors.email = "ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ";
+    }
+
+    // if (!form.password) {
+    //   newErrors.password = 'ກະລຸນາປ້ອນລະຫັດຜ່ານ'
+    // } else if (strength.score < 3) {
+    //   newErrors.password = 'ລະຫັດຜ່ານບໍ່ປອດໄພພຽງພໍ ກະລຸນາປັບປຸງ'
+    // }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ຟັງຊັນ handle submit
+ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setSubmitStatus(null);
+
+  if (!validateForm()) return;
+
+  setIsSubmitting(true);
+  try {
+    // ຈຳລອງການເອີ້ນ API — ປ່ຽນເປັນ endpoint ຈິງໄດ້ຕາມໂຕໂປຣເຈັກ
+    const response = await apiClient.post<APIResponse>("/auth/login", form);
+    console.log("Login response:", response.data);
+
+    if (![200, 201].includes(response.status)) {
+      throw new Error(response.data?.message ?? "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
+    }
+
+    const { success, message, token, data } = response.data;
+
+    if (!success || !token || !data) {
+      throw new Error(message ?? "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
+    }
+
+    toast.success(message);
+    secureLocalStorage.setItem("token", token);
+    secureLocalStorage.setItem("data", JSON.stringify(data));
+
+    setSubmitStatus("success");
+    console.log("Login payload:", form);
+
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    router.push("/dashboard"); // ການເຂົ້າສູ່ dashboard ຫຼັງຈາກ login ສຳເລັດ
+  } catch (err: any) {
+    console.error("Login failed:", err);
+    toast.error(err.response?.data?.message ?? err?.message ?? "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
+    setSubmitStatus("error");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+  return (
+    <div
+      className={`${notoSansLao.className} w-full max-w-md mx-auto bg-white border border-black/10 rounded-2xl shadow-xl shadow-black/5 px-8 py-10`}
+    >
+      {/* Header */}
+      <div className="mb-8">
+        <div className="w-11 h-11 rounded-xl bg-blue-500 flex items-center justify-center mb-5">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="11" width="18" height="10" rx="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+        <h4 className="text-2xl font-bold text-black tracking-tight">
+          ເຂົ້າສູ່ລະບົບ
+        </h4>
+        <p className="text-sm text-black/50 mt-1">
+          ຍິນດີຕ້ອນຮັບກັບຄືນ, ກະລຸນາປ້ອນຂໍ້ມູນຂອງທ່ານ
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+        {/* Username / Email */}
+        <div>
+          <label className="block text-black text-sm font-semibold mb-1.5">
+            ຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ
+          </label>
+          <input
+            type="text"
+            placeholder="enter your name or email"
+            value={form.email}
+            onChange={handleChange("email")}
+            className={`w-full bg-white border rounded-lg px-3.5 py-2.5 text-black placeholder-black/30 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+              errors.email
+                ? "border-red-400 focus:border-red-500"
+                : "border-black/15 focus:border-blue-500"
+            }`}
+          />
+          {errors.email && (
+            <p className="text-xs text-red-600 mt-1.5">{errors.email}</p>
+          )}
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="block text-black text-sm font-semibold mb-1.5">
+            ລະຫັດຜ່ານ
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="enter your password"
+              value={form.password}
+              onChange={handleChange("password")}
+              className={`w-full bg-white border rounded-lg px-3.5 py-2.5 pr-10 text-black placeholder-black/30 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+                errors.password
+                  ? "border-red-400 focus:border-red-500"
+                  : "border-black/15 focus:border-blue-500"
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 hover:text-black/70 transition-colors"
+              tabIndex={-1}
+            >
+              {showPassword ? (
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.4 18.4 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-xs text-red-600 mt-1.5">{errors.password}</p>
+          )}
+
+          {/* Strength meter */}
+          {form.password.length > 0 && (
+            <div className="mt-3">
+              <div className="flex gap-1.5 mb-1.5">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                      i < strength.score ? strength.barColor : "bg-black/10"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-semibold ${strength.color}`}>
+                  ຄວາມປອດໄພ: {strength.label}
+                </span>
+                <span className="text-xs text-black/40">
+                  {strength.score}/5
+                </span>
+              </div>
+
+              <ul className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2.5">
+                {(
+                  [
+                    ["length", "ຢ່າງໜ້ອຍ 8 ໂຕ"],
+                    ["uppercase", "ໂຕພິມໃຫຍ່ A-Z"],
+                    ["lowercase", "ໂຕພິມນ້ອຍ a-z"],
+                    ["number", "ຕົວເລກ 0-9"],
+                    ["special", "ສັນຍາລັກພິເສດ"],
+                  ] as Array<[PasswordStrengthKey, string]>
+                ).map(([key, text]) => (
+                  <li
+                    key={key}
+                    className={`flex items-center gap-1.5 text-[11px] transition-colors ${
+                      strength.checks[key]
+                        ? "text-emerald-600"
+                        : "text-black/35"
+                    }`}
+                  >
+                    <span
+                      className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${
+                        strength.checks[key] ? "bg-emerald-500" : "bg-black/10"
+                      }`}
+                    >
+                      {strength.checks[key] && (
+                        <svg
+                          width="8"
+                          height="8"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </span>
+                    {text}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Submit status banner */}
+        {submitStatus === "success" && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-3.5 py-2.5">
+            ເຂົ້າສູ່ລະບົບສຳເລັດ!
+          </div>
+        )}
+        {submitStatus === "error" && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3.5 py-2.5">
+            ເກີດຂໍ້ຜິດພາດ, ກະລຸນາລອງໃໝ່ອີກຄັ້ງ
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg px-4 py-2.5 mt-1 transition-colors flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <>
+              <svg
+                className="animate-spin"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="white"
+                  strokeWidth="3"
+                  opacity="0.3"
+                />
+                <path
+                  d="M12 2a10 10 0 0 1 10 10"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+              ກຳລັງເຂົ້າສູ່ລະບົບ...
+            </>
+          ) : (
+            "ເຂົ້າສູ່ລະບົບ"
+          )}
+        </button>
+      </form>
+
+      <p className="text-center text-xs text-black/40 mt-6">
+        ຍັງບໍ່ມີບັນຊີ?{" "}
+        <a href="#" className="text-blue-500 font-semibold hover:underline">
+          ລົງທະບຽນ
+        </a>
+      </p>
+    </div>
+  );
+}
+
+export default LoginForm;
+</file>
+
+<file path="app/components/ui/DocumentPreview.tsx">
+"use client"
+import React, { useState } from 'react'
+import type { Document } from '@/types/document'
+import { ExternalLink, FileWarning, Loader2 } from 'lucide-react'
+
+function isPdf(fileType: Document['fileType'], url: string): boolean {
+  if (fileType === 'pdf') return true
+  return /\.pdf($|\?)/i.test(url)
+}
+
+export default function DocumentPreview({ doc, className = '' }: { doc: Document; className?: string }) {
+  const [pdfError, setPdfError] = useState(false)
+  const [imgError, setImgError] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(true)
+
+  const url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
+  const hasUrl = !!url && url !== '#'
+  const showPdf = hasUrl && isPdf(doc.fileType, url)
+
+  if (!hasUrl || (showPdf && pdfError) || (!showPdf && imgError)) {
+    return (
+      <div className={`w-full h-[500px] border border-dashed border-gray-300 rounded bg-gray-50 flex items-center justify-center ${className}`}>
+        <div className="text-center text-gray-400 px-6">
+          <FileWarning className="mx-auto mb-3 h-10 w-10" />
+          <p className="text-sm font-medium text-gray-500">ບໍ່ສາມາດສະແດງເອກະສານນີ້ໄດ້</p>
+          <p className="mt-1 text-xs">{hasUrl ? 'ກະລຸນາລອງເປີດໄຟລ໌ຜ່ານປຸ່ມດ້ານລຸ່ມ' : 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ'}</p>
+          {hasUrl && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              ເປີດໃນແຖບໃໝ່
+            </a>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (showPdf) {
+    return (
+      <div className={`relative w-full h-[500px] border rounded bg-gray-100 overflow-hidden ${className}`}>
+        {pdfLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+            <div className="flex flex-col items-center text-gray-400">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <p className="mt-2 text-xs">ກຳລັງໂຫຼດ PDF...</p>
+            </div>
+          </div>
+        )}
+        <iframe
+          src={url}
+          title={doc.title}
+          className="w-full h-full"
+          onLoad={() => setPdfLoading(false)}
+          onError={() => { setPdfLoading(false); setPdfError(true) }}
+        />
+      </div>
+    )
+  }
+
+  // image / other previewable file
+  return (
+    <div className={`relative w-full h-[500px] border rounded bg-gray-50 flex items-center justify-center overflow-hidden ${className}`}>
+      {imgError ? (
+        <div className="text-center text-gray-400 px-6">
+          <FileWarning className="mx-auto mb-3 h-10 w-10" />
+          <p className="text-sm font-medium text-gray-500">ບໍ່ສາມາດສະແດງຮູບພາບໄດ້</p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            ເປີດໄຟລ໌
+          </a>
+        </div>
+      ) : (
+        <img
+          src={url}
+          alt={doc.title}
+          className="max-w-full max-h-full object-contain"
+          onError={() => setImgError(true)}
+        />
+      )}
+    </div>
+  )
+}
+</file>
+
+<file path="app/components/ui/Modal.tsx">
+"use client"
+import React from 'react'
+
+export default function Modal({ open, title, onClose, children }: { open: boolean; title?: string; onClose: () => void; children: React.ReactNode }) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-lg shadow-lg w-full max-w-3xl mx-4 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <button onClick={onClose} className="text-black/50 hover:text-black">ປິດ</button>
+        </div>
+        <div>{children}</div>
+      </div>
+    </div>
+  )
+}
+</file>
+
+<file path="app/components/ui/PDFPlaceholder.tsx">
+import React from 'react'
+
+export default function PDFPlaceholder({ title }: { title?: string }) {
+  return (
+    <div className="w-full h-80 border border-dashed border-black/10 rounded-md flex items-center justify-center bg-gray-50">
+      <div className="text-center text-black/50">
+        <div className="text-sm mb-2">PDF ຕົວຢ່າງ</div>
+        <div className="text-xs">{title ?? 'ເອກະສານ ຕ່ຳຫນື່ງ'}</div>
+      </div>
+    </div>
+  )
+}
+</file>
+
+<file path="app/components/ui/Toast.tsx">
+"use client"
+import React, { useEffect, useState } from 'react'
+
+export type ToastMessage = { id: string; title: string; description?: string }
+
+let listeners: ((toasts: ToastMessage[]) => void)[] = []
+let toasts: ToastMessage[] = []
+
+export function pushToast(t: Omit<ToastMessage, 'id'>) {
+  const id = Math.random().toString(36).slice(2, 9)
+  const msg = { id, ...t }
+  toasts = [msg, ...toasts]
+  listeners.forEach((l) => l(toasts))
+  setTimeout(() => {
+    toasts = toasts.filter((x) => x.id !== id)
+    listeners.forEach((l) => l(toasts))
+  }, 3500)
+}
+
+export default function ToastContainer() {
+  const [local, setLocal] = useState<ToastMessage[]>([])
+  useEffect(() => {
+    const l = (t: ToastMessage[]) => setLocal(t)
+    listeners.push(l)
+    return () => { listeners = listeners.filter((x) => x !== l) }
+  }, [])
+
+  if (local.length === 0) return null
+  return (
+    <div className="fixed right-4 bottom-6 z-50 flex flex-col gap-3">
+      {local.map((t) => (
+        <div key={t.id} className="bg-white border rounded-lg px-4 py-3 shadow-md w-80">
+          <div className="font-semibold">{t.title}</div>
+          {t.description && <div className="text-sm text-black/60">{t.description}</div>}
+        </div>
+      ))}
+    </div>
+  )
+}
+</file>
+
+<file path="app/components/dashboard.tsx">
+import { Activity, DollarSign, Plus, ShoppingCart, Users } from 'lucide-react';
+
+type StatItem = {
+  title: string;
+  value: string;
+  change: string;
+  isPositive: boolean;
+  icon: typeof DollarSign;
+};
+
+const stats: StatItem[] = [
+  { title: 'ລາຍຮັບທັງໝົດ', value: '฿124,500', change: '+12.5%', isPositive: true, icon: DollarSign },
+  { title: 'ຜູ້ໃຊ້ໃໝ່', value: '+1,234', change: '+18.2%', isPositive: true, icon: Users },
+  { title: 'ຄຳສັ່ງຊື້', value: '564', change: '-2.4%', isPositive: false, icon: ShoppingCart },
+  { title: 'ສະຖານະລະບົບ', value: '98.5%', change: '+4.1%', isPositive: true, icon: Activity },
+];
+
+export function Dashboard() {
+  return (
+    <main className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">ຍິນດີຕ້ອນຮັບກັບຄືນ! ນີ້ແມ່ນພາບລວມລະບົບຂອງທ່ານມື້ນີ້</p>
+        </div>
+        <button
+          type="button"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          ສ້າງລາຍການໃໝ່
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+
+          return (
+            <div key={stat.title} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-500">{stat.title}</span>
+                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                  <Icon className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-bold text-gray-900">{stat.value}</h3>
+                <p className={`text-xs mt-1 font-semibold ${stat.isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {stat.change} <span className="text-gray-400 font-normal">ທຽບກັບເດືອນກ່ອນ</span>
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">ກິດຈະກຳລ່າສຸດ</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="py-3 px-4">ຜູ້ໃຊ້ງານ</th>
+                <th className="py-3 px-4">ລາຍການ</th>
+                <th className="py-3 px-4">ເວລາ</th>
+                <th className="py-3 px-4">ສະຖານະ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-sm">
+              <tr>
+                <td className="py-3 px-4 font-medium text-gray-900">Somchai Jaidee</td>
+                <td className="py-3 px-4">ສະໝັກແພັກເກັດ Pro (1 ປີ)</td>
+                <td className="py-3 px-4 text-gray-500">2 ນາທີກ່ອນ</td>
+                <td className="py-3 px-4">
+                  <span className="px-2.5 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">ສຳເລັດ</span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-4 font-medium text-gray-900">Somsri Raka</td>
+                <td className="py-3 px-4">ອັບເດດຂໍ້ມູນໂປຣໄຟລ໌</td>
+                <td className="py-3 px-4 text-gray-500">1 ຊົ່ວໂມງກ່ອນ</td>
+                <td className="py-3 px-4">
+                  <span className="px-2.5 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">ສຳເລັດ</span>
+                </td>
+              </tr>
+              <tr>
+                <td className="py-3 px-4 font-medium text-gray-900">Anan Sukjai</td>
+                <td className="py-3 px-4">ຊຳລະເງິນບໍ່ສຳເລັດ</td>
+                <td className="py-3 px-4 text-gray-500">3 ຊົ່ວໂມງກ່ອນ</td>
+                <td className="py-3 px-4">
+                  <span className="px-2.5 py-1 text-xs font-medium bg-rose-100 text-rose-700 rounded-full">ລົ້ມເຫລວ</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  );
+}
+</file>
+
+<file path="app/components/inex.tsx">
+export { default } from './login/login-form'
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+import { Noto_Sans, Noto_Sans_Lao } from "next/font/google";
+import "./globals.css";
+import { DMSProvider } from './(main)/_dms-context'
+import ToastContainer from './components/ui/Toast'
+import { Toaster } from 'react-hot-toast';
+
+const notoSans = Noto_Sans({
+  variable: "--font-noto-sans",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const notoSansLao = Noto_Sans_Lao({
+  variable: "--font-noto-sans-lao",
+  subsets: ["lao"],
+  weight: ["400", "500", "600", "700"],
+});
+
+export const metadata: Metadata = {
+  title: "Dashboard Lao",
+  description: "Dashboard interface in Lao language",
+};
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
+    <html
+      lang="lo"
+      className={`${notoSans.variable} ${notoSansLao.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col">
+        <Toaster />
+        <DMSProvider>
+          {children}
+          <ToastContainer />
+        </DMSProvider>
+      </body>
+    </html>
+  )
+}
+</file>
+
+<file path="config/axiosClient.tsx">
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import axios from 'axios';
+import secureLocalStorage from 'react-secure-storage';
+
+const axiosClient = axios.create({
+  baseURL: 'http://10.44.38.164:3000/api',
+});
+
+// Request Interceptor
+axiosClient.interceptors.request.use(
+  async (config: any) => {
+    config.headers = {
+      'Content-Type': 'application/json',
+      ...config.headers,
+    };
+
+    // Add Bearer Token if it exists
+    const token = secureLocalStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    console.error('Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response Interceptor
+axiosClient.interceptors.response.use(
+  (response) => {
+    // Handle success responses
+    // if (response.status === 200 || response.status === 201) {
+    //   // return response?.data; // Return only the data for cleaner usage
+    //   return response; 
+    // }
+    return response;
+  },
+  (error) => {
+    // if (error.response) {
+    //   const response = error.response;
+    //   if (response?.data?.code === 401 && response?.data?.error === "Unauthorized") {
+    //     // Handle unauthorized access (e.g., token expiration)
+    //     console.log("Unauthorized", error.response);
+    //     console.warn('Token expired or unauthorized, redirecting to login...');
+    //     // document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    //     localStorage.clear();
+    //     secureLocalStorage.clear();
+    //     window.location.replace('/auth/login');
+    //   } else {
+    //     console.error(
+    //       `API Error: ${response.status} - ${response.statusText}`
+    //     );
+    //   }
+    // } else {
+    //   console.error('Network/Server Error:', error.message);
+    // }
+
+    // Re-throw the error for further handling
+    return Promise.reject(error);
+  }
+);
+
+export default axiosClient;
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+</file>
+
+<file path="types/user.ts">
+export type UserRole = 'SuperAdmin' | 'Admin' | 'User';
+export type UserStatus = 'active' | 'inactive';
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  department: string;
+  position?: string;
+  status: UserStatus;
+  avatarColor?: string;
+  createdAt?: string;
+};
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="AGENTS.md">
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
+</file>
+
+<file path="CLAUDE.md">
+@AGENTS.md
+</file>
+
+<file path="eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+</file>
+
+<file path="postcss.config.mjs">
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="README.md">
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"],
+      "@/components/*": ["./app/components/*"],
+      "@/app/*": ["./app/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+</file>
+
+<file path="app/(main)/dashboard/page.tsx">
+"use client"
+import Link from 'next/link';
+import { useMemo } from 'react';
+import { DashboardLayout } from '@/app/components/dashboard-layout';
+import { useDMS } from '../_dms-context';
+
+const statusStyles: Record<string, string> = {
+  'ຮ່າງ': 'bg-slate-100 text-slate-700',
+  'ລໍຖ້າອະນຸມັດ': 'bg-amber-100 text-amber-700',
+  'ອະນຸມັດ': 'bg-emerald-100 text-emerald-700',
+  'ເກັບເຂົ້າຄັງ': 'bg-gray-200 text-gray-700',
+};
+
+const statusLabelMap: Record<string, string> = {
+  draft: 'ຮ່າງ',
+  pending: 'ລໍຖ້າອະນຸມັດ',
+  approved: 'ອະນຸມັດ',
+  archived: 'ເກັບເຂົ້າຄັງ',
+};
+
+export default function DashboardPage() {
+  const { documents } = useDMS();
+
+  const active = useMemo(() => documents.filter((d) => !d.deleted), [documents]);
+
+  const summaryCards = useMemo(() => {
+    const total = active.length;
+    const inbound = active.filter((d) => d.category === 'ຂາເຂົ້າ').length;
+    const outbound = active.filter((d) => d.category === 'ຂາອອກ').length;
+    const pending = active.filter((d) => d.status === 'pending').length;
+
+    return [
+      { label: 'ເອກກະສານທັງໝົດ', value: String(total), trend: 'ຢູ່ໃນລະບົບ', tone: 'emerald' },
+      { label: 'ຂາເຂົ້າ', value: String(inbound), trend: 'ເອກະສານ', tone: 'blue' },
+      { label: 'ຂາອອກ', value: String(outbound), trend: 'ເອກະສານ', tone: 'amber' },
+      { label: 'ລໍຖ້າອະນຸມັດ', value: String(pending), trend: 'ເອກະສານ', tone: 'violet' },
+    ];
+  }, [active]);
+
+  const recentDocuments = useMemo(() => {
+    return [...active]
+      .sort((a, b) => (a.uploadDate < b.uploadDate ? 1 : -1))
+      .slice(0, 5);
+  }, [active]);
+
+  return (
+    <DashboardLayout title="ໜ້າຫຼັກ">
+      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">ໜ້າຫຼັກ</h1>
+            <p className="mt-1 text-sm text-gray-500">ພາບລວມລະບົບ DMS ແລະຄຸນນະພາບການຈັດການເອກະສານ.</p>
+          </div>
+          <Link
+            href="/documents/upload"
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
+          >
+            + ອັບໂຫຼດເອກກະສານໃໝ່
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map((card) => (
+            <div key={card.label} className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+              <div className="text-sm text-gray-500">{card.label}</div>
+              <div className="mt-4 text-2xl font-bold text-gray-900">{card.value}</div>
+              <div
+                className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  card.tone === 'emerald'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : card.tone === 'blue'
+                      ? 'bg-blue-100 text-blue-700'
+                      : card.tone === 'amber'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-violet-100 text-violet-700'
+                }`}
+              >
+                {card.trend}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-gray-900">ສະຫຼຸບຕາມສະຖານະ</h2>
+            <div className="space-y-4">
+              {(['pending', 'approved', 'draft', 'archived'] as const).map((status) => {
+                const count = active.filter((d) => d.status === status).length;
+                return (
+                  <div key={status} className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
+                    <span className="text-sm text-gray-600">{statusLabelMap[status]}</span>
+                    <span className="text-sm font-semibold text-gray-900">{count} ເອກະສານ</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-100 bg-white shadow-sm">
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="text-lg font-bold text-gray-900">ເອກກະສານອັບໂຫຼດລ່າສຸດ</h2>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left">
+                <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-4 py-3">ຊື່ເອກກະສານ</th>
+                    <th className="px-4 py-3">ໝວດໝູ່</th>
+                    <th className="px-4 py-3">ວັນທີ</th>
+                    <th className="px-4 py-3">ສະຖານະ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentDocuments.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-400">
+                        ຍັງບໍ່ມີເອກະສານ
+                      </td>
+                    </tr>
+                  ) : (
+                    recentDocuments.map((doc) => (
+                      <tr key={doc.id} className="border-t border-gray-100">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900">{doc.title}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{doc.category}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadDate}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[statusLabelMap[doc.status]]}`}>
+                            {statusLabelMap[doc.status]}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </DashboardLayout>
+  );
+}
+</file>
+
+<file path="app/(main)/documents/archive/page.tsx">
+"use client"
+import { DashboardLayout } from '@/app/components/dashboard-layout';
+import { useDMS } from '../../_dms-context';
+import {
+  CreateCabinetModal,
+  CreateFolderModal,
+  ConfirmDeleteModal,
+  DocumentPreviewModal,
+  PageHeader,
+} from '@/app/components/archive/ArchiveModals';
+import CabinetView from '@/app/components/archive/CabinetView';
+import FolderView from '@/app/components/archive/FolderView';
+import DocumentView, { Breadcrumbs, BackButton } from '@/app/components/archive/DocumentView';
+import { useArchive } from '@/app/components/archive/useArchive';
+
+export default function ArchivePage() {
+  const {
+    cabinets,
+    folders,
+    documents,
+    createCabinet,
+    createFolder,
+    deleteCabinet,
+    deleteFolder,
+    deleteDocument,
+  } = useDMS();
+
+  const archive = useArchive(cabinets, folders, documents, {
+    createCabinet,
+    createFolder,
+    deleteCabinet,
+    deleteFolder,
+    deleteDocument,
+  });
+
+  return (
+    <DashboardLayout title="ຄັງເກັບເອກກະສານ">
+      <main className="flex-1 overflow-y-auto p-6">
+        <PageHeader
+          showCreateButton={archive.view.level === 'cabinets'}
+          onCreate={() => archive.setCabinetModalOpen(true)}
+        />
+
+        <div className="mb-6">
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+            <Breadcrumbs
+              view={archive.view}
+              activeCabinet={archive.activeCabinet}
+              activeFolder={archive.activeFolder}
+              onNavigate={archive.setView}
+            />
+          </div>
+        </div>
+
+        {archive.view.level === 'cabinets' && (
+          <CabinetView
+            cabinets={cabinets}
+            folders={folders}
+            documents={documents}
+            onCreate={() => archive.setCabinetModalOpen(true)}
+            onOpen={(cabinetId) => archive.setView({ level: 'folders', cabinetId })}
+            onDelete={(cabinet) => archive.handleDelete('cabinet', cabinet.id, cabinet.name)}
+          />
+        )}
+
+        {archive.view.level === 'folders' && archive.activeCabinet && (
+          <FolderView
+            cabinet={archive.activeCabinet}
+            folders={archive.cabinetFolders}
+            documents={documents}
+            onCreate={() => archive.setFolderModalOpen(true)}
+            onOpen={(folderId) => archive.setView({ level: 'documents', cabinetId: archive.activeCabinet!.id, folderId })}
+            onDelete={(folder) => archive.handleDelete('folder', folder.id, folder.name)}
+          />
+        )}
+
+        {archive.view.level === 'documents' && archive.activeCabinet && archive.activeFolder && (
+          <DocumentView
+            cabinet={archive.activeCabinet}
+            folder={archive.activeFolder}
+            documents={archive.folderDocuments}
+            onPreview={archive.setPreviewDoc}
+            onDownload={archive.handleDownload}
+            onDelete={(doc) => archive.handleDelete('document', doc.id, doc.title)}
+          />
+        )}
+
+        {archive.view.level !== 'cabinets' && <BackButton onClick={archive.handleBack} />}
+
+        <CreateCabinetModal
+          open={archive.cabinetModalOpen}
+          onClose={() => archive.setCabinetModalOpen(false)}
+          onCreate={archive.handleCreateCabinet}
+        />
+
+        <CreateFolderModal
+          open={archive.folderModalOpen}
+          onClose={() => archive.setFolderModalOpen(false)}
+          cabinetName={archive.activeCabinet?.name}
+          onCreate={archive.handleCreateFolder}
+        />
+
+        <DocumentPreviewModal
+          doc={archive.previewDoc}
+          onClose={() => archive.setPreviewDoc(null)}
+          onDownload={archive.handleDownload}
+        />
+
+        <ConfirmDeleteModal
+          target={archive.confirmDelete}
+          onClose={() => archive.setConfirmDelete(null)}
+          onConfirm={archive.confirmDeleteNow}
+        />
+      </main>
+    </DashboardLayout>
+  )
+}
+</file>
+
+<file path="app/(main)/documents/upload/page.tsx">
+"use client"
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { DashboardLayout } from '@/app/components/dashboard-layout'
+import { useDMS } from '../../_dms-context'
+import { pushToast } from '@/app/components/ui/Toast'
+import type { DocumentCategory, DocumentFileType, DocumentStatus } from '@/types/document'
+
+const categoryOptions: DocumentCategory[] = ['ຂາເຂົ້າ', 'ຂາອອກ', 'ຄຳສັ່ງ', 'ແຈ້ງການ', 'ສັນຍາ', 'ລາຍງານ']
+
+const departmentOptions = [
+  'ພະແນກບໍລິຫານ & ຈັດຕັ້ງ',
+  'ພະແນກການເງິນ & ບັນຊີ',
+  'ພະແນກໄອທີ & ເຕັກໂນໂລຊີ',
+  'ພະແນກການຕະຫຼາດ & ຂາຍ',
+  'ພະແນກແຜນການ & ໂຄງການ',
+]
+
+const documentTypeOptions = [
+  'ເອກະສານການເງິນ',
+  'ແຈ້ງການ / ປະກາດ',
+  'ສັນຍາ & ຂໍ້ຕົກລົງ',
+  'ບົດລາຍງານ',
+  'ຄຳສັ່ງ / ມະຕິ',
+  'ອື່ນໆ',
+]
+
+// ສ້າງເລກທີເອກະສານອັດຕະໂນມັດ ເຊັ່ນ DOC-2026-001
+function generateDocNumber(): string {
+  const year = new Date().getFullYear()
+  const seq = Date.now().toString().slice(-3).padStart(3, '0')
+  return `DOC-${year}-${seq}`
+}
+
+// ກຳນົດ fileType ຈາກນາມສະກຸນໄຟລ໌ທີ່ຜູ້ໃຊ້ເລືອກ
+function resolveFileType(fileName: string): DocumentFileType {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  if (ext === 'pdf') return 'pdf'
+  if (ext === 'png' || ext === 'jpg' || ext === 'jpeg') return 'image'
+  return 'doc'
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export default function UploadDocumentPage() {
+  const router = useRouter()
+  const { addDocument, cabinets, folders } = useDMS()
+
+  const [title, setTitle] = useState('')
+  // ອັດຕະໂນມັດຕື່ມເລກທີ reacts ເມື່ອເຂົ້າມາໜ້ານີ້ (ຜູ້ໃຊ້ສາມາດແກ້ໄຂໄດ້)
+  const [docNumber, setDocNumber] = useState(generateDocNumber)
+  const [category, setCategory] = useState<DocumentCategory>('ຂາເຂົ້າ')
+  const [department, setDepartment] = useState('')
+  const [documentType, setDocumentType] = useState('')
+  const [uploadDate, setUploadDate] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
+  const [error, setError] = useState<string | null>(null)
+
+  // 3-Level archive: cabinet + folder selection
+  const [cabinetId, setCabinetId] = useState('')
+  const [folderId, setFolderId] = useState('')
+
+  // ການກັນສະເພາະແຟ້ມຂອງຕູ້ທີ່ເລືອກ
+  const visibleFolders = cabinetId ? folders.filter((f) => f.cabinetId === cabinetId) : []
+
+  function handleCabinetChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value
+    setCabinetId(value)
+    setFolderId('') // ຣີເຊັດແຟ້ມເມື່ອປ່ຽນຕູ້
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) {
+      // ສ້າງ preview URL ຈາກໄຟລ໌ທີ່ເລືອກ ເພື່ອໃຊ້ສະແດງຕົວຢ່າງໃນ DocumentPreview
+      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
+      setSelectedFile(file)
+      setFilePreviewUrl(URL.createObjectURL(file))
+    }
+  }
+
+  function validateForm(): boolean {
+    if (!title.trim()) {
+      setError('ກະລຸນາປ້ອນຊື່ເອກະສານ')
+      return false
+    }
+    if (!docNumber.trim()) {
+      setError('ກະລຸນາປ້ອນຍັງທີ')
+      return false
+    }
+    if (!department) {
+      setError('ກະລຸນາເລືອກພະແນກ')
+      return false
+    }
+    if (!documentType) {
+      setError('ກະລຸນາເລືອກຕຳບົບເອກະສານ')
+      return false
+    }
+    if (!selectedFile) {
+      setError('ກະລຸນາເລືອກໄຟລ໌')
+      return false
+    }
+    if (!cabinetId) {
+      setError('ກະລຸນາເລືອກຕູ້ເອກະສານ')
+      return false
+    }
+    if (!folderId) {
+      setError('ກະລຸນາເລືອກແຟ້ມ')
+      return false
+    }
+    setError(null)
+    return true
+  }
+
+  function handleSubmit(status: DocumentStatus) {
+    if (!validateForm()) return
+
+    const selectedCabinet = cabinets.find((c) => c.id === cabinetId)
+    const selectedFolder = folders.find((f) => f.id === folderId)
+
+    addDocument({
+      title: title.trim(),
+      docNumber: docNumber.trim(),
+      category,
+      department,
+      documentType,
+      status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບສົ່ງອະນຸມັດ
+      fileType: selectedFile ? resolveFileType(selectedFile.name) : 'pdf',
+      fileSize: selectedFile ? formatFileSize(selectedFile.size) : '0 KB',
+      uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
+      uploadedBy: 'John Doe', // TODO: ປ່ຽນເັປັນ user ທີ່ login ຢູ່ ເມື່ອມີລະບົບ Auth ແທ້
+      fileUrl: filePreviewUrl || '#',
+      fileName: selectedFile?.name,
+      // 3-Level archive: save cabinet + folder
+      cabinetId,
+      cabinetName: selectedCabinet?.name,
+      folderId,
+      folderName: selectedFolder?.name,
+    })
+
+    pushToast({
+      title: status === 'draft' ? 'ບັນທຶກເປັນສະບັບຮ່າງສຳເລັດ' : 'ອັບໂຫຼດເອກະສານສຳເລັດ',
+    })
+    router.push(status === 'draft' ? '/documents' : '/documents/pending')
+  }
+
+  return (
+    <DashboardLayout title="ອັບໂຫຼດເອກະສານ">
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">ອັບໂຫຼດເອກະສານ</h1>
+          <p className="mt-1 text-sm text-gray-500">ອັບໂຫຼດເອກະສານໃໝກັບລະບົບເມັບເອກະສານຂອງທ່ານ</p>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              ໄຟລ໌ <span className="text-red-500">*</span>
+            </label>
+            <label
+              htmlFor="file-input"
+              className="cursor-pointer rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-8 text-center block"
+            >
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl text-indigo-600">
+                ⤴
+              </div>
+              <p className="text-lg font-semibold text-gray-900">
+                {selectedFile ? selectedFile.name : 'ລາກແລະວາງໄຟລ໌ທີ່ທ່ານຕ້ອງການອັບໂຫຼດ'}
+              </p>
+              <p className="mt-2 text-sm text-gray-500">
+                {selectedFile ? formatFileSize(selectedFile.size) : 'PDF, DOC, PNG, JPG ຈະຖືກຮັບຮອງໃນລະບົບ'}
+              </p>
+              <input id="file-input" type="file" className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={handleFileChange} />
+              <span className="mt-5 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                ເຂືອກໄຟລ໌
+              </span>
+            </label>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-gray-900">ຂໍ້ມູນເອກະສານ</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  ຊື່ເອກະສານ <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                  placeholder="ປ້ອນຊື່ເອກະສານ"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  ເຂກທີ <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={docNumber}
+                  onChange={(e) => setDocNumber(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                  placeholder="DOC-2026-XXX"
+                />
+              </div>
+
+              {/* 3-Level archive: Cabinet + Folder dropdowns */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  ຕູ້ເອກະສານ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={cabinetId}
+                  onChange={handleCabinetChange}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                >
+                  <option value="">— ເລືອກຕູ້ເອກະສານ —</option>
+                  {cabinets.map((c) => (
+                    <option key={c.id} value={c.id}>🗄️ {c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  ແຟ້ມ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={folderId}
+                  onChange={(e) => setFolderId(e.target.value)}
+                  disabled={!cabinetId}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  <option value="">{cabinetId ? '— ເລືອກແຟ້ມ —' : '— ກະລຸນາເລືອກຕູ້ກ່ອນ —'}</option>
+                  {visibleFolders.map((f) => (
+                    <option key={f.id} value={f.id}>📁 {f.name}</option>
+                  ))}
+                </select>
+                {cabinetId && visibleFolders.length === 0 && (
+                  <p className="mt-1 text-xs text-amber-600">ຕູ້ນີ້ຍັງບໍ່ມີແຟ້ມ — ກະລຸນາສ້າງແຟ້ມກ່ອນທີ່ໜ້າ ຄັງເກັບເອກະສານ</p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  ພະແນກ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                >
+                  <option value="">— ເຂືອກພະແນກ —</option>
+                  {departmentOptions.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  ປະເພດເອກະສານ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={documentType}
+                  onChange={(e) => setDocumentType(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                >
+                  <option value="">— ເຂືອກປະເພດເອກະສານ —</option>
+                  {documentTypeOptions.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">ໝວດໝູ່</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as DocumentCategory)}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                >
+                  {categoryOptions.map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">ວັນທີ</label>
+                <input
+                  type="date"
+                  value={uploadDate}
+                  onChange={(e) => setUploadDate(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                />
+              </div>
+
+              {error && <p className="text-xs text-rose-600">{error}</p>}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleSubmit('pending')}
+                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
+                >
+                  ອັບໂຫຼດເອກະສານ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSubmit('draft')}
+                  className="flex-1 rounded-lg bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-300"
+                >
+                  ບັນທຶກເປັນສະບັບຮ່າງ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </DashboardLayout>
+  );
+}
+</file>
+
+<file path="app/(main)/reports/page.tsx">
+'use client'
+import { useMemo, useRef } from 'react'
+import { DashboardLayout } from '@/app/components/dashboard-layout'
+import { useDMS } from '../_dms-context'
+import { pushToast } from '@/app/components/ui/Toast'
+import type { DocumentCategory } from '@/types/document'
+import * as XLSX from 'xlsx'
+
+const statusStyles: Record<string, string> = {
+  'ອະນຸມັດ': 'bg-emerald-100 text-emerald-700',
+  'ລໍຖ້າອະນຸມັດ': 'bg-amber-100 text-amber-700',
+  'ເກັບເຂົ້າຄັງ': 'bg-gray-200 text-gray-700',
+  'ຮ່າງ': 'bg-slate-100 text-slate-700',
+};
+
+const statusLabelMap: Record<string, string> = {
+  draft: 'ຮ່າງ',
+  pending: 'ລໍຖ້າອະນຸມັດ',
+  approved: 'ອະນຸມັດ',
+  archived: 'ເກັບເຂົ້າຄັງ',
+};
+
+const allCategories: DocumentCategory[] = ['ຂາເຂົ້າ', 'ຂາອອກ', 'ຄຳສັ່ງ', 'ແຈ້ງການ', 'ສັນຍາ', 'ລາຍງານ']
+
+export default function ReportsPage() {
+  const { documents } = useDMS()
+  const active = useMemo(() => documents.filter((d) => !d.deleted), [documents])
+
+  // ອ້າງອິງເຖິງ Element ທີ່ຈະຖືກພິມ (ຫໍ່ ເນື້ອຫາທັງໝົດຂອງໜ້ານີ້)
+  const printRef = useRef<HTMLDivElement>(null)
+
+  const stats = useMemo(() => {
+    const total = active.length
+    const approved = active.filter((d) => d.status === 'approved').length
+    const pending = active.filter((d) => d.status === 'pending').length
+    const archived = active.filter((d) => d.status === 'archived').length
+
+    return [
+      { label: 'ເອກກະສານທັງໝົດ', value: String(total), tone: 'emerald' },
+      { label: 'ເອກກະສານທີ່ອະນຸມັດ', value: String(approved), tone: 'blue' },
+      { label: 'ລໍຖ້າອະນຸມັດ', value: String(pending), tone: 'amber' },
+      { label: 'ເອກກະສານຄັງເກັບ', value: String(archived), tone: 'violet' },
+    ]
+  }, [active])
+
+  const categoryData = useMemo(() => {
+    const total = active.length || 1
+    return allCategories.map((name) => {
+      const count = active.filter((d) => d.category === name).length
+      return { name, value: Math.round((count / total) * 100), count }
+    })
+  }, [active])
+
+  const recentEntries = useMemo(() => {
+    return [...active]
+      .sort((a, b) => (a.uploadDate < b.uploadDate ? 1 : -1))
+      .slice(0, 4)
+  }, [active])
+
+  // ---------- Export Excel ----------
+  // ສ້າງໄຟລ໌ .xlsx ຈິງ ຈາກ documents[] ໃນ Context ແລ້ວດາວໂຫຼດອັດຕະໂນມັດ
+  function handleExportExcel() {
+    if (active.length === 0) {
+      pushToast({ title: 'ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ' })
+      return
+    }
+
+    // ປ່ຽນ documents[] ໃຫ້ເປັນຮູບແບບແຖວ/ຄໍລຳ (Rows) ພ້ອມຫົວຂໍ້ພາສາລາວ
+    const rows = active.map((d) => ({
+      'ຊື່ເອກກະສານ': d.title,
+      'ເລກທີ': d.docNumber,
+      'ໝວດໝູ່': d.category,
+      'ສະຖານະ': statusLabelMap[d.status],
+      'ວັນທີອັບໂຫຼດ': d.uploadDate,
+      'ຜູ້ອັບໂຫຼດ': d.uploadedBy,
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'ລາຍງານ')
+
+    // ຕັ້ງຄວາມກວ້າງຄໍລຳໃຫ້ອ່ານງ່າຍ
+    worksheet['!cols'] = [
+      { wch: 35 }, { wch: 15 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 18 },
+    ]
+
+    const fileName = `dms-report-${new Date().toISOString().slice(0, 10)}.xlsx`
+    XLSX.writeFile(workbook, fileName)
+    pushToast({ title: 'ສົ່ງອອກ Excel ສຳເລັດ' })
+  }
+
+  // ---------- Print ----------
+  // ໃຊ້ window.print() ຂອງ Browser + CSS ໃນ globals.css ໃຫ້ພິມສະເພາະ #print-area
+  function handlePrint() {
+    window.print()
+  }
+
+  return (
+    <DashboardLayout title="ລາຍງານ & ສະຖິຕິ">
+      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div id="print-area" ref={printRef} className="space-y-6">
+          <div className="mb-2">
+            <h1 className="text-2xl font-bold text-gray-900">ລາຍງານ & ສະຖິຕິ</h1>
+            <p className="mt-1 text-sm text-gray-500">ຂໍ້ມູນການໃຊ້ງານເອກະສານຂອງລະບົບ (ຄິດໄລ່ຈາກຂໍ້ມູນປັດຈຸບັນ)</p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {stats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="text-sm text-gray-500">{stat.label}</div>
+                <div className="mt-4 text-3xl font-bold text-gray-900">{stat.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-5 text-lg font-bold text-gray-900">ການແຜ່ຂະຫຍາຍເອກກະສານຕາມໝວດໝູ່</h2>
+              <div className="space-y-4">
+                {categoryData.map((item) => (
+                  <div key={item.name}>
+                    <div className="mb-1 flex items-center justify-between text-sm text-gray-700">
+                      <span>{item.name}</span>
+                      <span>{item.count} ({item.value}%)</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-gray-100">
+                      <div className="h-2.5 rounded-full bg-indigo-500" style={{ width: `${item.value}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-5 text-lg font-bold text-gray-900">ລາຍການເຂົ້າໃໝ່</h2>
+              <div className="space-y-3">
+                {recentEntries.length === 0 ? (
+                  <div className="text-sm text-gray-400">ຍັງບໍ່ມີເອກະສານ</div>
+                ) : (
+                  recentEntries.map((entry) => (
+                    <div key={entry.id} className="rounded-2xl bg-gray-50 p-4">
+                      <div className="flex items-center justify-between gap-4 text-sm text-gray-700">
+                        <div>
+                          <p className="font-semibold text-gray-900">{entry.title}</p>
+                          <p className="text-xs text-gray-500">{entry.category} • {entry.uploadDate}</p>
+                        </div>
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyles[statusLabelMap[entry.status]]}`}>
+                          {statusLabelMap[entry.status]}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section ນີ້ຢູ່ນອກ #print-area ໂດຍຕັ້ງໃຈ ຈະບໍ່ຖືກພິມອອກ (ບໍ່ຈຳເປັນຕ້ອງມີປຸ່ມຢູ່ໃນເອກະສານທີ່ພິມແລ້ວ) */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm print:hidden">
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">ຕົວເລືອກສ່ວນປະກອບ</h2>
+              <p className="mt-1 text-sm text-gray-500">ສົ່ງອອກ ຫຼື ພິມລາຍງານ</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={handleExportExcel} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                Export Excel
+              </button>
+              <button onClick={handlePrint} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+                Print
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </DashboardLayout>
+  )
+}
+</file>
+
+<file path="app/(main)/settings/page.tsx">
+"use client";
+
+import { useState } from "react";
+import { DashboardLayout } from "@/app/components/dashboard-layout";
+import { pushToast } from "@/app/components/ui/Toast";
+import { Camera, Check, Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
+
+export default function SettingsPage() {
+  // ---- Profile state ----
+  const [name, setName] = useState("John Doe");
+  const [email, setEmail] = useState("john.doe@example.com");
+  const [role] = useState<"Admin" | "Staff">("Admin");
+
+  // ---- Security state ----
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // ---- Handlers ----
+  function handleSaveProfile() {
+    if (!name.trim() || !email.trim()) return;
+    pushToast({ title: "ບັນທຶກການປ່ຽນແປງສຳເລັດ", description: "ຂໍ້ມູນໂປຣໄຟລ໌ຂອງທ່ານຖືກອັບເດດແລ້ວ" });
+  }
+
+  function handleUpdatePassword() {
+    const err: string[] = [];
+    if (!currentPassword) err.push("ກະລຸນາປ້ອນລະຫັດຜ່ານປັດຈຸບັນ");
+    if (newPassword.length < 8) err.push("ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຢ່າງໜ້ອຍ 8 ໂຕອັກສອນ");
+    if (newPassword !== confirmPassword) err.push("ລະຫັດຜ່ານໃໝ່ ແລະ ຢືນຢັນບໍ່ກົງກັນ");
+
+    if (err.length > 0) {
+      setPasswordError(err.join(" • "));
+      // Clear the error after 4 seconds so the user can retype without a stale message
+      setTimeout(() => setPasswordError(""), 4000);
+      return;
+    }
+
+    setPasswordError("");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    pushToast({ title: "ອັບເດດລະຫັດຜ່ານສຳເລັດ", description: "ລະຫັດຜ່ານຂອງທ່ານຖືກປ່ຽນແລ້ວ" });
+  }
+
+  // ---- Shared input styling ----
+  const inputBase =
+    "w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
+
+  return (
+    <DashboardLayout title="ຕັ້ງຄ່າ">
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">ຕັ້ງຄ່າ</h1>
+          <p className="mt-1 text-sm text-gray-500">ຈັດການຂໍ້ມູນສ່ວນຕົວແລະຄວາມປອດໄພຂອງບັນຊີ</p>
+        </div>
+
+        <div className="space-y-6">
+          {/* ============ Section 1: Profile ============ */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+                <User className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">ໂປຣໄຟລ໌ຂອງຂ້ອຍ</h2>
+                <p className="text-sm text-gray-500">ຈັດການຂໍ້ມູນສ່ວນຕົວແລະຂໍ້ມູນຕິດຕໍ່ຂອງທ່ານ</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+              {/* Avatar + change photo */}
+              <div className="flex flex-col items-center gap-2 sm:items-start">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-2xl font-bold text-white shadow-lg shadow-indigo-600/30">
+                  JD
+                </div>
+                <button
+                  type="button"
+                  className="mt-1 flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+                >
+                  <Camera className="h-4 w-4" />
+                  ປ່ຽນຮູບ
+                </button>
+              </div>
+
+              {/* Fields */}
+              <div className="grid flex-1 gap-5">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຊື່ ແລະ ນາມສະກຸນ</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={inputBase}
+                    placeholder="ຊື່ ແລະ ນາມສະກຸນ"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ອີເມວ</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={inputBase}
+                    placeholder="ອີເມວ"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຕຳແໜ່ງ</label>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                        role === "Admin"
+                          ? "bg-indigo-100 text-indigo-700"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      {role === "Admin" ? "ຜູ້ບໍລິຫານລະບົບ" : "ພະນັກງານ"}
+                    </span>
+                    <span className="text-xs text-gray-400">(ບໍ່ສາມາດແກ້ໄຂໄດ້)</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSaveProfile}
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+                  >
+                    <Check className="h-4 w-4" />
+                    ບັນທຶກການປ່ຽນແປງ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ============ Section 2: Security ============ */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">ຄວາມປອດໄພ</h2>
+                <p className="text-sm text-gray-500">ປ່ຽນລະຫັດຜ່ານເພື່ອປົກປ້ອງບັນຊີຂອງທ່ານ</p>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <div className="grid gap-5 md:grid-cols-3">
+                {/* Current password */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານປັດຈຸບັນ</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showCurrent ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className={`${inputBase} pl-9 pr-10`}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrent((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+                    >
+                      {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New password */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານໃໝ່</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showNew ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className={`${inputBase} pl-9 pr-10`}
+                      placeholder="ຢ່າງໜ້ອຍ 8 ໂຕອັກສອນ"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNew((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+                    >
+                      {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm password */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຢືນຢັນລະຫັດຜ່ານໃໝ່</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showConfirm ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`${inputBase} pl-9 pr-10`}
+                      placeholder="ພິມລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+                    >
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inline validation error */}
+              {passwordError && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                  {passwordError}
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleUpdatePassword}
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+                >
+                  <Lock className="h-4 w-4" />
+                  ອັບເດດລະຫັດຜ່ານ
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </DashboardLayout>
+  );
+}
+</file>
+
+<file path="app/(main)/users/page.tsx">
+"use client"
+import { DashboardLayout } from '@/app/components/dashboard-layout'
+import { useState } from 'react'
+import Modal from '@/app/components/ui/Modal'
+import { pushToast } from '@/app/components/ui/Toast'
+import { useDMS } from '../_dms-context'
+import type { UserRole } from '@/types/user'
+
+export default function UsersPage() {
+  const { users, addUser, removeUser } = useDMS()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [role, setRole] = useState<UserRole>('Staff')
+
+  function handleAdd() {
+    if (!name.trim()) return
+    addUser({ name: name.trim(), role })
+    setName('')
+    setOpen(false)
+    pushToast({ title: 'ເພີ່ມຜູ້ໃຊ້ງານສຳເລັດ' })
+  }
+
+  function handleRemove(id: string) {
+    removeUser(id)
+    pushToast({ title: 'ລຶບຜູ້ໃຊ້ງານສຳເລັດ' })
+  }
+
+  return (
+    <DashboardLayout title="ຈັດການຜູ້ໃຊ້">
+      <main className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold">ຈັດການຜູ້ໃຊ້</h1>
+            <p className="text-sm text-gray-500">ສ້າງ ແກ້ໄຂ ແລະ ຈັດສິດການເຂົ້າເວັບ</p>
+          </div>
+          <button onClick={() => setOpen(true)} className="px-4 py-2 rounded bg-indigo-600 text-white">+ ເພີ່ມຜູ້ໃຊ້ງານ</button>
+        </div>
+
+        <div className="rounded bg-white border p-4">
+          {users.map((u) => (
+            <div key={u.id} className="py-2 border-b last:border-b-0 flex items-center justify-between">
+              <div>
+                <div className="font-medium">{u.name}</div>
+                <div className="text-xs text-gray-500">{u.role}</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-500">ID: {u.id}</span>
+                <button onClick={() => handleRemove(u.id)} className="text-xs text-rose-600 hover:underline">ລຶບ</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Modal open={open} onClose={() => setOpen(false)} title="ເພີ່ມຜູ້ໃຊ້ງານ">
+          <div>
+            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded border px-3 py-2 mb-3" placeholder="ຊື່" />
+            <select value={role} onChange={(e) => setRole(e.target.value as UserRole)} className="w-full rounded border px-3 py-2 mb-3">
+              <option>Admin</option>
+              <option>Staff</option>
+            </select>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setOpen(false)} className="px-3 py-2 rounded bg-gray-100">ຍົກເລີກ</button>
+              <button onClick={handleAdd} className="px-3 py-2 rounded bg-indigo-600 text-white">ບັນທຶກ</button>
+            </div>
+          </div>
+        </Modal>
+      </main>
+    </DashboardLayout>
+  )
+}
+</file>
+
+<file path="app/globals.css">
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-noto-sans), var(--font-noto-sans-lao), sans-serif;
+  --font-mono: var(--font-noto-sans), sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html {
+  font-family: var(--font-noto-sans), var(--font-noto-sans-lao), sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-noto-sans), var(--font-noto-sans-lao), sans-serif;
+}
+
+/* ---------- Print styles ---------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+</file>
+
+<file path="types/document.ts">
+export type DocumentStatus = 'draft' | 'pending' | 'approved' | 'archived';
+export type DocumentFileType = 'pdf' | 'doc' | 'image';
+
+export type DocumentCategory =
+  | 'ຂາເຂົ້າ'
+  | 'ຂາອອກ'
+  | 'ຄຳສັ່ງ'
+  | 'ແຈ້ງການ'
+  | 'ສັນຍາ'
+  | 'ລາຍງານ';
+
+// ── 3-Level Archive types ────────────────────────────────────────────────
+export type Cabinet = {
+  id: string;
+  name: string;
+  color: string; // Tailwind gradient classes e.g. "from-indigo-500 to-blue-500"
+  department: string;
+  description: string;
+  createdAt: string;
+};
+
+export type Folder = {
+  id: string;
+  cabinetId: string;
+  name: string;
+  description: string;
+  createdAt: string;
+};
+
+export type Document = {
+  id: string;
+  title: string;
+  docNumber: string;
+  category: DocumentCategory;
+  status: DocumentStatus;
+  fileType: DocumentFileType;
+  fileSize: string;
+  uploadDate: string;
+  uploadedBy: string;
+  fileUrl: string;
+  fileName?: string;
+  pdfUrl?: string;
+  deleted?: boolean;
+  department?: string;
+  documentType?: string;
+  // 3-Level archive fields
+  cabinetId?: string;
+  cabinetName?: string;
+  folderId?: string;
+  folderName?: string;
+};
+</file>
+
+<file path="package.json">
+{
+  "name": "next.js-basic",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "axios": "^1.19.0",
+    "lucide-react": "^1.29.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-hot-toast": "^2.6.0",
+    "react-secure-storage": "^1.3.2",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="app/(main)/documents/page.tsx">
+'use client'
+import Link from 'next/link'
+import { DashboardLayout } from '@/app/components/dashboard-layout'
+import type { Document, DocumentStatus } from '@/types/document'
+import { useEffect, useMemo, useState } from 'react'
+import { useDMS } from '../_dms-context'
+import Modal from '@/app/components/ui/Modal'
+import DocumentPreview from '@/app/components/ui/DocumentPreview'
+import { pushToast } from '@/app/components/ui/Toast'
+import { Settings } from 'lucide-react'
+import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
+
+const statusStyles: Record<DocumentStatus, string> = {
+  draft: 'bg-slate-100 text-slate-700',
+  pending: 'bg-amber-100 text-amber-700',
+  approved: 'bg-emerald-100 text-emerald-700',
+  archived: 'bg-gray-200 text-gray-700',
+}
+
+const statusLabels: Record<DocumentStatus, string> = {
+  draft: 'ຮ່າງ',
+  pending: 'ລໍຖ້າອະນຸມັດ',
+  approved: 'ອະນຸມັດ',
+  archived: 'ເກັບເຂົ້າຄັງ',
+}
+
+export default function DocumentsPage() {
+  const { documents, setDocuments, categories, addCategory, removeCategory, cabinets } = useDMS()
+  const [query, setQuery] = useState('')
+  const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
+  const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
+  const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
+  const [manageCategoryOpen, setManageCategoryOpen] = useState(false)
+
+  useEffect(() => {
+    // ensure categories include special 'ທັງໝົດ'
+  }, [])
+
+  const visible = useMemo(() => {
+    return documents.filter((d) => !d.deleted && d.status !== 'pending').filter((d) => {
+      const q = query.trim().toLowerCase()
+      if (q) {
+        if (!(d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q))) return false
+      }
+      if (filterCategory !== 'ທັງໝົດ' && d.category !== filterCategory) return false
+      if (filterCabinet !== 'ທັງໝົດ' && d.cabinetId !== filterCabinet) return false
+      if (filterStatus !== 'ທັງໝົດ') {
+        if (filterStatus === 'ຮ່າງ' && d.status !== 'draft') return false
+        if (filterStatus === 'ອະນຸມັດ' && d.status !== 'approved') return false
+        if (filterStatus === 'ເກັບເຂົ້າຄັງ' && d.status !== 'archived') return false
+      }
+      return true
+    })
+  }, [documents, query, filterCategory, filterCabinet, filterStatus])
+
+  function handleDelete(doc: Document) {
+    setConfirmDelete(doc)
+  }
+
+  function confirmDeleteNow() {
+    if (!confirmDelete) return
+    setDocuments((prev) => prev.map((d) => (d.id === confirmDelete.id ? { ...d, deleted: true } : d)))
+    pushToast({ title: 'ເອກະສານຖືກນໍາໄປຍັງ Trash' })
+    setConfirmDelete(null)
+  }
+
+  function handleRestore(id: string) {
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: false } : d)))
+    pushToast({ title: 'ການກູ້ຄືນສຳເລັດ' })
+  }
+
+  function countDocsInCategory(category: string) {
+    return documents.filter((d) => d.category === category && !d.deleted).length
+  }
+
+  function handleAddCategory(name: string) {
+    addCategory(name)
+    pushToast({ title: 'ເພີ່ມໝວດໝູ່ສຳເລັດ' })
+  }
+
+  function handleRemoveCategory(c: string) {
+    const count = countDocsInCategory(c)
+    if (count > 0) {
+      pushToast({ title: `ບໍ່ສາມາດລຶບໄດ້ ຍັງມີ ${count} ເອກະສານໃຊ້ໝວດໝູ່ນີ້ຢູ່` })
+      return
+    }
+    removeCategory(c)
+    if (filterCategory === c) {
+      setFilterCategory('ທັງໝົດ')
+    }
+  }
+
+  return (
+    <DashboardLayout title="ເອກກະສານທັງໝົດ">
+      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">ເອກກະສານທັງໝົດ</h1>
+            <p className="text-sm text-gray-500 mt-1">ການຕິດຕາມແລະຈັດການເອກະສານໃນລະບົບ DMS</p>
+          </div>
+
+          <Link
+            href="/documents/upload"
+            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+          >
+            + ອັບໂຫຼດເອກກະສານ
+          </Link>
+        </div>
+
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ຄົ້ນຫາ</label>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="ຊື່ເອກກະສານ / ເລກທີ"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none ring-0 placeholder:text-gray-400 focus:border-indigo-400"
+              />
+            </div>
+
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">ໝວດໝູ່</label>
+                <button
+                  onClick={() => setManageCategoryOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                >
+                  <Settings size={14} />
+                  ຈັດການ
+                </button>
+              </div>
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
+                <option>ທັງໝົດ</option>
+                {categories.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ຕູ້ເອກະສານ</label>
+              <select value={filterCabinet} onChange={(e) => setFilterCabinet(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
+                <option>ທັງໝົດ</option>
+                {cabinets.map((c) => (
+                  <option key={c.id} value={c.id}>🗄️ {c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ສະຖານະ</label>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
+                <option>ທັງໝົດ</option>
+                <option>ຮ່າງ</option>
+                <option>ອະນຸມັດ</option>
+                <option>ເກັບເຂົ້າຄັງ</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left">
+              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-4 py-3">ເອກະສານ</th>
+                  <th className="px-4 py-3">ໝວດໝູ່</th>
+                  <th className="px-4 py-3">ເລກທີ</th>
+                  <th className="px-4 py-3">ຮູບແບບ</th>
+                  <th className="px-4 py-3">ຂະໜາດ</th>
+                  <th className="px-4 py-3">ວັນທີ</th>
+                  <th className="px-4 py-3">ຜູ້ອັບໂຫຼດ</th>
+                  <th className="px-4 py-3">ສະຖານະ</th>
+                  <th className="px-4 py-3 text-center">ການກະທຳ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((doc) => (
+                  <tr key={doc.id} className="border-t border-gray-100 align-top">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-gray-900">{doc.title}</div>
+                      <div className="text-xs text-gray-500">ID: {doc.id}</div>
+                      {(doc.cabinetName || doc.folderName) && (
+                        <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+                          🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{doc.category}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{doc.docNumber}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 uppercase">{doc.fileType}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{doc.fileSize}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadDate}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadedBy}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
+                        {statusLabels[doc.status]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => setPreviewDoc(doc)} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                          ເບິ່ງ
+                        </button>
+                        <button type="button" className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
+                          ດາວໂຫຼດ
+                        </button>
+                        <button onClick={() => handleDelete(doc)} type="button" className="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100">
+                          ລົບ
+                        </button>
+                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <Modal open={!!previewDoc} onClose={() => setPreviewDoc(null)} title={previewDoc?.title}>
+          {previewDoc && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-gray-500">ເລກທີ</div>
+                  <div className="font-semibold">{previewDoc.docNumber}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ໝວດໝູ່</div>
+                  <div className="font-semibold">{previewDoc.category}</div>
+                </div>
+              </div>
+              <DocumentPreview doc={previewDoc} />
+              <div className="flex items-center justify-end gap-2">
+                <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
+                <button onClick={() => { pushToast({ title: 'ດາວໂຫຼດເອກະສານ' }) }} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="ຢືນຢັນການລົບ">
+          <div>
+            <p className="mb-4">ທ່ານຕ້ອງການລົບເອກະສານນີ້ແທ້ບໍ? ການລົບຈະເຮັດໃຫ້ເອກະສານເຂົ້າໄປຢູ່ Trash.</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="px-3 py-2 rounded bg-gray-100">ຍົກເລີກ</button>
+              <button onClick={confirmDeleteNow} className="px-3 py-2 rounded bg-rose-600 text-white">ຢືນຢັນລົບ</button>
+            </div>
+          </div>
+        </Modal>
+
+        <ManageCategoryModal
+          open={manageCategoryOpen}
+          onClose={() => setManageCategoryOpen(false)}
+          categories={categories}
+          onAdd={handleAddCategory}
+          onRemove={handleRemoveCategory}
+          countDocs={countDocsInCategory}
+        />
+      </main>
+    </DashboardLayout>
+  )
+}
+</file>
+
+<file path="app/(main)/_dms-context.tsx">
+"use client"
+import React, { createContext, useContext, useState } from 'react'
+import { Cabinet, Document, Folder } from '@/types/document'
+import { User } from '@/types/user'
+
+type DMSContextType = {
+  // Raw state (ຍັງເກັບໄວ້ໃຫ້ backward-compatible ກັບ Code ເກົ່າທີ່ໃຊ້ setDocuments ໂດຍກົງ)
+  documents: Document[]
+  setDocuments: React.Dispatch<React.SetStateAction<Document[]>>
+  categories: string[]
+  setCategories: React.Dispatch<React.SetStateAction<string[]>>
+  users: User[]
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>
+
+  // 3-Level archive state
+  cabinets: Cabinet[]
+  setCabinets: React.Dispatch<React.SetStateAction<Cabinet[]>>
+  folders: Folder[]
+  setFolders: React.Dispatch<React.SetStateAction<Folder[]>>
+
+  // Document helpers
+  addDocument: (doc: Omit<Document, 'id' | 'deleted'>) => Document
+  updateDocument: (id: string, patch: Partial<Document>) => void
+  deleteDocument: (id: string) => void // soft delete -> ໄປ Trash
+  restoreDocument: (id: string) => void // ກູ້ຄືນຈາກ Trash
+  permDeleteDocument: (id: string) => void // ລຶບຖາວອນ
+  archiveDocument: (id: string) => void // ປ່ຽນ status ເປັນ archived
+
+  // Category helpers
+  addCategory: (name: string) => void
+  removeCategory: (name: string) => void
+
+  // User helpers
+  addUser: (user: Omit<User, 'id'>) => User
+  updateUser: (id: string, patch: Partial<Omit<User, 'id'>>) => void
+  removeUser: (id: string) => void
+  toggleUserStatus: (id: string) => void
+
+  // 3-Level archive helpers
+  createCabinet: (input: Omit<Cabinet, 'id' | 'createdAt'>) => Cabinet
+  createFolder: (input: Omit<Folder, 'id' | 'createdAt'>) => Folder
+  deleteCabinet: (id: string) => void
+  deleteFolder: (id: string) => void
+  assignDocument: (docId: string, cabinetId: string, folderId: string) => void
+}
+
+const DMSContext = createContext<DMSContextType | undefined>(undefined)
+
+// ຟັງຊັນຊ່ວຍສ້າງ ID ແບບບໍ່ຊ້ຳກັນ, ໃຊ້ prefix ໄດ້ (ເຊັ່ນ 'DOC', 'USR', 'CAB', 'FLD')
+function generateId(prefix: string) {
+  return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`
+}
+
+export function DMSProvider({ children }: { children: React.ReactNode }) {
+  const [documents, setDocuments] = useState<Document[]>([
+    {
+      id: 'DOC-001',
+      title: 'ເອກະສານຂາເຂົ້າທີ່ກ່ຽວກັບຄຳສັ່ງຊື້',
+      docNumber: 'K-2026-001',
+      category: 'ຂາເຂົ້າ',
+      status: 'approved',
+      fileType: 'pdf',
+      fileSize: '2.4 MB',
+      uploadDate: '2026-08-08',
+      uploadedBy: 'ນາງ ທຳມະເພກ',
+      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      cabinetId: 'CAB-FIN',
+      cabinetName: 'ການເງິນ',
+      folderId: 'FLD-FIN-01',
+      folderName: 'ໃບສັ່ງຊື້',
+    },
+    {
+      id: 'DOC-002',
+      title: 'ແຈ້ງການປະກາດຄວາມກ້າຫານໃນອຸດສາຫະກໍາ',
+      docNumber: 'AN-2026-014',
+      category: 'ແຈ້ງການ',
+      status: 'pending',
+      fileType: 'doc',
+      fileSize: '840 KB',
+      uploadDate: '2026-08-07',
+      uploadedBy: 'ທ້າວ ອາລີ',
+      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      cabinetId: 'CAB-ANN',
+      cabinetName: 'ແຈ້ງການ',
+      folderId: 'FLD-ANN-01',
+      folderName: 'ແຈ້ງການພາຍໃນ',
+    },
+    {
+      id: 'DOC-003',
+      title: 'ສັນຍາເຊົ່າອມຕໍ່ກັບຜູ້ສະຫນອງ',
+      docNumber: 'CT-2026-021',
+      category: 'ສັນຍາ',
+      status: 'draft',
+      fileType: 'pdf',
+      fileSize: '1.1 MB',
+      uploadDate: '2026-08-05',
+      uploadedBy: 'ນາງ ຄຳນາ',
+      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      cabinetId: 'CAB-CTR',
+      cabinetName: 'ສັນຍາ',
+      folderId: 'FLD-CTR-01',
+      folderName: 'ສັນຍາຜູ້ສະໜອງ',
+    },
+    {
+      id: 'DOC-004',
+      title: 'ບົດລາຍງານການງານຂອງຫົວໜ້າພະແນກ',
+      docNumber: 'RP-2026-045',
+      category: 'ລາຍງານ',
+      status: 'approved',
+      fileType: 'image',
+      fileSize: '3.2 MB',
+      uploadDate: '2026-08-04',
+      uploadedBy: 'ທ້າວ ລະມາ',
+      fileUrl: 'https://picsum.photos/800/1000',
+      cabinetId: 'CAB-FIN',
+      cabinetName: 'ການເງິນ',
+      folderId: 'FLD-FIN-02',
+      folderName: 'ບົດລາຍງານການເງິນ',
+    },
+    {
+      id: 'DOC-005',
+      title: 'ເອກະສານຂາອອກ ກ່ຽວກັບຂໍ້ຕົກລົງການສົ່ງສິນຄ້າ',
+      docNumber: 'OUT-2026-009',
+      category: 'ຂາອອກ',
+      status: 'archived',
+      fileType: 'pdf',
+      fileSize: '1.7 MB',
+      uploadDate: '2026-08-02',
+      uploadedBy: 'ທ້າວ ຊົມບູລີ',
+      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      cabinetId: 'CAB-CTR',
+      cabinetName: 'ສັນຍາ',
+      folderId: 'FLD-CTR-02',
+      folderName: 'ສັນຍາເຊົ່າ',
+    },
+  ])
+
+  const [categories, setCategories] = useState<string[]>(['ທົ່ວໄປ', 'ສິນທັດ', 'ເອກະສານທີ່ສຳຄັນ'])
+
+  const [users, setUsers] = useState<User[]>([
+    {
+      id: 'USR-001',
+      name: 'ຈອນໂດ',
+      email: 'john.doe@company.com',
+      role: 'SuperAdmin',
+      department: 'ພະແນກບໍລິຫານ & ຈັດຕັ້ງ',
+      position: 'ຜູ້ບໍລິຫານລະບົບສູງສຸດ',
+      status: 'active',
+      avatarColor: 'bg-rose-500',
+      createdAt: '2026-01-05',
+    },
+    {
+      id: 'USR-002',
+      name: 'ສະໄໝ ສະໄໝ',
+      email: 'somsak.somsak@company.com',
+      role: 'Admin',
+      department: 'ພະແນກການເງິນ & ບັນຊີ',
+      position: 'ຫົວໜ້າພະແນກການເງິນ',
+      status: 'active',
+      avatarColor: 'bg-purple-500',
+      createdAt: '2026-01-12',
+    },
+    {
+      id: 'USR-003',
+      name: 'ນາງ ທຳມະເພກ',
+      email: 'thammapaek@company.com',
+      role: 'User',
+      department: 'ພະແນກໄອທີ & ເຕັກໂນໂລຊີ',
+      position: 'ພະນັກງານໄອທີ',
+      status: 'active',
+      avatarColor: 'bg-emerald-500',
+      createdAt: '2026-02-03',
+    },
+    {
+      id: 'USR-004',
+      name: 'ທ້າວ ອາລີ',
+      email: 'arunee@company.com',
+      role: 'Admin',
+      department: 'ພະແນກການຕະຫຼາດ & ຂາຍ',
+      position: 'ຫົວໜ້າພະແນກການຕະຫຼາດ',
+      status: 'inactive',
+      avatarColor: 'bg-amber-500',
+      createdAt: '2026-02-18',
+    },
+    {
+      id: 'USR-005',
+      name: 'ນາງ ຄຳນາ',
+      email: 'kumna@company.com',
+      role: 'User',
+      department: 'ພະແນກແຜນການ & ໂຄງການ',
+      position: 'ພະນັກງານແຜນການ',
+      status: 'active',
+      avatarColor: 'bg-indigo-500',
+      createdAt: '2026-03-01',
+    },
+    {
+      id: 'USR-006',
+      name: 'ທ້າວ ສົມພອນ',
+      email: 'somphone@company.com',
+      role: 'User',
+      department: 'ພະແນກບໍລິຫານ & ຈັດຕັ້ງ',
+      position: 'ພະນັກງານທຸລະການ',
+      status: 'inactive',
+      avatarColor: 'bg-cyan-500',
+      createdAt: '2026-03-15',
+    },
+  ])
+
+  // ---------- 3-Level archive state ----------
+  const [cabinets, setCabinets] = useState<Cabinet[]>([
+    {
+      id: 'CAB-FIN',
+      name: 'ການເງິນ',
+      color: 'from-emerald-500 to-teal-600',
+      department: 'ພະແນກການເງິນ & ບັນຊີ',
+      description: 'ເອກະສານກ່ຽວກັບການເງິນ, ບັນຊີ ແລະ ການເບີກຈ່າຍ',
+      createdAt: '2026-01-10',
+    },
+    {
+      id: 'CAB-ANN',
+      name: 'ແຈ້ງການ',
+      color: 'from-indigo-500 to-blue-600',
+      department: 'ພະແນກບໍລິຫານ & ຈັດຕັ້ງ',
+      description: 'ແຈ້ງການ, ປະກາດ ແລະ ຂ່າວສານພາຍໃນອົງກອນ',
+      createdAt: '2026-01-12',
+    },
+    {
+      id: 'CAB-CTR',
+      name: 'ສັນຍາ',
+      color: 'from-amber-500 to-orange-600',
+      department: 'ພະແນກແຜນການ & ໂຄງການ',
+      description: 'ສັນຍາທຸກປະເພດທັງສັນຍາເຊົ່າ, ສັນຍາຜູ້ສະໜອງ ແລະ ຂໍ້ຕົກລົງ',
+      createdAt: '2026-02-01',
+    },
+  ])
+
+  const [folders, setFolders] = useState<Folder[]>([
+    { id: 'FLD-FIN-01', cabinetId: 'CAB-FIN', name: 'ໃບສັ່ງຊື້', description: 'ໃບສັ່ງຊື້ ແລະ ໃບຮັບເງິນ', createdAt: '2026-01-15' },
+    { id: 'FLD-FIN-02', cabinetId: 'CAB-FIN', name: 'ບົດລາຍງານການເງິນ', description: 'ລາຍງານການເງິນປະຈຳເດືອນ / ປີ', createdAt: '2026-01-20' },
+    { id: 'FLD-ANN-01', cabinetId: 'CAB-ANN', name: 'ແຈ້ງການພາຍໃນ', description: 'ແຈ້ງການໃຫ້ພະນັກງານພາຍໃນ', createdAt: '2026-01-18' },
+    { id: 'FLD-ANN-02', cabinetId: 'CAB-ANN', name: 'ປະກາດ', description: 'ປະກາດສາທາລະນະ', createdAt: '2026-02-02' },
+    { id: 'FLD-CTR-01', cabinetId: 'CAB-CTR', name: 'ສັນຍາຜູ້ສະໜອງ', description: 'ສັນຍາກັບຜູ້ສະໜອງສິນຄ້າ ແລະ ບໍລິການ', createdAt: '2026-02-05' },
+    { id: 'FLD-CTR-02', cabinetId: 'CAB-CTR', name: 'ສັນຍາເຊົ່າ', description: 'ສັນຍາເຊົ່າອາຄານ, ອຸປະກອນ', createdAt: '2026-02-10' },
+  ])
+
+  // ---------- Document helpers ----------
+  function addDocument(doc: Omit<Document, 'id' | 'deleted'>): Document {
+    const newDoc: Document = { ...doc, id: generateId('DOC'), deleted: false }
+    setDocuments((prev) => [newDoc, ...prev])
+    return newDoc
+  }
+
+  function updateDocument(id: string, patch: Partial<Document>) {
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)))
+  }
+
+  function deleteDocument(id: string) {
+    updateDocument(id, { deleted: true })
+  }
+
+  function restoreDocument(id: string) {
+    updateDocument(id, { deleted: false })
+  }
+
+  function permDeleteDocument(id: string) {
+    setDocuments((prev) => prev.filter((d) => d.id !== id))
+  }
+
+  function archiveDocument(id: string) {
+    updateDocument(id, { status: 'archived' })
+  }
+
+  // ---------- Category helpers ----------
+  function addCategory(name: string) {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setCategories((prev) => (prev.includes(trimmed) ? prev : [trimmed, ...prev]))
+  }
+
+  function removeCategory(name: string) {
+    setCategories((prev) => prev.filter((c) => c !== name))
+  }
+
+  // ---------- User helpers ----------
+  function addUser(user: Omit<User, 'id'>): User {
+    const newUser: User = { ...user, id: generateId('USR') }
+    setUsers((prev) => [newUser, ...prev])
+    return newUser
+  }
+
+  function removeUser(id: string) {
+    setUsers((prev) => prev.filter((u) => u.id !== id))
+  }
+
+  function updateUser(id: string, patch: Partial<Omit<User, 'id'>>) {
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
+  }
+
+  function toggleUserStatus(id: string) {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u
+      )
+    )
+  }
+
+  // ---------- 3-Level archive helpers ----------
+  function createCabinet(input: Omit<Cabinet, 'id' | 'createdAt'>): Cabinet {
+    const newCabinet: Cabinet = {
+      ...input,
+      id: generateId('CAB'),
+      createdAt: new Date().toISOString().slice(0, 10),
+    }
+    setCabinets((prev) => [newCabinet, ...prev])
+    return newCabinet
+  }
+
+  function createFolder(input: Omit<Folder, 'id' | 'createdAt'>): Folder {
+    const newFolder: Folder = {
+      ...input,
+      id: generateId('FLD'),
+      createdAt: new Date().toISOString().slice(0, 10),
+    }
+    setFolders((prev) => [newFolder, ...prev])
+    return newFolder
+  }
+
+  function deleteCabinet(id: string) {
+    setCabinets((prev) => prev.filter((c) => c.id !== id))
+    setFolders((prev) => prev.filter((f) => f.cabinetId !== id))
+    // ເອົາຂໍ້ມູນ cabinet/folder ອອກຈາກເອກະສານທີ່ອ້າງອີງຕູ້ນັ້ນ
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.cabinetId === id
+          ? { ...d, cabinetId: undefined, cabinetName: undefined, folderId: undefined, folderName: undefined }
+          : d
+      )
+    )
+  }
+
+  function deleteFolder(id: string) {
+    setFolders((prev) => prev.filter((f) => f.id !== id))
+    // ເອົາຂໍ້ມູນ folder ອອກຈາກເອກະສານທີ່ອ້າງອີງແຟ້ມນັ້ນ
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.folderId === id
+          ? { ...d, folderId: undefined, folderName: undefined }
+          : d
+      )
+    )
+  }
+
+  function assignDocument(docId: string, cabinetId: string, folderId: string) {
+    const cabinet = cabinets.find((c) => c.id === cabinetId)
+    const folder = folders.find((f) => f.id === folderId)
+    updateDocument(docId, {
+      cabinetId,
+      cabinetName: cabinet?.name,
+      folderId,
+      folderName: folder?.name,
+    })
+  }
+
+  return (
+    <DMSContext.Provider
+      value={{
+        documents,
+        setDocuments,
+        categories,
+        setCategories,
+        users,
+        setUsers,
+        cabinets,
+        setCabinets,
+        folders,
+        setFolders,
+        addDocument,
+        updateDocument,
+        deleteDocument,
+        restoreDocument,
+        permDeleteDocument,
+        archiveDocument,
+        addCategory,
+        removeCategory,
+        addUser,
+        updateUser,
+        removeUser,
+        toggleUserStatus,
+        createCabinet,
+        createFolder,
+        deleteCabinet,
+        deleteFolder,
+        assignDocument,
+      }}
+    >
+      {children}
+    </DMSContext.Provider>
+  )
+}
+
+export function useDMS() {
+  const ctx = useContext(DMSContext)
+  if (!ctx) throw new Error('useDMS must be used within DMSProvider')
+  return ctx
+}
+
+export default DMSContext
+</file>
+
+<file path="app/(main)/documents/pending/page.tsx">
+'use client'
+
+import { useState } from 'react'
+import { DashboardLayout } from '@/app/components/dashboard-layout'
+import { useDMS } from '../../_dms-context'
+import { pushToast } from '@/app/components/ui/Toast'
+import Modal from '@/app/components/ui/Modal'
+import DocumentPreview from '@/app/components/ui/DocumentPreview'
+import type { Document } from '@/types/document'
+import { ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+
+const categoryBadgeStyles: Record<string, string> = {
+  'ຂາເຂົ້າ': 'bg-blue-100 text-blue-800',
+  'ຂາອອກ': 'bg-violet-100 text-violet-800',
+}
+
+const categoryBadgeIcons: Record<string, typeof ArrowDownLeft> = {
+  'ຂາເຂົ້າ': ArrowDownLeft,
+  'ຂາອອກ': ArrowUpRight,
+}
+
+function CategoryBadge({ category }: { category: string }) {
+  const Icon = categoryBadgeIcons[category]
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+        categoryBadgeStyles[category] ?? 'bg-slate-100 text-slate-700'
+      }`}
+    >
+      {Icon ? <Icon className="h-3 w-3" /> : null}
+      {category}
+    </span>
+  )
+}
+
+export default function PendingDocumentsPage() {
+  const { documents, setDocuments } = useDMS()
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
+  const list = documents.filter((d) => d.status === 'pending' && !d.deleted)
+
+  function approve(id: string) {
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'approved' } : d)))
+    pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
+  }
+
+  function reject(id: string) {
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'draft' } : d)))
+    pushToast({ title: 'ເອກະສານຖືກປະຕິເສດ' })
+  }
+
+  return (
+    <DashboardLayout title="ເອກະສານລໍຖ້າອະນຸມັດ">
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">ເອກະສານລໍຖ້າອະນຸມັດ</h1>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left">
+              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th className="px-4 py-3">ເອກະສານ</th>
+                  <th className="px-4 py-3">ສະຖານະ</th>
+                  <th className="px-4 py-3">ວັນທີ</th>
+                  <th className="px-4 py-3">ຜູ້ອັບໂຫຼດ</th>
+                  <th className="px-4 py-3 text-center">ການກະທຳ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((d) => (
+                  <tr key={d.id} className="border-t border-gray-100">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{d.title}</span>
+                        <CategoryBadge category={d.category} />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                        ລໍຖ້າອະນຸມັດ
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{d.uploadDate}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{d.uploadedBy}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => setPreviewDoc(d)} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                          ເບິ່ງ
+                        </button>
+                        <button onClick={() => approve(d.id)} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">ອະນຸມັດ</button>
+                        <button onClick={() => reject(d.id)} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">ປະຕິເສດ</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <Modal open={!!previewDoc} onClose={() => setPreviewDoc(null)} title={previewDoc?.title}>
+          {previewDoc && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-gray-500">ເລກທີ</div>
+                  <div className="font-semibold">{previewDoc.docNumber}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ໝວດໝູ່</div>
+                  <div className="font-semibold">{previewDoc.category}</div>
+                </div>
+              </div>
+              <DocumentPreview doc={previewDoc} />
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { approve(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
+                    ອະນຸມັດ
+                  </button>
+                  <button onClick={() => { reject(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100">
+                    ປະຕິເສດ
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
+                  <button onClick={() => { pushToast({ title: 'ດາວໂຫຼດເອກະສານ' }) }} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
+      </main>
+    </DashboardLayout>
+  )
+}
+</file>
+
+<file path="app/components/dashboard-layout.tsx">
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import secureLocalStorage from 'react-secure-storage';
+import {
+  Archive,
+  BarChart3,
+  Bell,
+  ChevronDown,
+  Clock3,
+  FileText,
+  FolderOpen,
+  LayoutDashboard,
+  LogOut,
+  Search,
+  Settings,
+  Trash2,
+  Upload,
+  UserCog,
+  Users,
+} from 'lucide-react';
+import { useDMS } from '../(main)/_dms-context';
+
+type DashboardLayoutProps = {
+  children: ReactNode;
+  title?: string;
+};
+
+type MenuItem = {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  badge?: string;
+};
+
+type MenuSection = {
+  title: string;
+  items: MenuItem[];
+};
+
+const menuSections: MenuSection[] = [
+  {
+    title: 'MAIN',
+    items: [
+      { name: 'ໜ້າຫຼັກ', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'ລາຍງານ & ສະຖິຕິ', href: '/reports', icon: BarChart3 },
+    ],
+  },
+  {
+    title: 'DOCUMENTS',
+    items: [
+      { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
+      { name: 'ລໍຖ້າອະນຸມັດ', href: '/documents/pending', icon: Clock3 },
+      { name: 'ອັບໂຫຼດເອກກະສານ', href: '/documents/upload', icon: Upload },
+      { name: 'ຄັງເກັບເອກກະສານ', href: '/documents/archive', icon: Archive },
+    ],
+  },
+  {
+    title: 'SYSTEM',
+    items: [
+      { name: 'ຈັດການຜູ້ໃຊ້ງານ', href: '/users', icon: Users },
+      { name: 'ຖັງຂີ້ເຫຍື້ອ', href: '/documents/trash', icon: Trash2 },
+    ],
+  },
+];
+
+export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { documents } = useDMS();
+  const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function handleLogout() {
+    // Clear local auth state
+    secureLocalStorage.removeItem('token');
+    secureLocalStorage.removeItem('data');
+    router.push('/');
+  }
+
+  return (
+    <div
+      className="flex h-screen bg-gray-50 text-gray-800"
+      style={{ fontFamily: "'Noto Sans Lao', 'Noto Sans', sans-serif" }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap');
+      `}</style>
+
+      <aside className="flex w-72 flex-col justify-between overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl">
+        <div>
+          <div className="mb-6 flex items-center gap-3 border-b border-slate-800 px-2 pb-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-900/40">
+              <FolderOpen className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">DMS</div>
+              <div className="text-sm font-semibold text-white">ລະບົບເອກກະສານ</div>
+            </div>
+          </div>
+
+          <nav className="space-y-5">
+            {menuSections.map((section) => (
+              <div key={section.title}>
+                <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  {section.title === 'MAIN' ? 'ເມນູຫຼັກ' : section.title === 'DOCUMENTS' ? 'ຈັດການເອກກະສານ' : 'ລະບົບ & ການຕັ້ງຄ່າ'}
+                </div>
+
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
+                    const itemBadge = item.href === '/documents/pending' && pendingCount > 0 ? String(pendingCount) : item.badge;
+
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                          isActive
+                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-700/30'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3">
+                          <Icon className="h-4 w-4" />
+                          {item.name}
+                        </span>
+                        {itemBadge ? (
+                          <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
+                            {itemBadge}
+                          </span>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </div>
+
+        <div className="border-t border-slate-800 pt-4">
+          <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-900/80 px-3 py-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+              JD
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-white">John Doe</div>
+              <div className="text-xs text-slate-400">ຜູ້ບໍລິຫານລະບົບ</div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-rose-400"
+          >
+            <LogOut className="h-4 w-4" />
+            ອອກຈາກລະບົບ
+          </button>
+        </div>
+      </aside>
+
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
+          <div className="relative w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="ຄົ້ນຫາ..."
+              className="w-full rounded-lg border border-transparent bg-gray-100 py-2 pl-9 pr-4 text-sm focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              className="relative rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100"
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500"></span>
+            </button>
+
+            <div className="relative border-l border-gray-200 pl-4" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setProfileOpen((open) => !open)}
+                className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-gray-50"
+              >
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+                  JD
+                </div>
+                <div className="hidden text-left sm:block">
+                  <p className="text-sm font-semibold leading-none">John Doe</p>
+                  <p className="mt-1 text-xs text-gray-500">ຜູ້ບໍລິຫານລະບົບ</p>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-gray-400 transition-transform duration-300 ${
+                    profileOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              <div
+                className={`absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 ease-out ${
+                  profileOpen
+                    ? 'pointer-events-auto scale-100 opacity-100'
+                    : 'pointer-events-none scale-95 opacity-0'
+                }`}
+              >
+                {/* User header */}
+                <div className="border-b border-gray-100 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+                      JD
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-gray-900">John Doe</p>
+                      <p className="text-xs text-gray-500">ຜູ້ບໍລິຫານລະບົບ</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu items */}
+                <div className="p-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      router.push('/settings');
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    <UserCog className="h-4 w-4 text-gray-400" />
+                    ແກ້ໄຂໂປຣໄຟລ໌
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      router.push('/settings');
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    <Settings className="h-4 w-4 text-gray-400" />
+                    ຕັ້ງຄ່າລະບົບ
+                  </button>
+                </div>
+
+                <div className="mx-3 my-1 border-t border-gray-100" />
+
+                {/* Logout */}
+                <div className="p-1.5 pb-2">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    ອອກຈາກລະບົບ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+</file>
+
+</files>

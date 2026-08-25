@@ -37,11 +37,13 @@ export default function DocumentDetailPage() {
   }
 
   function handleDelete() {
+    if (!doc) return
     setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, deleted: true } : d)))
     pushToast({ title: 'ເອກະສານຖືກນໍາໄປ Trash' })
   }
 
   function handleApprove() {
+    if (!doc) return
     setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, status: 'approved' } : d)))
     pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
   }
