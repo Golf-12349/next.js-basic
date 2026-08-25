@@ -170,14 +170,14 @@ export default function UploadDocumentPage() {
           <p className="mt-1 text-sm text-gray-500">ອັບໂຫຼດເອກະສານໃໝກັບລະບົບເມັບເອກະສານຂອງທ່ານ</p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-          <div>
+        <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr] items-stretch">
+          <div className="flex flex-col">
             <label className="mb-1 block text-sm font-medium text-gray-700">
               ໄຟລ໌ <span className="text-red-500">*</span>
             </label>
             <label
               htmlFor="file-input"
-              className="cursor-pointer rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-8 text-center block"
+              className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-8 text-center"
             >
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl text-indigo-600">
                 ⤴
@@ -190,7 +190,7 @@ export default function UploadDocumentPage() {
               </p>
               <input id="file-input" type="file" className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={handleFileChange} />
               <span className="mt-5 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-                ເຂືອກໄຟລ໌
+                ເລືອກໄຟລ໌
               </span>
             </label>
           </div>
@@ -267,7 +267,7 @@ export default function UploadDocumentPage() {
                   onChange={(e) => setDepartment(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                 >
-                  <option value="">— ເຂືອກພະແນກ —</option>
+                  <option value="">— ເລືອກພະແນກ —</option>
                   {departmentOptions.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
@@ -282,7 +282,7 @@ export default function UploadDocumentPage() {
                   onChange={(e) => setDocumentType(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                 >
-                  <option value="">— ເຂືອກປະເພດເອກະສານ —</option>
+                  <option value="">— ເລືອກປະເພດເອກະສານ —</option>
                   {documentTypeOptions.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
