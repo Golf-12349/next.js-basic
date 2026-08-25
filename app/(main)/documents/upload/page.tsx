@@ -45,7 +45,8 @@ function formatFileSize(bytes: number): string {
 
 export default function UploadDocumentPage() {
   const router = useRouter()
-  const { addDocument, categories, cabinets, folders } = useDMS()
+  const { addDocument, uploadFile, categories, cabinets, folders } = useDMS()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [title, setTitle] = useState('')
   // ອັດຕະໂນມັດຕື່ມເລກທີ reacts ເມື່ອເຂົ້າມາໜ້ານີ້ (ຜູ້ໃຊ້ສາມາດແກ້ໄຂໄດ້)
@@ -119,12 +120,16 @@ export default function UploadDocumentPage() {
   }
 
   async function handleSubmit(status: DocumentStatus) {
-    if (!validateForm()) return
+    if (!validateForm() || !selectedFile) return
 
     const selectedCabinet = cabinets.find((c) => c.id === cabinetId)
     const selectedFolder = folders.find((f) => f.id === folderId)
 
+    setIsSubmitting(true)
     try {
+      // ອັບໂຫຼດໄຟລ໌ຈິງຂຶ້ນ Supabase Storage ກ່ອນ ແລ້ວຄ່ອຍສ້າງ record ເອກະສານໂດຍໃຊ້ URL ທີ່ໄດ້ກັບມາ
+      const uploaded = await uploadFile(selectedFile)
+
       await addDocument({
         title: title.trim(),
         docNumber: docNumber.trim(),
@@ -132,12 +137,12 @@ export default function UploadDocumentPage() {
         department,
         documentType,
         status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບສົ່ງອະນຸມັດ
-        fileType: selectedFile ? resolveFileType(selectedFile.name) : 'pdf',
-        fileSize: selectedFile ? formatFileSize(selectedFile.size) : '0 KB',
+        fileType: resolveFileType(selectedFile.name),
+        fileSize: uploaded.fileSize,
         uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
         uploadedBy: '-', // backend ຈະໃຊ້ user ທີ່ login ຢູ່ ແທນຄ່ານີ້
-        fileUrl: filePreviewUrl || '#',
-        fileName: selectedFile?.name,
+        fileUrl: uploaded.fileUrl,
+        fileName: uploaded.fileName,
         // 3-Level archive: save cabinet + folder
         cabinetId,
         cabinetName: selectedCabinet?.name,
@@ -152,6 +157,8 @@ export default function UploadDocumentPage() {
     } catch (err) {
       console.error('Upload failed:', err)
       setError('ອັບໂຫຼດເອກະສານລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -309,16 +316,18 @@ export default function UploadDocumentPage() {
                 <button
                   type="button"
                   onClick={() => handleSubmit('pending')}
-                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
                 >
-                  ອັບໂຫຼດເອກະສານ
+                  {isSubmitting ? 'ກຳລັງອັບໂຫຼດ...' : 'ອັບໂຫຼດເອກະສານ'}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSubmit('draft')}
-                  className="flex-1 rounded-lg bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-300"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-lg bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-400"
                 >
-                  ບັນທຶກເປັນສະບັບຮ່າງ
+                  {isSubmitting ? 'ກຳລັງອັບໂຫຼດ...' : 'ບັນທຶກເປັນສະບັບຮ່າງ'}
                 </button>
               </div>
             </div>

@@ -9,10 +9,14 @@ const axiosClient = axios.create({
 // Request Interceptor
 axiosClient.interceptors.request.use(
   async (config: any) => {
+    // ถ้า body เป็น FormData (เช่น อัปโหลดไฟล์) ต้องปล่อยให้ browser ตั้ง Content-Type
+    // เองพร้อม boundary ของ multipart — ถ้าตั้ง 'application/json' ทับไป backend จะ parse ไม่ได้
+    const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData;
     config.headers = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...config.headers,
     };
+    if (isFormData) delete config.headers['Content-Type'];
 
     // Add Bearer Token if it exists
     const token = secureLocalStorage.getItem('token');

@@ -51,6 +51,7 @@ type DMSContextType = {
   loading: boolean
 
   // Document helpers (ตໍ່ API ຈິງ)
+  uploadFile: (file: File) => Promise<{ fileUrl: string; fileName: string; fileSize: string }>
   addDocument: (doc: Omit<Document, 'id' | 'deleted'>) => Promise<Document>
   updateDocument: (id: string, patch: Partial<Document>) => Promise<void>
   deleteDocument: (id: string) => Promise<void> // soft delete -> ไป Trash
@@ -172,6 +173,16 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   // ---------- Document helpers (ตໍ່ API ຈິງ) ----------
+  async function uploadFile(file: File): Promise<{ fileUrl: string; fileName: string; fileSize: string }> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await apiClient.post<{ fileUrl: string; fileName: string; fileSize: string }>(
+      '/documents/upload-file',
+      formData,
+    )
+    return res.data
+  }
+
   async function addDocument(doc: Omit<Document, 'id' | 'deleted'>): Promise<Document> {
     const categoryId = categoryList.find((c) => c.name === doc.category)?.id
     const res = await apiClient.post<ApiDocument>('/documents', {
@@ -335,6 +346,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
         users,
         setUsers,
         loading,
+        uploadFile,
         addDocument,
         updateDocument,
         deleteDocument,
