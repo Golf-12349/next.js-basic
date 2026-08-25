@@ -8,6 +8,7 @@ import {
   UserDetailModal,
   UserFormModal,
   DeleteUserModal,
+  TemporaryPasswordModal,
   roleStyles,
   roleLabels,
   statusStyles,
@@ -31,6 +32,7 @@ export default function UsersPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
+  const [temporaryPasswordUser, setTemporaryPasswordUser] = useState<{ name: string; email: string; password: string } | null>(null)
 
   const departments = useMemo(() => {
     const set = new Set(users.map((u) => u.department).filter(Boolean))
@@ -73,8 +75,15 @@ export default function UsersPage() {
         await updateUser(editingUser.id, { ...values })
         pushToast({ title: 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານສຳເລັດ' })
       } else {
-        await addUser(values)
+        const created = await addUser(values)
         pushToast({ title: 'ເພີ່ມຜູ້ໃຊ້ງານສຳເລັດ' })
+        if (created.temporaryPassword) {
+          setTemporaryPasswordUser({
+            name: created.name,
+            email: created.email,
+            password: created.temporaryPassword,
+          })
+        }
       }
       setFormOpen(false)
       setEditingUser(null)
@@ -312,6 +321,12 @@ export default function UsersPage() {
           open={!!deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onConfirm={handleDeleteConfirm}
+        />
+
+        <TemporaryPasswordModal
+          user={temporaryPasswordUser}
+          open={!!temporaryPasswordUser}
+          onClose={() => setTemporaryPasswordUser(null)}
         />
       </main>
     </DashboardLayout>

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import type { User, UserRole, UserStatus } from '@/types/user'
-import { Mail, Phone, Building2, ShieldCheck, Calendar, Clock } from 'lucide-react'
+import { Mail, Phone, Building2, ShieldCheck, Calendar, Clock, Copy, KeyRound } from 'lucide-react'
 
 export const roleStyles: Record<UserRole, string> = {
   SuperAdmin: 'bg-violet-100 text-violet-700',
@@ -306,6 +306,68 @@ export function DeleteUserModal({
             </button>
             <button onClick={onConfirm} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700">
               ຢືນຢັນລຶບ
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+/* ---------------------------------------------------------- */
+/* Temporary password modal (ສະແດງຄັ້ງດຽວຕອນສ້າງຜູ້ໃຊ້ໃໝ່)      */
+/* ---------------------------------------------------------- */
+export function TemporaryPasswordModal({
+  user,
+  open,
+  onClose,
+}: {
+  user: { name: string; email: string; password: string } | null
+  open: boolean
+  onClose: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!open) setCopied(false)
+  }, [open])
+
+  async function handleCopy() {
+    if (!user) return
+    try {
+      await navigator.clipboard.writeText(user.password)
+      setCopied(true)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="ສ້າງຜູ້ໃຊ້ງານສຳເລັດ">
+      {user && (
+        <div className="space-y-4">
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+            ລະຫັດຜ່ານນີ້ຈະສະແດງແຄ່ຄັ້ງດຽວ ກະລຸນາຄັດລອກ ແລະ ສົ່ງໃຫ້ <span className="font-semibold">{user.name}</span> ({user.email}) ດ້ວຍຕົນເອງ
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">ລະຫັດຜ່ານຊົ່ວຄາວ</label>
+            <div className="flex items-center gap-2">
+              <div className="flex flex-1 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <KeyRound size={16} className="text-gray-400" />
+                <code className="text-sm font-mono text-gray-900">{user.password}</code>
+              </div>
+              <button
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                <Copy size={14} />
+                {copied ? 'ຄັດລອກແລ້ວ' : 'ຄັດລອກ'}
+              </button>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button onClick={onClose} className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
+              ປິດ
             </button>
           </div>
         </div>

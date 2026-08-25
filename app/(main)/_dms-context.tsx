@@ -15,6 +15,8 @@ type ApiUser = {
   status: User['status']
   createdAt: string
   updatedAt: string
+  // ມີແຕ່ຄັ້ງດຽວຕອນສ້າງ user ໃໝ່ໂດຍບໍ່ໄດ້ໃສ່ password ມາເອງ — backend ສຸ່ມໃຫ້ແລ້ວສົ່ງກັບມາຄັ້ງດຽວ
+  temporaryPassword?: string
 }
 type ApiCabinet = { id: string; name: string; color: string; department: string; description: string; createdAt: string }
 type ApiFolder = { id: string; cabinetId: string; name: string; description: string; createdAt: string }
@@ -63,7 +65,7 @@ type DMSContextType = {
   removeCategory: (name: string) => Promise<void>
 
   // User helpers (ตໍ່ API ຈິງ)
-  addUser: (user: Omit<User, 'id' | 'joinDate' | 'lastActive'>) => Promise<User>
+  addUser: (user: Omit<User, 'id' | 'joinDate' | 'lastActive'>) => Promise<User & { temporaryPassword?: string }>
   updateUser: (id: string, patch: Partial<User>) => Promise<void>
   removeUser: (id: string) => Promise<void>
   toggleUserStatus: (id: string) => Promise<void>
@@ -257,7 +259,9 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
   }
 
   // ---------- User helpers (ตໍ່ API ຈິງ) ----------
-  async function addUser(user: Omit<User, 'id' | 'joinDate' | 'lastActive'>): Promise<User> {
+  async function addUser(
+    user: Omit<User, 'id' | 'joinDate' | 'lastActive'>,
+  ): Promise<User & { temporaryPassword?: string }> {
     const res = await apiClient.post<ApiUser>('/users', {
       name: user.name,
       email: user.email,
@@ -268,7 +272,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
     })
     const newUser = toFrontendUser(res.data)
     setUsers((prev) => [newUser, ...prev])
-    return newUser
+    return { ...newUser, temporaryPassword: res.data.temporaryPassword }
   }
 
   async function updateUser(id: string, patch: Partial<User>) {
