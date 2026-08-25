@@ -16,6 +16,8 @@ type ApiUser = {
   createdAt: string
   updatedAt: string
 }
+type ApiCabinet = { id: string; name: string; color: string; department: string; description: string; createdAt: string }
+type ApiFolder = { id: string; cabinetId: string; name: string; description: string; createdAt: string }
 type ApiDocument = {
   id: string
   title: string
@@ -31,6 +33,10 @@ type ApiDocument = {
   uploadedBy: { id: string; name: string } | null
   uploadDate: string
   deleted: boolean
+  cabinetId: string | null
+  cabinet: ApiCabinet | null
+  folderId: string | null
+  folder: ApiFolder | null
 }
 
 type DMSContextType = {
@@ -61,24 +67,19 @@ type DMSContextType = {
   removeUser: (id: string) => Promise<void>
   toggleUserStatus: (id: string) => Promise<void>
 
-  // 3-Level Archive (cabinets -> folders -> documents) helpers — ยังเป็น local mock
+  // 3-Level Archive (cabinets -> folders -> documents) helpers (ตໍ່ API ຈິງ)
   cabinets: Cabinet[]
   setCabinets: React.Dispatch<React.SetStateAction<Cabinet[]>>
   folders: Folder[]
   setFolders: React.Dispatch<React.SetStateAction<Folder[]>>
-  createCabinet: (data: { name: string; color: string; department: string; description: string }) => void
-  createFolder: (data: { cabinetId: string; name: string; description: string }) => void
-  deleteCabinet: (id: string) => void
-  deleteFolder: (id: string) => void
-  assignDocument: (docId: string, cabinetId: string, folderId: string) => void
+  createCabinet: (data: { name: string; color: string; department: string; description: string }) => Promise<void>
+  createFolder: (data: { cabinetId: string; name: string; description: string }) => Promise<void>
+  deleteCabinet: (id: string) => Promise<void>
+  deleteFolder: (id: string) => Promise<void>
+  assignDocument: (docId: string, cabinetId: string, folderId: string) => Promise<void>
 }
 
 const DMSContext = createContext<DMSContextType | undefined>(undefined)
-
-// ฟังก์ชันช่วยสร้าง ID แบบไม่ซ้ำกัน, ใช้ prefix ได้ (เช่น 'USR', 'CAB', 'FLDR')
-function generateId(prefix: string) {
-  return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`
-}
 
 function toFrontendUser(user: ApiUser): User {
   return {
@@ -108,6 +109,10 @@ function toFrontendDocument(doc: ApiDocument): Document {
     fileUrl: doc.fileUrl ?? '#',
     fileName: doc.fileName ?? undefined,
     deleted: doc.deleted,
+    cabinetId: doc.cabinetId ?? undefined,
+    cabinetName: doc.cabinet?.name,
+    folderId: doc.folderId ?? undefined,
+    folderName: doc.folder?.name,
   }
 }
 
@@ -119,53 +124,21 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
 
   const [users, setUsers] = useState<User[]>([])
 
-  // ── 3-Level Archive state: Cabinets & Folders (local mock ยังไม่ต่อ API) ──
-  const [cabinets, setCabinets] = useState<Cabinet[]>([
-    {
-      id: 'CAB-001',
-      name: 'ການເງິນ',
-      color: 'from-emerald-500 to-teal-600',
-      department: 'ຝ່າຍການເງິນ & ບັນຊີ',
-      description: 'ເກັບເອກະສານການເງິນ ແລະ ບັນຊີທັງໝົດ',
-      createdAt: '2026-01-10',
-    },
-    {
-      id: 'CAB-002',
-      name: 'ປະກາດ',
-      color: 'from-indigo-500 to-blue-600',
-      department: 'ຝ່າຍປະກາດ & ສື່ມວນຊົນ',
-      description: 'ປະກາດ ແຈ້ງການ ຕ່າງໆ ຂອງອົງກອນ',
-      createdAt: '2026-01-12',
-    },
-    {
-      id: 'CAB-003',
-      name: 'ສັນຍາ',
-      color: 'from-amber-500 to-orange-600',
-      department: 'ຝ່າຍສັນຍາ & ກົດໝາຍ',
-      description: 'ສັນຍາ ຂໍ້ຕົກລົງ ແລະ ເອກະສານທາງກົດໝາຍ',
-      createdAt: '2026-01-15',
-    },
-  ])
-
-  const [folders, setFolders] = useState<Folder[]>([
-    { id: 'FLDR-001', cabinetId: 'CAB-001', name: 'ໄບສັ່ງຊື້', description: 'ໃບສັ່ງຊື້ສິນຄ້າ ແລະ ບໍລິການ', createdAt: '2026-02-01' },
-    { id: 'FLDR-002', cabinetId: 'CAB-001', name: 'ໄບຮັບເງິນ', description: 'ໃບຮັບເງິນ ແລະ ໃບເສຍພາສີ', createdAt: '2026-02-02' },
-    { id: 'FLDR-003', cabinetId: 'CAB-001', name: 'ລາຍງານການເງິນ', description: 'ລາຍງານປະຈຳເດືອນ / ປີ', createdAt: '2026-02-05' },
-    { id: 'FLDR-004', cabinetId: 'CAB-002', name: 'ແຈ້ງການພາຍໃນ', description: 'ແຈ້ງການພາຍໃນອົງກອນ', createdAt: '2026-02-03' },
-    { id: 'FLDR-005', cabinetId: 'CAB-002', name: 'ປະກາດສາທາລະນະ', description: 'ປະກາດທີ່ເຜີຍແຜ່ສາທາລະນະ', createdAt: '2026-02-07' },
-    { id: 'FLDR-006', cabinetId: 'CAB-003', name: 'ສັນຍາພະນັກງານ', description: 'ສັນຍາຈ້າງງານພະນັກງານ', createdAt: '2026-02-04' },
-    { id: 'FLDR-007', cabinetId: 'CAB-003', name: 'ສັນຍາຜູ້ສະໜອງ', description: 'ສັນຍາກັບຜູ້ສະໜອງສິນຄ້າ/ບໍລິການ', createdAt: '2026-02-08' },
-  ])
+  // ── 3-Level Archive state: Cabinets & Folders (ตໍ່ API ຈິງ) ──
+  const [cabinets, setCabinets] = useState<Cabinet[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
       try {
-        const [categoriesRes, activeDocsRes, deletedDocsRes] = await Promise.all([
+        const [categoriesRes, activeDocsRes, deletedDocsRes, cabinetsRes, foldersRes] = await Promise.all([
           apiClient.get<ApiCategory[]>('/categories'),
           apiClient.get<{ data: ApiDocument[] }>('/documents', { params: { limit: 100 } }),
           apiClient.get<{ data: ApiDocument[] }>('/documents', { params: { limit: 100, deleted: 'true' } }),
+          apiClient.get<ApiCabinet[]>('/cabinets'),
+          apiClient.get<ApiFolder[]>('/folders'),
         ])
         if (cancelled) return
 
@@ -175,6 +148,8 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
           ...activeDocsRes.data.data.map(toFrontendDocument),
           ...deletedDocsRes.data.data.map(toFrontendDocument),
         ])
+        setCabinets(cabinetsRes.data)
+        setFolders(foldersRes.data)
 
         // /users ต้องมีสิทธิ์ SuperAdmin/Admin — user ทั่วไปจะโดน 403 ซึ่งไม่ควรทำให้ข้อมูลส่วนอื่นโหลดไม่ได้
         try {
@@ -209,12 +184,10 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
       fileUrl: doc.fileUrl,
       fileName: doc.fileName,
       uploadDate: doc.uploadDate,
+      cabinetId: doc.cabinetId,
+      folderId: doc.folderId,
     })
-    const newDoc = toFrontendDocument({
-      ...res.data,
-      category: categoryList.find((c) => c.id === categoryId) ?? null,
-      uploadedBy: null,
-    })
+    const newDoc = toFrontendDocument(res.data)
     setDocuments((prev) => [newDoc, ...prev])
     return newDoc
   }
@@ -223,8 +196,11 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
     if (patch.status) {
       await apiClient.patch(`/documents/${id}/status`, { status: patch.status })
     }
-    const { status: _status, category, ...rest } = patch
+    // cabinetName/folderName เป็นค่าที่ backend derive ให้เองจาก cabinetId/folderId — ไม่ใช่ field ที่ backend รับ
+    const { status: _status, category, cabinetName: _cabinetName, folderName: _folderName, ...rest } = patch
     void _status
+    void _cabinetName
+    void _folderName
     const categoryId = category ? categoryList.find((c) => c.name === category)?.id : undefined
     if (Object.keys(rest).length > 0 || categoryId) {
       await apiClient.patch(`/documents/${id}`, { ...rest, categoryId })
@@ -305,32 +281,20 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)))
   }
 
-  // ---------- 3-Level Archive helpers (local mock) ----------
-  function createCabinet(data: { name: string; color: string; department: string; description: string }) {
-    const newCabinet: Cabinet = {
-      id: generateId('CAB'),
-      name: data.name,
-      color: data.color,
-      department: data.department,
-      description: data.description,
-      createdAt: new Date().toISOString().slice(0, 10),
-    }
-    setCabinets((prev) => [newCabinet, ...prev])
+  // ---------- 3-Level Archive helpers (ตໍ່ API ຈິງ) ----------
+  async function createCabinet(data: { name: string; color: string; department: string; description: string }) {
+    const res = await apiClient.post<ApiCabinet>('/cabinets', data)
+    setCabinets((prev) => [res.data, ...prev])
   }
 
-  function createFolder(data: { cabinetId: string; name: string; description: string }) {
-    const newFolder: Folder = {
-      id: generateId('FLDR'),
-      cabinetId: data.cabinetId,
-      name: data.name,
-      description: data.description,
-      createdAt: new Date().toISOString().slice(0, 10),
-    }
-    setFolders((prev) => [newFolder, ...prev])
+  async function createFolder(data: { cabinetId: string; name: string; description: string }) {
+    const res = await apiClient.post<ApiFolder>('/folders', data)
+    setFolders((prev) => [res.data, ...prev])
   }
 
-  function deleteCabinet(id: string) {
-    // ลบตู้ และ folders ในตู้นั้น พร้อมถอนเอกสารออกจากการจัดระเบียบ
+  async function deleteCabinet(id: string) {
+    // ลบตู้ + folders ในตู้นั้น (backend cascade), เอกสารที่เคยอยู่ในตู้นี้จะแค่ถอนออก (ไม่ถูกลบ)
+    await apiClient.delete(`/cabinets/${id}`)
     setCabinets((prev) => prev.filter((c) => c.id !== id))
     setFolders((prev) => prev.filter((f) => f.cabinetId !== id))
     setDocuments((prev) =>
@@ -342,17 +306,18 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
-  function deleteFolder(id: string) {
+  async function deleteFolder(id: string) {
+    await apiClient.delete(`/folders/${id}`)
     setFolders((prev) => prev.filter((f) => f.id !== id))
     setDocuments((prev) =>
       prev.map((d) => (d.folderId === id ? { ...d, folderId: undefined, folderName: undefined } : d))
     )
   }
 
-  function assignDocument(docId: string, cabinetId: string, folderId: string) {
+  async function assignDocument(docId: string, cabinetId: string, folderId: string) {
     const cabinet = cabinets.find((c) => c.id === cabinetId)
     const folder = folders.find((f) => f.id === folderId)
-    updateDocument(docId, {
+    await updateDocument(docId, {
       cabinetId,
       cabinetName: cabinet?.name,
       folderId,
