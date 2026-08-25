@@ -8,6 +8,7 @@ import {
   UserDetailModal,
   UserFormModal,
   DeleteUserModal,
+  TemporaryPasswordModal,
   roleStyles,
   roleLabels,
   statusStyles,
@@ -31,6 +32,7 @@ export default function UsersPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
+  const [temporaryPasswordUser, setTemporaryPasswordUser] = useState<{ name: string; email: string; password: string } | null>(null)
 
   const departments = useMemo(() => {
     const set = new Set(users.map((u) => u.department).filter(Boolean))
@@ -67,32 +69,40 @@ export default function UsersPage() {
     setFormOpen(true)
   }
 
-  function handleFormSubmit(values: UserFormValues) {
-    if (editingUser) {
-      updateUser(editingUser.id, { ...values })
-      pushToast({ title: 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານສຳເລັດ' })
-    } else {
-      addUser({
-        ...values,
-        joinDate: new Date().toISOString().slice(0, 10),
-        lastActive: new Date().toISOString().slice(0, 10),
-      })
-      pushToast({ title: 'ເພີ່ມຜູ້ໃຊ້ງານສຳເລັດ' })
+  async function handleFormSubmit(values: UserFormValues) {
+    try {
+      if (editingUser) {
+        await updateUser(editingUser.id, { ...values })
+        pushToast({ title: 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານສຳເລັດ' })
+      } else {
+        const created = await addUser(values)
+        pushToast({ title: 'ເພີ່ມຜູ້ໃຊ້ງານສຳເລັດ' })
+        if (created.temporaryPassword) {
+          setTemporaryPasswordUser({
+            name: created.name,
+            email: created.email,
+            password: created.temporaryPassword,
+          })
+        }
+      }
+      setFormOpen(false)
+      setEditingUser(null)
+    } catch (err) {
+      console.error('User form submit failed:', err)
+      pushToast({ title: 'ດຳເນີນການລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່' })
     }
-    setFormOpen(false)
-    setEditingUser(null)
   }
 
-  function handleToggleStatus(user: User) {
-    toggleUserStatus(user.id)
+  async function handleToggleStatus(user: User) {
+    await toggleUserStatus(user.id)
     pushToast({
       title: user.status === 'active' ? `ປິດການໃຊ້ງານຂອງ ${user.name}` : `ເປີດການໃຊ້ງານຂອງ ${user.name}`,
     })
   }
 
-  function handleDeleteConfirm() {
+  async function handleDeleteConfirm() {
     if (!deleteTarget) return
-    removeUser(deleteTarget.id)
+    await removeUser(deleteTarget.id)
     pushToast({ title: 'ລຶບຜູ້ໃຊ້ງານສຳເລັດ' })
     setDeleteTarget(null)
   }
@@ -311,6 +321,12 @@ export default function UsersPage() {
           open={!!deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onConfirm={handleDeleteConfirm}
+        />
+
+        <TemporaryPasswordModal
+          user={temporaryPasswordUser}
+          open={!!temporaryPasswordUser}
+          onClose={() => setTemporaryPasswordUser(null)}
         />
       </main>
     </DashboardLayout>

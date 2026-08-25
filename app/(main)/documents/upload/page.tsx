@@ -1,12 +1,10 @@
 "use client"
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDMS } from '../../_dms-context'
 import { pushToast } from '@/app/components/ui/Toast'
-import type { DocumentCategory, DocumentFileType, DocumentStatus } from '@/types/document'
-
-const categoryOptions: DocumentCategory[] = ['ຂາເຂົ້າ', 'ຂາອອກ', 'ຄຳສັ່ງ', 'ແຈ້ງການ', 'ສັນຍາ', 'ລາຍງານ']
+import type { DocumentFileType, DocumentStatus } from '@/types/document'
 
 const departmentOptions = [
   'ພະແນກບໍລິຫານ & ຈັດຕັ້ງ',
@@ -47,18 +45,23 @@ function formatFileSize(bytes: number): string {
 
 export default function UploadDocumentPage() {
   const router = useRouter()
-  const { addDocument, cabinets, folders } = useDMS()
+  const { addDocument, uploadFile, categories, cabinets, folders } = useDMS()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [title, setTitle] = useState('')
   // ອັດຕະໂນມັດຕື່ມເລກທີ reacts ເມື່ອເຂົ້າມາໜ້ານີ້ (ຜູ້ໃຊ້ສາມາດແກ້ໄຂໄດ້)
   const [docNumber, setDocNumber] = useState(generateDocNumber)
-  const [category, setCategory] = useState<DocumentCategory>('ຂາເຂົ້າ')
+  const [category, setCategory] = useState('')
   const [department, setDepartment] = useState('')
   const [documentType, setDocumentType] = useState('')
   const [uploadDate, setUploadDate] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!category && categories.length > 0) setCategory(categories[0])
+  }, [categories, category])
 
   // 3-Level archive: cabinet + folder selection
   const [cabinetId, setCabinetId] = useState('')
@@ -116,36 +119,47 @@ export default function UploadDocumentPage() {
     return true
   }
 
-  function handleSubmit(status: DocumentStatus) {
-    if (!validateForm()) return
+  async function handleSubmit(status: DocumentStatus) {
+    if (!validateForm() || !selectedFile) return
 
     const selectedCabinet = cabinets.find((c) => c.id === cabinetId)
     const selectedFolder = folders.find((f) => f.id === folderId)
 
-    addDocument({
-      title: title.trim(),
-      docNumber: docNumber.trim(),
-      category,
-      department,
-      documentType,
-      status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບສົ່ງອະນຸມັດ
-      fileType: selectedFile ? resolveFileType(selectedFile.name) : 'pdf',
-      fileSize: selectedFile ? formatFileSize(selectedFile.size) : '0 KB',
-      uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
-      uploadedBy: 'John Doe', // TODO: ປ່ຽນເັປັນ user ທີ່ login ຢູ່ ເມື່ອມີລະບົບ Auth ແທ້
-      fileUrl: filePreviewUrl || '#',
-      fileName: selectedFile?.name,
-      // 3-Level archive: save cabinet + folder
-      cabinetId,
-      cabinetName: selectedCabinet?.name,
-      folderId,
-      folderName: selectedFolder?.name,
-    })
+    setIsSubmitting(true)
+    try {
+      // ອັບໂຫຼດໄຟລ໌ຈິງຂຶ້ນ Supabase Storage ກ່ອນ ແລ້ວຄ່ອຍສ້າງ record ເອກະສານໂດຍໃຊ້ URL ທີ່ໄດ້ກັບມາ
+      const uploaded = await uploadFile(selectedFile)
 
-    pushToast({
-      title: status === 'draft' ? 'ບັນທຶກເປັນສະບັບຮ່າງສຳເລັດ' : 'ອັບໂຫຼດເອກະສານສຳເລັດ',
-    })
-    router.push(status === 'draft' ? '/documents' : '/documents/pending')
+      await addDocument({
+        title: title.trim(),
+        docNumber: docNumber.trim(),
+        category,
+        department,
+        documentType,
+        status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບສົ່ງອະນຸມັດ
+        fileType: resolveFileType(selectedFile.name),
+        fileSize: uploaded.fileSize,
+        uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
+        uploadedBy: '-', // backend ຈະໃຊ້ user ທີ່ login ຢູ່ ແທນຄ່ານີ້
+        fileUrl: uploaded.fileUrl,
+        fileName: uploaded.fileName,
+        // 3-Level archive: save cabinet + folder
+        cabinetId,
+        cabinetName: selectedCabinet?.name,
+        folderId,
+        folderName: selectedFolder?.name,
+      })
+
+      pushToast({
+        title: status === 'draft' ? 'ບັນທຶກເປັນສະບັບຮ່າງສຳເລັດ' : 'ອັບໂຫຼດເອກະສານສຳເລັດ',
+      })
+      router.push(status === 'draft' ? '/documents' : '/documents/pending')
+    } catch (err) {
+      console.error('Upload failed:', err)
+      setError('ອັບໂຫຼດເອກະສານລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -278,10 +292,10 @@ export default function UploadDocumentPage() {
                 <label className="mb-1 block text-sm font-medium text-gray-700">ໝວດໝູ່</label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as DocumentCategory)}
+                  onChange={(e) => setCategory(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                 >
-                  {categoryOptions.map((c) => (
+                  {categories.map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>
@@ -302,16 +316,18 @@ export default function UploadDocumentPage() {
                 <button
                   type="button"
                   onClick={() => handleSubmit('pending')}
-                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
                 >
-                  ອັບໂຫຼດເອກະສານ
+                  {isSubmitting ? 'ກຳລັງອັບໂຫຼດ...' : 'ອັບໂຫຼດເອກະສານ'}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSubmit('draft')}
-                  className="flex-1 rounded-lg bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-300"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-lg bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-400"
                 >
-                  ບັນທຶກເປັນສະບັບຮ່າງ
+                  {isSubmitting ? 'ກຳລັງອັບໂຫຼດ...' : 'ບັນທຶກເປັນສະບັບຮ່າງ'}
                 </button>
               </div>
             </div>

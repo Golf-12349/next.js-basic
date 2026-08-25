@@ -3,7 +3,6 @@ import { useMemo, useRef } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDMS } from '../_dms-context'
 import { pushToast } from '@/app/components/ui/Toast'
-import type { DocumentCategory } from '@/types/document'
 import * as XLSX from 'xlsx'
 
 const statusStyles: Record<string, string> = {
@@ -20,10 +19,8 @@ const statusLabelMap: Record<string, string> = {
   archived: 'ເກັບເຂົ້າຄັງ',
 };
 
-const allCategories: DocumentCategory[] = ['ຂາເຂົ້າ', 'ຂາອອກ', 'ຄຳສັ່ງ', 'ແຈ້ງການ', 'ສັນຍາ', 'ລາຍງານ']
-
 export default function ReportsPage() {
-  const { documents } = useDMS()
+  const { documents, categories: allCategories } = useDMS()
   const active = useMemo(() => documents.filter((d) => !d.deleted), [documents])
 
   // ອ້າງອິງເຖິງ Element ທີ່ຈະຖືກພິມ (ຫໍ່ ເນື້ອຫາທັງໝົດຂອງໜ້ານີ້)

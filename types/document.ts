@@ -1,14 +1,6 @@
 export type DocumentStatus = 'draft' | 'pending' | 'approved' | 'archived';
 export type DocumentFileType = 'pdf' | 'doc' | 'image';
 
-export type DocumentCategory =
-  | 'ຂາເຂົ້າ'
-  | 'ຂາອອກ'
-  | 'ຄຳສັ່ງ'
-  | 'ແຈ້ງການ'
-  | 'ສັນຍາ'
-  | 'ລາຍງານ';
-
 // ── 3-Level Archive types ────────────────────────────────────────────────
 export type Cabinet = {
   id: string;
@@ -31,7 +23,8 @@ export type Document = {
   id: string;
   title: string;
   docNumber: string;
-  category: DocumentCategory;
+  // ໝວດໝູ່ຕອນນີ້ດຶງມາຈາກຕາຕະລາງ categories ໃນຖານຂໍ້ມູນ (dynamic), ບໍ່ແມ່ນຄ່າຄົງທີ່ອີກຕໍ່ໄປ
+  category: string;
   status: DocumentStatus;
   fileType: DocumentFileType;
   fileSize: string;

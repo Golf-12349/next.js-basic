@@ -1,10 +1,48 @@
 "use client"
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import apiClient from '@/config/axiosClient'
 import { Cabinet, Document, Folder } from '@/types/document'
 import { User } from '@/types/user'
 
+type ApiCategory = { id: string; name: string }
+type ApiUser = {
+  id: string
+  name: string
+  email: string
+  role: User['role']
+  phone: string | null
+  department: string | null
+  status: User['status']
+  createdAt: string
+  updatedAt: string
+  // ມີແຕ່ຄັ້ງດຽວຕອນສ້າງ user ໃໝ່ໂດຍບໍ່ໄດ້ໃສ່ password ມາເອງ — backend ສຸ່ມໃຫ້ແລ້ວສົ່ງກັບມາຄັ້ງດຽວ
+  temporaryPassword?: string
+}
+type ApiCabinet = { id: string; name: string; color: string; department: string; description: string; createdAt: string }
+type ApiFolder = { id: string; cabinetId: string; name: string; description: string; createdAt: string }
+type ApiDocument = {
+  id: string
+  title: string
+  docNumber: string
+  categoryId: string | null
+  category: ApiCategory | null
+  status: Document['status']
+  fileType: Document['fileType']
+  fileSize: string | null
+  fileUrl: string | null
+  fileName: string | null
+  uploadedById: string | null
+  uploadedBy: { id: string; name: string } | null
+  uploadDate: string
+  deleted: boolean
+  cabinetId: string | null
+  cabinet: ApiCabinet | null
+  folderId: string | null
+  folder: ApiFolder | null
+}
+
 type DMSContextType = {
-  // Raw state (ยังเก็บไว้ให้ backward-compatible กับ Code เก่าที่ใช้ setDocuments โดยตรง)
+  // Raw state (ยังเก็บไว้ให้ backward-compatible กับ code เก่าที่ใช้ setDocuments โดยตรง)
   documents: Document[]
   setDocuments: React.Dispatch<React.SetStateAction<Document[]>>
   categories: string[]
@@ -12,318 +50,266 @@ type DMSContextType = {
   users: User[]
   setUsers: React.Dispatch<React.SetStateAction<User[]>>
 
-  // Document helpers
-  addDocument: (doc: Omit<Document, 'id' | 'deleted'>) => Document
-  updateDocument: (id: string, patch: Partial<Document>) => void
-  deleteDocument: (id: string) => void // soft delete -> ไป Trash
-  restoreDocument: (id: string) => void // กู้คืนจาก Trash
-  permDeleteDocument: (id: string) => void // ลบถาวร
-  archiveDocument: (id: string) => void // เปลี่ยน status เป็น archived
+  loading: boolean
 
-  // Category helpers
-  addCategory: (name: string) => void
-  removeCategory: (name: string) => void
+  // Document helpers (ตໍ່ API ຈິງ)
+  uploadFile: (file: File) => Promise<{ fileUrl: string; fileName: string; fileSize: string }>
+  addDocument: (doc: Omit<Document, 'id' | 'deleted'>) => Promise<Document>
+  updateDocument: (id: string, patch: Partial<Document>) => Promise<void>
+  deleteDocument: (id: string) => Promise<void> // soft delete -> ไป Trash
+  restoreDocument: (id: string) => Promise<void> // กู้คืนจาก Trash
+  permDeleteDocument: (id: string) => Promise<void> // ลบถาวร
+  archiveDocument: (id: string) => Promise<void> // เปลี่ยน status เป็น archived
 
-  // User helpers
-  addUser: (user: Omit<User, 'id'>) => User
-  updateUser: (id: string, patch: Partial<User>) => void
-  removeUser: (id: string) => void
-  toggleUserStatus: (id: string) => void
+  addCategory: (name: string) => Promise<void>
+  removeCategory: (name: string) => Promise<void>
 
-  // 3-Level Archive (cabinets -> folders -> documents) helpers
+  // User helpers (ตໍ່ API ຈິງ)
+  addUser: (user: Omit<User, 'id' | 'joinDate' | 'lastActive'>) => Promise<User & { temporaryPassword?: string }>
+  updateUser: (id: string, patch: Partial<User>) => Promise<void>
+  removeUser: (id: string) => Promise<void>
+  toggleUserStatus: (id: string) => Promise<void>
+
+  // 3-Level Archive (cabinets -> folders -> documents) helpers (ตໍ່ API ຈິງ)
   cabinets: Cabinet[]
   setCabinets: React.Dispatch<React.SetStateAction<Cabinet[]>>
   folders: Folder[]
   setFolders: React.Dispatch<React.SetStateAction<Folder[]>>
-  createCabinet: (data: { name: string; color: string; department: string; description: string }) => void
-  createFolder: (data: { cabinetId: string; name: string; description: string }) => void
-  deleteCabinet: (id: string) => void
-  deleteFolder: (id: string) => void
-  assignDocument: (docId: string, cabinetId: string, folderId: string) => void
+  createCabinet: (data: { name: string; color: string; department: string; description: string }) => Promise<void>
+  createFolder: (data: { cabinetId: string; name: string; description: string }) => Promise<void>
+  deleteCabinet: (id: string) => Promise<void>
+  deleteFolder: (id: string) => Promise<void>
+  assignDocument: (docId: string, cabinetId: string, folderId: string) => Promise<void>
 }
 
 const DMSContext = createContext<DMSContextType | undefined>(undefined)
 
-// ฟังก์ชันช่วยสร้าง ID แบบไม่ซ้ำกัน, ใช้ prefix ได้ (เช่น 'DOC', 'USR', 'CAB', 'FLDR')
-function generateId(prefix: string) {
-  return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`
+function toFrontendUser(user: ApiUser): User {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone ?? undefined,
+    role: user.role,
+    department: user.department ?? '',
+    status: user.status,
+    joinDate: user.createdAt.slice(0, 10),
+    lastActive: user.updatedAt.slice(0, 10),
+  }
+}
+
+function toFrontendDocument(doc: ApiDocument): Document {
+  return {
+    id: doc.id,
+    title: doc.title,
+    docNumber: doc.docNumber,
+    category: doc.category?.name ?? '',
+    status: doc.status,
+    fileType: doc.fileType,
+    fileSize: doc.fileSize ?? '-',
+    uploadDate: doc.uploadDate.slice(0, 10),
+    uploadedBy: doc.uploadedBy?.name ?? '-',
+    fileUrl: doc.fileUrl ?? '#',
+    fileName: doc.fileName ?? undefined,
+    deleted: doc.deleted,
+    cabinetId: doc.cabinetId ?? undefined,
+    cabinetName: doc.cabinet?.name,
+    folderId: doc.folderId ?? undefined,
+    folderName: doc.folder?.name,
+  }
 }
 
 export function DMSProvider({ children }: { children: React.ReactNode }) {
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: 'DOC-001',
-      title: 'ເອກະສານຂາເຂົ້າທີ່ກ່ຽວກັບຄຳສັ່ງຊື້',
-      docNumber: 'K-2026-001',
-      category: 'ຂາເຂົ້າ',
-      status: 'approved',
-      fileType: 'pdf',
-      fileSize: '2.4 MB',
-      uploadDate: '2026-08-08',
-      uploadedBy: 'ນາງ ທຳມະເພກ',
-      fileUrl: '#',
-      cabinetId: 'CAB-001',
-      cabinetName: 'ການເງິນ',
-      folderId: 'FLDR-001',
-      folderName: 'ໄບສັ່ງຊື້',
-    },
-    {
-      id: 'DOC-002',
-      title: 'ແຈ້ງການປະກາດຄວາມກ້າຫານໃນອຸດສາຫະກໍາ',
-      docNumber: 'AN-2026-014',
-      category: 'ແຈ້ງການ',
-      status: 'pending',
-      fileType: 'doc',
-      fileSize: '840 KB',
-      uploadDate: '2026-08-07',
-      uploadedBy: 'ທ້າວ ອາລີ',
-      fileUrl: '#',
-      cabinetId: 'CAB-002',
-      cabinetName: 'ປະກາດ',
-      folderId: 'FLDR-004',
-      folderName: 'ແຈ້ງການພາຍໃນ',
-    },
-    {
-      id: 'DOC-003',
-      title: 'ສັນຍາເຊົ່ອມຕໍ່ກັບຜູ້ສະຫນອງ',
-      docNumber: 'CT-2026-021',
-      category: 'ສັນຍາ',
-      status: 'draft',
-      fileType: 'pdf',
-      fileSize: '1.1 MB',
-      uploadDate: '2026-08-05',
-      uploadedBy: 'ນາງ ຄຳນາ',
-      fileUrl: '#',
-      cabinetId: 'CAB-003',
-      cabinetName: 'ສັນຍາ',
-      folderId: 'FLDR-007',
-      folderName: 'ສັນຍາຜູ້ສະໜອງ',
-    },
-    {
-      id: 'DOC-004',
-      title: 'ບົດລາຍງານການງານຂອງຫົວໜ້າພະແນກ',
-      docNumber: 'RP-2026-045',
-      category: 'ລາຍງານ',
-      status: 'approved',
-      fileType: 'image',
-      fileSize: '3.2 MB',
-      uploadDate: '2026-08-04',
-      uploadedBy: 'ທ້າວ ລະມາ',
-      fileUrl: '#',
-    },
-    {
-      id: 'DOC-005',
-      title: 'ເອກະສານຂາອອກ ກ່ຽວກັບຂໍ້ຕົກລົງການສົ່ງສິນຄ້າ',
-      docNumber: 'OUT-2026-009',
-      category: 'ຂາອອກ',
-      status: 'archived',
-      fileType: 'pdf',
-      fileSize: '1.7 MB',
-      uploadDate: '2026-08-02',
-      uploadedBy: 'ທ້າວ ຊົມບູລີ',
-      fileUrl: '#',
-    },
-  ])
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [categories, setCategories] = useState<string[]>([])
+  const [categoryList, setCategoryList] = useState<ApiCategory[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const [categories, setCategories] = useState<string[]>(['ທົ່ວໄປ', 'ສິນທັດ', 'ເອກະສານທີ່ສຳຄັນ'])
+  const [users, setUsers] = useState<User[]>([])
 
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 'USR-001',
-      name: 'ສົມສັກ ວົງສະຫວັນ',
-      email: 'somsack.v@dms.gov.la',
-      phone: '020 5551 0011',
-      role: 'SuperAdmin',
-      department: 'ຝ່າຍບໍລິຫານລະບົບ',
-      status: 'active',
-      joinDate: '2024-01-15',
-      lastActive: '2026-08-23',
-    },
-    {
-      id: 'USR-002',
-      name: 'ນາງ ທຳມະເພກ ພົມມະວົງ',
-      email: 'thammapheak.p@dms.gov.la',
-      phone: '020 5552 0022',
-      role: 'Admin',
-      department: 'ຝ່າຍທຸລະການ',
-      status: 'active',
-      joinDate: '2024-03-02',
-      lastActive: '2026-08-22',
-    },
-    {
-      id: 'USR-003',
-      name: 'ທ້າວ ອາລີ ໄຊຍະລາດ',
-      email: 'ali.s@dms.gov.la',
-      phone: '020 5553 0033',
-      role: 'Admin',
-      department: 'ຝ່າຍແຜນການ',
-      status: 'active',
-      joinDate: '2024-05-20',
-      lastActive: '2026-08-20',
-    },
-    {
-      id: 'USR-004',
-      name: 'ນາງ ຄຳນາ ສີວິໄລ',
-      email: 'khamna.s@dms.gov.la',
-      phone: '020 5554 0044',
-      role: 'User',
-      department: 'ຝ່າຍການເງິນ',
-      status: 'active',
-      joinDate: '2024-07-11',
-      lastActive: '2026-08-23',
-    },
-    {
-      id: 'USR-005',
-      name: 'ທ້າວ ລະມາ ບຸນມີ',
-      email: 'lama.b@dms.gov.la',
-      phone: '020 5555 0055',
-      role: 'User',
-      department: 'ຝ່າຍຊັບພະຍາກອນມະນຸດ',
-      status: 'inactive',
-      joinDate: '2024-09-09',
-      lastActive: '2026-07-30',
-    },
-    {
-      id: 'USR-006',
-      name: 'ທ້າວ ຊົມບູລີ ແກ້ວມະນີ',
-      email: 'sombouly.k@dms.gov.la',
-      phone: '020 5556 0066',
-      role: 'User',
-      department: 'ຝ່າຍເຕັກໂນໂລຊີ',
-      status: 'active',
-      joinDate: '2025-01-18',
-      lastActive: '2026-08-21',
-    },
-  ])
+  // ── 3-Level Archive state: Cabinets & Folders (ตໍ່ API ຈິງ) ──
+  const [cabinets, setCabinets] = useState<Cabinet[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
 
-  // ── 3-Level Archive state: Cabinets & Folders ──────────────────────────
-  const [cabinets, setCabinets] = useState<Cabinet[]>([
-    {
-      id: 'CAB-001',
-      name: 'ການເງິນ',
-      color: 'from-emerald-500 to-teal-600',
-      department: 'ຝ່າຍການເງິນ & ບັນຊີ',
-      description: 'ເກັບເອກະສານການເງິນ ແລະ ບັນຊີທັງໝົດ',
-      createdAt: '2026-01-10',
-    },
-    {
-      id: 'CAB-002',
-      name: 'ປະກາດ',
-      color: 'from-indigo-500 to-blue-600',
-      department: 'ຝ່າຍປະກາດ & ສື່ມວນຊົນ',
-      description: 'ປະກາດ ແຈ້ງການ ຕ່າງໆ ຂອງອົງກອນ',
-      createdAt: '2026-01-12',
-    },
-    {
-      id: 'CAB-003',
-      name: 'ສັນຍາ',
-      color: 'from-amber-500 to-orange-600',
-      department: 'ຝ່າຍສັນຍາ & ກົດໝາຍ',
-      description: 'ສັນຍາ ຂໍ້ຕົກລົງ ແລະ ເອກະສານທາງກົດໝາຍ',
-      createdAt: '2026-01-15',
-    },
-  ])
+  useEffect(() => {
+    let cancelled = false
 
-  const [folders, setFolders] = useState<Folder[]>([
-    // ການເງິນ (CAB-001)
-    { id: 'FLDR-001', cabinetId: 'CAB-001', name: 'ໄບສັ່ງຊື້', description: 'ໃບສັ່ງຊື້ສິນຄ້າ ແລະ ບໍລິການ', createdAt: '2026-02-01' },
-    { id: 'FLDR-002', cabinetId: 'CAB-001', name: 'ໄບຮັບເງິນ', description: 'ໃບຮັບເງິນ ແລະ ໃບເສຍພາສີ', createdAt: '2026-02-02' },
-    { id: 'FLDR-003', cabinetId: 'CAB-001', name: 'ລາຍງານການເງິນ', description: 'ລາຍງານປະຈຳເດືອນ / ປີ', createdAt: '2026-02-05' },
+    async function load() {
+      try {
+        const [categoriesRes, activeDocsRes, deletedDocsRes, cabinetsRes, foldersRes] = await Promise.all([
+          apiClient.get<ApiCategory[]>('/categories'),
+          apiClient.get<{ data: ApiDocument[] }>('/documents', { params: { limit: 100 } }),
+          apiClient.get<{ data: ApiDocument[] }>('/documents', { params: { limit: 100, deleted: 'true' } }),
+          apiClient.get<ApiCabinet[]>('/cabinets'),
+          apiClient.get<ApiFolder[]>('/folders'),
+        ])
+        if (cancelled) return
 
-    // ປະກາດ (CAB-002)
-    { id: 'FLDR-004', cabinetId: 'CAB-002', name: 'ແຈ້ງການພາຍໃນ', description: 'ແຈ້ງການພາຍໃນອົງກອນ', createdAt: '2026-02-03' },
-    { id: 'FLDR-005', cabinetId: 'CAB-002', name: 'ປະກາດສາທາລະນະ', description: 'ປະກາດທີ່ເຜີຍແຜ່ສາທາລະນະ', createdAt: '2026-02-07' },
+        setCategoryList(categoriesRes.data)
+        setCategories(categoriesRes.data.map((c) => c.name))
+        setDocuments([
+          ...activeDocsRes.data.data.map(toFrontendDocument),
+          ...deletedDocsRes.data.data.map(toFrontendDocument),
+        ])
+        setCabinets(cabinetsRes.data)
+        setFolders(foldersRes.data)
 
-    // ສັນຍາ (CAB-003)
-    { id: 'FLDR-006', cabinetId: 'CAB-003', name: 'ສັນຍາພະນັກງານ', description: 'ສັນຍາຈ້າງງານພະນັກງານ', createdAt: '2026-02-04' },
-    { id: 'FLDR-007', cabinetId: 'CAB-003', name: 'ສັນຍາຜູ້ສະໜອງ', description: 'ສັນຍາກັບຜູ້ສະໜອງສິນຄ້າ/ບໍລິການ', createdAt: '2026-02-08' },
-  ])
+        // /users ต้องมีสิทธิ์ SuperAdmin/Admin — user ทั่วไปจะโดน 403 ซึ่งไม่ควรทำให้ข้อมูลส่วนอื่นโหลดไม่ได้
+        try {
+          const usersRes = await apiClient.get<ApiUser[]>('/users')
+          if (!cancelled) setUsers(usersRes.data.map(toFrontendUser))
+        } catch (err) {
+          console.warn('ໂຫຼດລາຍຊື່ຜູ້ໃຊ້ບໍ່ໄດ້ (ອາດຈະບໍ່ມີສິດ):', err)
+        }
+      } catch (err) {
+        console.error('ໂຫຼດຂໍ້ມູນ DMS ລົ້ມເຫຼວ:', err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
 
-  // ---------- Document helpers ----------
-  function addDocument(doc: Omit<Document, 'id' | 'deleted'>): Document {
-    const newDoc: Document = { ...doc, id: generateId('DOC'), deleted: false }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // ---------- Document helpers (ตໍ່ API ຈິງ) ----------
+  async function uploadFile(file: File): Promise<{ fileUrl: string; fileName: string; fileSize: string }> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await apiClient.post<{ fileUrl: string; fileName: string; fileSize: string }>(
+      '/documents/upload-file',
+      formData,
+    )
+    return res.data
+  }
+
+  async function addDocument(doc: Omit<Document, 'id' | 'deleted'>): Promise<Document> {
+    const categoryId = categoryList.find((c) => c.name === doc.category)?.id
+    const res = await apiClient.post<ApiDocument>('/documents', {
+      title: doc.title,
+      docNumber: doc.docNumber,
+      categoryId,
+      fileType: doc.fileType,
+      status: doc.status,
+      fileSize: doc.fileSize,
+      fileUrl: doc.fileUrl,
+      fileName: doc.fileName,
+      uploadDate: doc.uploadDate,
+      cabinetId: doc.cabinetId,
+      folderId: doc.folderId,
+    })
+    const newDoc = toFrontendDocument(res.data)
     setDocuments((prev) => [newDoc, ...prev])
     return newDoc
   }
 
-  function updateDocument(id: string, patch: Partial<Document>) {
+  async function updateDocument(id: string, patch: Partial<Document>) {
+    if (patch.status) {
+      await apiClient.patch(`/documents/${id}/status`, { status: patch.status })
+    }
+    // cabinetName/folderName เป็นค่าที่ backend derive ให้เองจาก cabinetId/folderId — ไม่ใช่ field ที่ backend รับ
+    const { status: _status, category, cabinetName: _cabinetName, folderName: _folderName, ...rest } = patch
+    void _status
+    void _cabinetName
+    void _folderName
+    const categoryId = category ? categoryList.find((c) => c.name === category)?.id : undefined
+    if (Object.keys(rest).length > 0 || categoryId) {
+      await apiClient.patch(`/documents/${id}`, { ...rest, categoryId })
+    }
     setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)))
   }
 
-  function deleteDocument(id: string) {
-    updateDocument(id, { deleted: true })
+  async function deleteDocument(id: string) {
+    await apiClient.delete(`/documents/${id}`)
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: true } : d)))
   }
 
-  function restoreDocument(id: string) {
-    updateDocument(id, { deleted: false })
+  async function restoreDocument(id: string) {
+    await apiClient.patch(`/documents/${id}/restore`)
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: false } : d)))
   }
 
-  function permDeleteDocument(id: string) {
+  async function permDeleteDocument(id: string) {
+    await apiClient.delete(`/documents/${id}/permanent`)
     setDocuments((prev) => prev.filter((d) => d.id !== id))
   }
 
-  function archiveDocument(id: string) {
-    updateDocument(id, { status: 'archived' })
+  async function archiveDocument(id: string) {
+    await apiClient.patch(`/documents/${id}/archive`)
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'archived' } : d)))
   }
 
-  // ---------- Category helpers ----------
-  function addCategory(name: string) {
+  // ---------- Category helpers (ตໍ່ API ຈິງ) ----------
+  async function addCategory(name: string) {
     const trimmed = name.trim()
-    if (!trimmed) return
-    setCategories((prev) => (prev.includes(trimmed) ? prev : [trimmed, ...prev]))
+    if (!trimmed || categories.includes(trimmed)) return
+    const res = await apiClient.post<ApiCategory>('/categories', { name: trimmed })
+    setCategoryList((prev) => [res.data, ...prev])
+    setCategories((prev) => [res.data.name, ...prev])
   }
 
-  function removeCategory(name: string) {
+  async function removeCategory(name: string) {
+    const category = categoryList.find((c) => c.name === name)
+    if (!category) return
+    await apiClient.delete(`/categories/${category.id}`)
+    setCategoryList((prev) => prev.filter((c) => c.id !== category.id))
     setCategories((prev) => prev.filter((c) => c !== name))
   }
 
-  // ---------- User helpers ----------
-  function addUser(user: Omit<User, 'id'>): User {
-    const newUser: User = { ...user, id: generateId('USR') }
+  // ---------- User helpers (ตໍ່ API ຈິງ) ----------
+  async function addUser(
+    user: Omit<User, 'id' | 'joinDate' | 'lastActive'>,
+  ): Promise<User & { temporaryPassword?: string }> {
+    const res = await apiClient.post<ApiUser>('/users', {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      department: user.department,
+      status: user.status,
+    })
+    const newUser = toFrontendUser(res.data)
     setUsers((prev) => [newUser, ...prev])
-    return newUser
+    return { ...newUser, temporaryPassword: res.data.temporaryPassword }
   }
 
-  function updateUser(id: string, patch: Partial<User>) {
+  async function updateUser(id: string, patch: Partial<User>) {
+    const { joinDate: _joinDate, lastActive: _lastActive, ...rest } = patch
+    void _joinDate
+    void _lastActive
+    await apiClient.patch(`/users/${id}`, rest)
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
   }
 
-  function removeUser(id: string) {
+  async function removeUser(id: string) {
+    await apiClient.delete(`/users/${id}`)
     setUsers((prev) => prev.filter((u) => u.id !== id))
   }
 
-  function toggleUserStatus(id: string) {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u))
-    )
+  async function toggleUserStatus(id: string) {
+    const target = users.find((u) => u.id === id)
+    if (!target) return
+    const status = target.status === 'active' ? 'inactive' : 'active'
+    await apiClient.patch(`/users/${id}`, { status })
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)))
   }
 
-  // ---------- 3-Level Archive helpers ----------
-  function createCabinet(data: { name: string; color: string; department: string; description: string }) {
-    const newCabinet: Cabinet = {
-      id: generateId('CAB'),
-      name: data.name,
-      color: data.color,
-      department: data.department,
-      description: data.description,
-      createdAt: new Date().toISOString().slice(0, 10),
-    }
-    setCabinets((prev) => [newCabinet, ...prev])
+  // ---------- 3-Level Archive helpers (ตໍ່ API ຈິງ) ----------
+  async function createCabinet(data: { name: string; color: string; department: string; description: string }) {
+    const res = await apiClient.post<ApiCabinet>('/cabinets', data)
+    setCabinets((prev) => [res.data, ...prev])
   }
 
-  function createFolder(data: { cabinetId: string; name: string; description: string }) {
-    const newFolder: Folder = {
-      id: generateId('FLDR'),
-      cabinetId: data.cabinetId,
-      name: data.name,
-      description: data.description,
-      createdAt: new Date().toISOString().slice(0, 10),
-    }
-    setFolders((prev) => [newFolder, ...prev])
+  async function createFolder(data: { cabinetId: string; name: string; description: string }) {
+    const res = await apiClient.post<ApiFolder>('/folders', data)
+    setFolders((prev) => [res.data, ...prev])
   }
 
-  function deleteCabinet(id: string) {
-    // ลบตู้ และ folders ในตู้นั้น พร้อมถอนเอกสารออกจากการจัดระเบียบ
+  async function deleteCabinet(id: string) {
+    // ลบตู้ + folders ในตู้นั้น (backend cascade), เอกสารที่เคยอยู่ในตู้นี้จะแค่ถอนออก (ไม่ถูกลบ)
+    await apiClient.delete(`/cabinets/${id}`)
     setCabinets((prev) => prev.filter((c) => c.id !== id))
     setFolders((prev) => prev.filter((f) => f.cabinetId !== id))
     setDocuments((prev) =>
@@ -335,17 +321,18 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
-  function deleteFolder(id: string) {
+  async function deleteFolder(id: string) {
+    await apiClient.delete(`/folders/${id}`)
     setFolders((prev) => prev.filter((f) => f.id !== id))
     setDocuments((prev) =>
       prev.map((d) => (d.folderId === id ? { ...d, folderId: undefined, folderName: undefined } : d))
     )
   }
 
-  function assignDocument(docId: string, cabinetId: string, folderId: string) {
+  async function assignDocument(docId: string, cabinetId: string, folderId: string) {
     const cabinet = cabinets.find((c) => c.id === cabinetId)
     const folder = folders.find((f) => f.id === folderId)
-    updateDocument(docId, {
+    await updateDocument(docId, {
       cabinetId,
       cabinetName: cabinet?.name,
       folderId,
@@ -362,6 +349,8 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
         setCategories,
         users,
         setUsers,
+        loading,
+        uploadFile,
         addDocument,
         updateDocument,
         deleteDocument,

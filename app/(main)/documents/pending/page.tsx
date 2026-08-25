@@ -34,17 +34,17 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 export default function PendingDocumentsPage() {
-  const { documents, setDocuments } = useDMS()
+  const { documents, updateDocument } = useDMS()
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const list = documents.filter((d) => d.status === 'pending' && !d.deleted)
 
-  function approve(id: string) {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'approved' } : d)))
+  async function approve(id: string) {
+    await updateDocument(id, { status: 'approved' })
     pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
   }
 
-  function reject(id: string) {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'draft' } : d)))
+  async function reject(id: string) {
+    await updateDocument(id, { status: 'draft' })
     pushToast({ title: 'ເອກະສານຖືກປະຕິເສດ' })
   }
 
