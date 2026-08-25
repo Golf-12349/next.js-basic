@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import secureLocalStorage from 'react-secure-storage';
+import apiClient from '@/config/axiosClient';
 import {
   Archive,
   BarChart3,
@@ -155,7 +156,14 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  function handleLogout() {
+  async function handleLogout() {
+    // เรียก backend ให้ revoke token ปัจจุบันทันที (เพิ่ม tokenVersion) — ไม่รอผลลัพธ์นาน
+    // เพราะต่อให้ request ล้มเหลว (เช่น เน็ตหลุด) ก็ยังต้องเคลียร์ token ฝั่ง client ต่อไปตามปกติ
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout request failed:', err);
+    }
     secureLocalStorage.removeItem('token');
     secureLocalStorage.removeItem('data');
     router.push('/');
