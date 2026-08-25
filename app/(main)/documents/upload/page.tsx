@@ -1,12 +1,10 @@
 "use client"
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDMS } from '../../_dms-context'
 import { pushToast } from '@/app/components/ui/Toast'
-import type { DocumentCategory, DocumentFileType } from '@/types/document'
-
-const categoryOptions: DocumentCategory[] = ['ຂາເຂົ້າ', 'ຂາອອກ', 'ຄຳສັ່ງ', 'ແຈ້ງການ', 'ສັນຍາ', 'ລາຍງານ']
+import type { DocumentFileType } from '@/types/document'
 
 // ກຳນົດ fileType ຈາກນາມສະກຸນໄຟລ໌ທີ່ຜູ້ໃຊ້ເລືອກ
 function resolveFileType(fileName: string): DocumentFileType {
@@ -23,15 +21,19 @@ function formatFileSize(bytes: number): string {
 
 export default function UploadDocumentPage() {
   const router = useRouter()
-  const { addDocument } = useDMS()
+  const { addDocument, categories } = useDMS()
 
   const [title, setTitle] = useState('')
   const [docNumber, setDocNumber] = useState('')
-  const [category, setCategory] = useState<DocumentCategory>('ຂາເຂົ້າ')
+  const [category, setCategory] = useState('')
   const [uploadDate, setUploadDate] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!category && categories.length > 0) setCategory(categories[0])
+  }, [categories, category])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -43,28 +45,32 @@ export default function UploadDocumentPage() {
     }
   }
 
-  function handleUpload() {
+  async function handleUpload() {
     if (!title.trim() || !docNumber.trim()) {
       setError('ກະລຸນາປ້ອນຊື່ເອກະສານ ແລະ ເລກທີ ໃຫ້ຄົບ')
       return
     }
     setError(null)
 
-    addDocument({
-      title: title.trim(),
-      docNumber: docNumber.trim(),
-      category,
-      status: 'pending', // ເອກະສານໃໝ່ ຕັ້ງເປັນ "ລໍຖ້າອະນຸມັດ" ໂດຍ default
-      fileType: selectedFile ? resolveFileType(selectedFile.name) : 'pdf',
-      fileSize: selectedFile ? formatFileSize(selectedFile.size) : '0 KB',
-      uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
-      uploadedBy: 'John Doe', // TODO: ປ່ຽນເປັນ user ທີ່ login ຢູ່ ເມື່ອມີລະບົບ Auth ແທ້
-      fileUrl: filePreviewUrl || '#',
-      fileName: selectedFile?.name,
-    })
-
-    pushToast({ title: 'ອັບໂຫຼດເອກະສານສຳເລັດ' })
-    router.push('/documents/pending')
+    try {
+      await addDocument({
+        title: title.trim(),
+        docNumber: docNumber.trim(),
+        category,
+        status: 'pending', // ເອກະສານໃໝ່ ຕັ້ງເປັນ "ລໍຖ້າອະນຸມັດ" ໂດຍ default
+        fileType: selectedFile ? resolveFileType(selectedFile.name) : 'pdf',
+        fileSize: selectedFile ? formatFileSize(selectedFile.size) : '0 KB',
+        uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
+        uploadedBy: '-', // backend ຈະໃຊ້ user ທີ່ login ຢູ່ ແທນຄ່ານີ້
+        fileUrl: filePreviewUrl || '#',
+        fileName: selectedFile?.name,
+      })
+      pushToast({ title: 'ອັບໂຫຼດເອກະສານສຳເລັດ' })
+      router.push('/documents/pending')
+    } catch (err) {
+      console.error('Upload failed:', err)
+      setError('ອັບໂຫຼດເອກະສານລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່')
+    }
   }
 
   return (
@@ -120,10 +126,10 @@ export default function UploadDocumentPage() {
                 <label className="mb-1 block text-sm font-medium text-gray-700">ໝວດໝູ່</label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as DocumentCategory)}
+                  onChange={(e) => setCategory(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                 >
-                  {categoryOptions.map((c) => (
+                  {categories.map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>

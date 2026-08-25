@@ -3,7 +3,7 @@ import axios from 'axios';
 import secureLocalStorage from 'react-secure-storage';
 
 const axiosClient = axios.create({
-  baseURL: 'http://10.44.38.164:3000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api',
 });
 
 // Request Interceptor

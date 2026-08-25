@@ -1,10 +1,28 @@
 "use client"
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import apiClient from '@/config/axiosClient'
 import { Document } from '@/types/document'
 import { User } from '@/types/user'
 
+type ApiCategory = { id: string; name: string }
+type ApiDocument = {
+  id: string
+  title: string
+  docNumber: string
+  categoryId: string | null
+  category: ApiCategory | null
+  status: Document['status']
+  fileType: Document['fileType']
+  fileSize: string | null
+  fileUrl: string | null
+  fileName: string | null
+  uploadedById: string | null
+  uploadedBy: { id: string; name: string } | null
+  uploadDate: string
+  deleted: boolean
+}
+
 type DMSContextType = {
-  // Raw state (ຍັງເກັບໄວ້ໃຫ້ backward-compatible ກັບ Code ເກົ່າທີ່ໃຊ້ setDocuments ໂດຍກົງ)
   documents: Document[]
   setDocuments: React.Dispatch<React.SetStateAction<Document[]>>
   categories: string[]
@@ -12,140 +30,153 @@ type DMSContextType = {
   users: User[]
   setUsers: React.Dispatch<React.SetStateAction<User[]>>
 
-  // Document helpers
-  addDocument: (doc: Omit<Document, 'id' | 'deleted'>) => Document
-  updateDocument: (id: string, patch: Partial<Document>) => void
-  deleteDocument: (id: string) => void // soft delete -> ໄປ Trash
-  restoreDocument: (id: string) => void // ກູ້ຄືນຈາກ Trash
-  permDeleteDocument: (id: string) => void // ລຶບຖາວອນ
-  archiveDocument: (id: string) => void // ປ່ຽນ status ເປັນ archived
+  loading: boolean
 
-  // Category helpers
-  addCategory: (name: string) => void
-  removeCategory: (name: string) => void
+  addDocument: (doc: Omit<Document, 'id' | 'deleted'>) => Promise<Document>
+  updateDocument: (id: string, patch: Partial<Document>) => Promise<void>
+  deleteDocument: (id: string) => Promise<void>
+  restoreDocument: (id: string) => Promise<void>
+  permDeleteDocument: (id: string) => Promise<void>
+  archiveDocument: (id: string) => Promise<void>
 
-  // User helpers
+  addCategory: (name: string) => Promise<void>
+  removeCategory: (name: string) => Promise<void>
+
   addUser: (user: Omit<User, 'id'>) => User
   removeUser: (id: string) => void
 }
 
 const DMSContext = createContext<DMSContextType | undefined>(undefined)
 
-// ຟັງຊັນຊ່ວຍສ້າງ ID ແບບບໍ່ຊ້ຳກັນ, ໃຊ້ prefix ໄດ້ (ເຊັ່ນ 'DOC', 'USR')
-function generateId(prefix: string) {
-  return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`
+function toFrontendDocument(doc: ApiDocument): Document {
+  return {
+    id: doc.id,
+    title: doc.title,
+    docNumber: doc.docNumber,
+    category: (doc.category?.name ?? '') as Document['category'],
+    status: doc.status,
+    fileType: doc.fileType,
+    fileSize: doc.fileSize ?? '-',
+    uploadDate: doc.uploadDate.slice(0, 10),
+    uploadedBy: doc.uploadedBy?.name ?? '-',
+    fileUrl: doc.fileUrl ?? '#',
+    fileName: doc.fileName ?? undefined,
+    deleted: doc.deleted,
+  }
 }
 
 export function DMSProvider({ children }: { children: React.ReactNode }) {
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: 'DOC-001',
-      title: 'ເອກະສານຂາເຂົ້າທີ່ກ່ຽວກັບຄຳສັ່ງຊື້',
-      docNumber: 'K-2026-001',
-      category: 'ຂາເຂົ້າ',  
-      status: 'approved',
-      fileType: 'pdf',
-      fileSize: '2.4 MB',
-      uploadDate: '2026-08-08',
-      uploadedBy: 'ນາງ ທຳມະເພກ',
-      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-    {
-      id: 'DOC-002',
-      title: 'ແຈ້ງການປະກາດຄວາມກ້າຫານໃນອຸດສາຫະກໍາ',
-      docNumber: 'AN-2026-014',
-      category: 'ແຈ້ງການ',
-      status: 'pending',
-      fileType: 'doc',
-      fileSize: '840 KB',
-      uploadDate: '2026-08-07',
-      uploadedBy: 'ທ້າວ ອາລີ',
-      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-    {
-      id: 'DOC-003',
-      title: 'ສັນຍາເຊົ່ອມຕໍ່ກັບຜູ້ສະຫນອງ',
-      docNumber: 'CT-2026-021',
-      category: 'ສັນຍາ',
-      status: 'draft',
-      fileType: 'pdf',
-      fileSize: '1.1 MB',
-      uploadDate: '2026-08-05',
-      uploadedBy: 'ນາງ ຄຳນາ',
-      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-    {
-      id: 'DOC-004',
-      title: 'ບົດລາຍງານການງານຂອງຫົວໜ້າພະແນກ',
-      docNumber: 'RP-2026-045',
-      category: 'ລາຍງານ',
-      status: 'approved',
-      fileType: 'image',
-      fileSize: '3.2 MB',
-      uploadDate: '2026-08-04',
-      uploadedBy: 'ທ້າວ ລະມາ',
-      fileUrl: 'https://picsum.photos/800/1000',
-    },
-    {
-      id: 'DOC-005',
-      title: 'ເອກະສານຂາອອກ ກ່ຽວກັບຂໍ້ຕົກລົງການສົ່ງສິນຄ້າ',
-      docNumber: 'OUT-2026-009',
-      category: 'ຂາອອກ',
-      status: 'archived',
-      fileType: 'pdf',
-      fileSize: '1.7 MB',
-      uploadDate: '2026-08-02',
-      uploadedBy: 'ທ້າວ ຊົມບູລີ',
-      fileUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    },
-  ])
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [categories, setCategories] = useState<string[]>([])
+  const [categoryList, setCategoryList] = useState<ApiCategory[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const [categories, setCategories] = useState<string[]>(['ທົ່ວໄປ', 'ສິນທັດ', 'ເອກະສານທີ່ສຳຄັນ'])
+  useEffect(() => {
+    let cancelled = false
 
-  const [users, setUsers] = useState<User[]>([
-    { id: 'u1', name: 'ຈອນໂດ', role: 'Admin' },
-    { id: 'u2', name: 'ສະໄໝ ສະໄໝ', role: 'Staff' },
-  ])
+    async function load() {
+      try {
+        const [categoriesRes, activeDocsRes, deletedDocsRes] = await Promise.all([
+          apiClient.get<ApiCategory[]>('/categories'),
+          apiClient.get<{ data: ApiDocument[] }>('/documents', { params: { limit: 100 } }),
+          apiClient.get<{ data: ApiDocument[] }>('/documents', { params: { limit: 100, deleted: 'true' } }),
+        ])
+        if (cancelled) return
+
+        setCategoryList(categoriesRes.data)
+        setCategories(categoriesRes.data.map((c) => c.name))
+        setDocuments([
+          ...activeDocsRes.data.data.map(toFrontendDocument),
+          ...deletedDocsRes.data.data.map(toFrontendDocument),
+        ])
+      } catch (err) {
+        console.error('ໂຫຼດຂໍ້ມູນ DMS ລົ້ມເຫຼວ:', err)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // ---------- Document helpers ----------
-  function addDocument(doc: Omit<Document, 'id' | 'deleted'>): Document {
-    const newDoc: Document = { ...doc, id: generateId('DOC'), deleted: false }
+  async function addDocument(doc: Omit<Document, 'id' | 'deleted'>): Promise<Document> {
+    const categoryId = categoryList.find((c) => c.name === doc.category)?.id
+    const res = await apiClient.post<ApiDocument>('/documents', {
+      title: doc.title,
+      docNumber: doc.docNumber,
+      categoryId,
+      fileType: doc.fileType,
+      status: doc.status,
+      fileSize: doc.fileSize,
+      fileUrl: doc.fileUrl,
+      fileName: doc.fileName,
+      uploadDate: doc.uploadDate,
+    })
+    const newDoc = toFrontendDocument({ ...res.data, category: categoryList.find((c) => c.id === categoryId) ?? null, uploadedBy: null })
     setDocuments((prev) => [newDoc, ...prev])
     return newDoc
   }
 
-  function updateDocument(id: string, patch: Partial<Document>) {
+  async function updateDocument(id: string, patch: Partial<Document>) {
+    if (patch.status) {
+      await apiClient.patch(`/documents/${id}/status`, { status: patch.status })
+    }
+    const { status: _status, category, ...rest } = patch
+    void _status
+    const categoryId = category ? categoryList.find((c) => c.name === category)?.id : undefined
+    if (Object.keys(rest).length > 0 || categoryId) {
+      await apiClient.patch(`/documents/${id}`, { ...rest, categoryId })
+    }
     setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)))
   }
 
-  function deleteDocument(id: string) {
-    updateDocument(id, { deleted: true })
+  async function deleteDocument(id: string) {
+    await apiClient.delete(`/documents/${id}`)
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: true } : d)))
   }
 
-  function restoreDocument(id: string) {
-    updateDocument(id, { deleted: false })
+  async function restoreDocument(id: string) {
+    await apiClient.patch(`/documents/${id}/restore`)
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: false } : d)))
   }
 
-  function permDeleteDocument(id: string) {
+  async function permDeleteDocument(id: string) {
+    await apiClient.delete(`/documents/${id}/permanent`)
     setDocuments((prev) => prev.filter((d) => d.id !== id))
   }
 
-  function archiveDocument(id: string) {
-    updateDocument(id, { status: 'archived' })
+  async function archiveDocument(id: string) {
+    await apiClient.patch(`/documents/${id}/archive`)
+    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'archived' } : d)))
   }
 
   // ---------- Category helpers ----------
-  function addCategory(name: string) {
+  async function addCategory(name: string) {
     const trimmed = name.trim()
-    if (!trimmed) return
-    setCategories((prev) => (prev.includes(trimmed) ? prev : [trimmed, ...prev]))
+    if (!trimmed || categories.includes(trimmed)) return
+    const res = await apiClient.post<ApiCategory>('/categories', { name: trimmed })
+    setCategoryList((prev) => [res.data, ...prev])
+    setCategories((prev) => [res.data.name, ...prev])
   }
 
-  function removeCategory(name: string) {
+  async function removeCategory(name: string) {
+    const category = categoryList.find((c) => c.name === name)
+    if (!category) return
+    await apiClient.delete(`/categories/${category.id}`)
+    setCategoryList((prev) => prev.filter((c) => c.id !== category.id))
     setCategories((prev) => prev.filter((c) => c !== name))
   }
 
-  // ---------- User helpers ----------
+  // ---------- User helpers (ຍັງເປັນ local state, ບໍ່ໄດ້ຕໍ່ API ໃນຮອບນີ້) ----------
+  function generateId(prefix: string) {
+    return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`
+  }
+
   function addUser(user: Omit<User, 'id'>): User {
     const newUser: User = { ...user, id: generateId('USR') }
     setUsers((prev) => [newUser, ...prev])
@@ -165,6 +196,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
         setCategories,
         users,
         setUsers,
+        loading,
         addDocument,
         updateDocument,
         deleteDocument,

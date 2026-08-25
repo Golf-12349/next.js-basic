@@ -37,10 +37,8 @@ type PasswordStrengthKey = keyof PasswordStrengthChecks;
 type SubmitStatus = "success" | "error" | null;
 
 type APIResponse = {
-  success: boolean;
-  message: string;
-  token: string;
-  data: UserData;
+  accessToken: string;
+  user: UserData;
 };
 
 type UserData = {
@@ -139,18 +137,18 @@ function LoginForm() {
     console.log("Login response:", response.data);
 
     if (![200, 201].includes(response.status)) {
-      throw new Error(response.data?.message ?? "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
+      throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
     }
 
-    const { success, message, token, data } = response.data;
+    const { accessToken, user } = response.data;
 
-    if (!success || !token || !data) {
-      throw new Error(message ?? "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
+    if (!accessToken || !user) {
+      throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
     }
 
-    toast.success(message);
-    secureLocalStorage.setItem("token", token);
-    secureLocalStorage.setItem("data", JSON.stringify(data));
+    toast.success("ເຂົ້າສູ່ລະບົບສຳເລັດ");
+    secureLocalStorage.setItem("token", accessToken);
+    secureLocalStorage.setItem("data", JSON.stringify(user));
 
     setSubmitStatus("success");
     console.log("Login payload:", form);

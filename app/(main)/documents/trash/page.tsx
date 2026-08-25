@@ -6,18 +6,18 @@ import { useState } from 'react'
 import { pushToast } from '@/app/components/ui/Toast'
 
 export default function TrashPage() {
-  const { documents, setDocuments } = useDMS()
+  const { documents, restoreDocument, permDeleteDocument } = useDMS()
   const [confirm, setConfirm] = useState<string | null>(null)
 
   const trash = documents.filter((d) => d.deleted)
 
-  function restore(id: string) {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: false } : d)))
+  async function restore(id: string) {
+    await restoreDocument(id)
     pushToast({ title: 'ການກູ້ຄືນສຳເລັດ' })
   }
 
-  function permDelete(id: string) {
-    setDocuments((prev) => prev.filter((d) => d.id !== id))
+  async function permDelete(id: string) {
+    await permDeleteDocument(id)
     pushToast({ title: 'ເອກະສານຖືກລຶບຢ່າງຖາວອນ' })
     setConfirm(null)
   }

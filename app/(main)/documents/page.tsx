@@ -24,7 +24,7 @@ const statusLabels: Record<DocumentStatus, string> = {
 }
 
 export default function DocumentsPage() {
-  const { documents, setDocuments, categories, addCategory, removeCategory } = useDMS()
+  const { documents, categories, addCategory, removeCategory, deleteDocument, restoreDocument, updateDocument } = useDMS()
   const [query, setQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
@@ -58,25 +58,25 @@ export default function DocumentsPage() {
     setConfirmDelete(doc)
   }
 
-  function confirmDeleteNow() {
+  async function confirmDeleteNow() {
     if (!confirmDelete) return
-    setDocuments((prev) => prev.map((d) => (d.id === confirmDelete.id ? { ...d, deleted: true } : d)))
+    await deleteDocument(confirmDelete.id)
     pushToast({ title: 'ເອກະສານຖືກນໍາໄປຍັງ Trash' })
     setConfirmDelete(null)
   }
- 
-  function handleRestore(id: string) {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, deleted: false } : d)))
+
+  async function handleRestore(id: string) {
+    await restoreDocument(id)
     pushToast({ title: 'ການກູ້ຄືນສຳເລັດ' })
   }
 
-  function handleApprove(id: string) {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'approved' } : d)))
+  async function handleApprove(id: string) {
+    await updateDocument(id, { status: 'approved' })
     pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
   }
 
-  function handleReject(id: string) {
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'draft' } : d)))
+  async function handleReject(id: string) {
+    await updateDocument(id, { status: 'draft' })
     pushToast({ title: 'ເອກະສານຖືກປະຕິເສດ' })
   }
 
