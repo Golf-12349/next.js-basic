@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useRouter } from "next/navigation";
-import { Noto_Sans_Lao } from "next/font/google";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import apiClient from "@/config/axiosClient";
-import toast from 'react-hot-toast';
-import secureLocalStorage from 'react-secure-storage';
-
-// Noto Sans Lao ຮອງຮັບພາສາລາວ, ໃຫ້ import ໄວ້ນອກ component
-const notoSansLao = Noto_Sans_Lao({
-  subsets: ["lao"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
+import toast from "react-hot-toast";
+import secureLocalStorage from "react-secure-storage";
+import {
+  FolderOpen,
+  ShieldCheck,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  CheckCircle2,
+  FileText,
+} from "lucide-react";
 
 type LoginForm = {
   email: string;
@@ -33,22 +36,19 @@ type PasswordStrengthChecks = {
 };
 
 type PasswordStrengthKey = keyof PasswordStrengthChecks;
-
 type SubmitStatus = "success" | "error" | null;
 
 type APIResponse = {
   accessToken: string;
-  user: UserData;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
 };
 
-type UserData = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-};
-
-function LoginForm() {
+export default function LoginForm() {
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
   const [errors, setErrors] = useState<LoginErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,16 +56,8 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  // ກວດສອບຄວາມປອດໄພຂອງ password
-  const checkPasswordStrength = (
-    pwd: string,
-  ): {
-    checks: PasswordStrengthChecks;
-    score: number;
-    label: string;
-    color: string;
-    barColor: string;
-  } => {
+  // ── Password Strength Checker ──────────────────────────────
+  const checkPasswordStrength = (pwd: string) => {
     const checks: PasswordStrengthChecks = {
       length: pwd.length >= 8,
       lowercase: /[a-z]/.test(pwd),
@@ -81,8 +73,8 @@ function LoginForm() {
     if (pwd.length > 0) {
       if (score <= 2) {
         label = "ອ່ອນ";
-        color = "text-red-600";
-        barColor = "bg-red-500";
+        color = "text-rose-600";
+        barColor = "bg-rose-500";
       } else if (score <= 4) {
         label = "ປານກາງ";
         color = "text-amber-600";
@@ -105,299 +97,263 @@ function LoginForm() {
       if (submitStatus) setSubmitStatus(null);
     };
 
-  // ຟັງຊັນກວດສອບຄວາມຖືກຕ້ອງຂອງຟອມ
   const validateForm = () => {
     const newErrors: LoginErrors = {};
-
     if (!form.email.trim()) {
       newErrors.email = "ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ";
     }
-
-    // if (!form.password) {
-    //   newErrors.password = 'ກະລຸນາປ້ອນລະຫັດຜ່ານ'
-    // } else if (strength.score < 3) {
-    //   newErrors.password = 'ລະຫັດຜ່ານບໍ່ປອດໄພພຽງພໍ ກະລຸນາປັບປຸງ'
-    // }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // ຟັງຊັນ handle submit
- const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setSubmitStatus(null);
+  // ── Handle Submit (API Integration) ────────────────────────
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitStatus(null);
 
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  setIsSubmitting(true);
-  try {
-    // ຈຳລອງການເອີ້ນ API — ປ່ຽນເປັນ endpoint ຈິງໄດ້ຕາມໂຕໂປຣເຈັກ
-    const response = await apiClient.post<APIResponse>("/auth/login", form);
-    console.log("Login response:", response.data);
+    setIsSubmitting(true);
+    try {
+      const response = await apiClient.post<APIResponse>("/auth/login", form);
 
-    if (![200, 201].includes(response.status)) {
-      throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
+      if (![200, 201].includes(response.status)) {
+        throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
+      }
+
+      const { accessToken, user } = response.data;
+
+      if (!accessToken || !user) {
+        throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
+      }
+
+      toast.success("ເຂົ້າສູ່ລະບົບສຳເລັດ");
+      secureLocalStorage.setItem("token", accessToken);
+      secureLocalStorage.setItem("data", JSON.stringify(user));
+
+      setSubmitStatus("success");
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      toast.error(
+        err.response?.data?.message ?? err?.message ?? "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ"
+      );
+      setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const { accessToken, user } = response.data;
-
-    if (!accessToken || !user) {
-      throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
-    }
-
-    toast.success("ເຂົ້າສູ່ລະບົບສຳເລັດ");
-    secureLocalStorage.setItem("token", accessToken);
-    secureLocalStorage.setItem("data", JSON.stringify(user));
-
-    setSubmitStatus("success");
-    console.log("Login payload:", form);
-
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    router.push("/dashboard"); // ການເຂົ້າສູ່ dashboard ຫຼັງຈາກ login ສຳເລັດ
-  } catch (err: any) {
-    console.error("Login failed:", err);
-    toast.error(err.response?.data?.message ?? err?.message ?? "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
-    setSubmitStatus("error");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   return (
-    <div
-      className={`${notoSansLao.className} w-full max-w-md mx-auto bg-white border border-black/10 rounded-2xl shadow-xl shadow-black/5 px-8 py-10`}
-    >
-      {/* Header */}
-      <div className="mb-8">
-        <div className="w-11 h-11 rounded-xl bg-blue-500 flex items-center justify-center mb-5">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="11" width="18" height="10" rx="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-        </div>
-        <h4 className="text-2xl font-bold text-black tracking-tight">
-          ເຂົ້າສູ່ລະບົບ
-        </h4>
-        <p className="text-sm text-black/50 mt-1">
-          ຍິນດີຕ້ອນຮັບກັບຄືນ, ກະລຸນາປ້ອນຂໍ້ມູນຂອງທ່ານ
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-        {/* Username / Email */}
-        <div>
-          <label className="block text-black text-sm font-semibold mb-1.5">
-            ຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ
-          </label>
-          <input
-            type="text"
-            placeholder="enter your name or email"
-            value={form.email}
-            onChange={handleChange("email")}
-            className={`w-full bg-white border rounded-lg px-3.5 py-2.5 text-black placeholder-black/30 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-              errors.email
-                ? "border-red-400 focus:border-red-500"
-                : "border-black/15 focus:border-blue-500"
-            }`}
-          />
-          {errors.email && (
-            <p className="text-xs text-red-600 mt-1.5">{errors.email}</p>
-          )}
+    <div className="min-h-screen w-full grid lg:grid-cols-2 bg-white font-sans text-slate-900">
+      
+      {/* ── ຝັ່ງຊ້າຍ: ຟອມເຂົ້າສູ່ລະບົບ (Left-aligned Clean Form) ── */}
+      <div className="flex flex-col justify-between p-8 sm:p-12 lg:p-16 xl:p-24 min-h-screen">
+        {/* Brand Logo */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md shadow-slate-900/20">
+            <FolderOpen size={22} />
+          </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              DMS SYSTEM
+            </div>
+            <div className="text-base font-bold text-slate-900">
+              ລະບົບຈັດການເອກະສານ
+            </div>
+          </div>
         </div>
 
-        {/* Password */}
-        <div>
-          <label className="block text-black text-sm font-semibold mb-1.5">
-            ລະຫັດຜ່ານ
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="enter your password"
-              value={form.password}
-              onChange={handleChange("password")}
-              className={`w-full bg-white border rounded-lg px-3.5 py-2.5 pr-10 text-black placeholder-black/30 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
-                errors.password
-                  ? "border-red-400 focus:border-red-500"
-                  : "border-black/15 focus:border-blue-500"
-              }`}
-            />
+        {/* Form Container */}
+        <div className="w-full max-w-md my-auto py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              ເຂົ້າສູ່ລະບົບ
+            </h1>
+            <p className="mt-2 text-sm text-slate-500">
+              ຍິນດີຕ້ອນຮັບກັບຄືນ, ກະລຸນາປ້ອນຂໍ້ມູນຂອງທ່ານ
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                ຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="name@company.com"
+                  value={form.email}
+                  onChange={handleChange("email")}
+                  className={`w-full rounded-xl border bg-slate-50/50 py-2.5 pl-10 pr-3.5 text-xs text-slate-900 outline-none transition focus:bg-white focus:ring-1 focus:ring-slate-900 ${
+                    errors.email
+                      ? "border-rose-400 focus:border-rose-500"
+                      : "border-slate-200 focus:border-slate-900"
+                  }`}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-[11px] text-rose-600 mt-1">{errors.email}</p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  ລະຫັດຜ່ານ
+                </label>
+                <a href="#" className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700">
+                  ລືມລະຫັດຜ່ານ?
+                </a>
+              </div>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={handleChange("password")}
+                  className={`w-full rounded-xl border bg-slate-50/50 py-2.5 pl-10 pr-10 text-xs text-slate-900 outline-none transition focus:bg-white focus:ring-1 focus:ring-slate-900 ${
+                    errors.password
+                      ? "border-rose-400 focus:border-rose-500"
+                      : "border-slate-200 focus:border-slate-900"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-[11px] text-rose-600 mt-1">{errors.password}</p>
+              )}
+
+              {/* Password Strength Bar */}
+              {form.password.length > 0 && (
+                <div className="mt-2.5 space-y-1.5">
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${
+                          i < strength.score ? strength.barColor : "bg-slate-200"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className={`font-semibold ${strength.color}`}>
+                      ຄວາມປອດໄພ: {strength.label}
+                    </span>
+                    <span className="text-slate-400">{strength.score}/5</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Status Messages */}
+            {submitStatus === "success" && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-medium text-emerald-700">
+                ເຂົ້າສູ່ລະບົບສຳເລັດ! ກຳລັງພາໄປໜ້າຫຼັກ...
+              </div>
+            )}
+            {submitStatus === "error" && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-medium text-rose-700">
+                ເກີດຂໍ້ຜິດພາດ, ກະລຸນາກວດສອບອີເມວ ແລະ ລະຫັດຜ່ານ
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 hover:text-black/70 transition-colors"
-              tabIndex={-1}
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-semibold text-white shadow-md shadow-slate-900/10 transition hover:bg-slate-800 disabled:bg-slate-400"
             >
-              {showPassword ? (
-                <svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.4 18.4 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
+              {isSubmitting ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>ກຳລັງເຂົ້າສູ່ລະບົບ...</span>
+                </>
               ) : (
-                <svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
+                <>
+                  <span>ເຂົ້າສູ່ລະບົບ</span>
+                  <ArrowRight size={14} />
+                </>
               )}
             </button>
-          </div>
-          {errors.password && (
-            <p className="text-xs text-red-600 mt-1.5">{errors.password}</p>
-          )}
-
-          {/* Strength meter */}
-          {form.password.length > 0 && (
-            <div className="mt-3">
-              <div className="flex gap-1.5 mb-1.5">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                      i < strength.score ? strength.barColor : "bg-black/10"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className={`text-xs font-semibold ${strength.color}`}>
-                  ຄວາມປອດໄພ: {strength.label}
-                </span>
-                <span className="text-xs text-black/40">
-                  {strength.score}/5
-                </span>
-              </div>
-
-              <ul className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2.5">
-                {(
-                  [
-                    ["length", "ຢ່າງໜ້ອຍ 8 ໂຕ"],
-                    ["uppercase", "ໂຕພິມໃຫຍ່ A-Z"],
-                    ["lowercase", "ໂຕພິມນ້ອຍ a-z"],
-                    ["number", "ຕົວເລກ 0-9"],
-                    ["special", "ສັນຍາລັກພິເສດ"],
-                  ] as Array<[PasswordStrengthKey, string]>
-                ).map(([key, text]) => (
-                  <li
-                    key={key}
-                    className={`flex items-center gap-1.5 text-[11px] transition-colors ${
-                      strength.checks[key]
-                        ? "text-emerald-600"
-                        : "text-black/35"
-                    }`}
-                  >
-                    <span
-                      className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${
-                        strength.checks[key] ? "bg-emerald-500" : "bg-black/10"
-                      }`}
-                    >
-                      {strength.checks[key] && (
-                        <svg
-                          width="8"
-                          height="8"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="white"
-                          strokeWidth="4"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      )}
-                    </span>
-                    {text}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          </form>
         </div>
 
-        {/* Submit status banner */}
-        {submitStatus === "success" && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-3.5 py-2.5">
-            ເຂົ້າສູ່ລະບົບສຳເລັດ!
-          </div>
-        )}
-        {submitStatus === "error" && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3.5 py-2.5">
-            ເກີດຂໍ້ຜິດພາດ, ກະລຸນາລອງໃໝ່ອີກຄັ້ງ
-          </div>
-        )}
+        {/* Security Footer Badge */}
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <ShieldCheck size={16} className="text-emerald-600" />
+          <span>ລະບົບປອດໄພດ້ວຍການເຂົ້າລະຫັດ 256-bit SSL · ສະເພາະພາຍໃນອົງກອນ</span>
+        </div>
+      </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-lg px-4 py-2.5 mt-1 transition-colors flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <svg
-                className="animate-spin"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="white"
-                  strokeWidth="3"
-                  opacity="0.3"
-                />
-                <path
-                  d="M12 2a10 10 0 0 1 10 10"
-                  stroke="white"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
-              ກຳລັງເຂົ້າສູ່ລະບົບ...
-            </>
-          ) : (
-            "ເຂົ້າສູ່ລະບົບ"
-          )}
-        </button>
-      </form>
+      {/* ── ຝັ່ງຂວາ: Visual Branding & Floating Glass Card ── */}
+      <div className="hidden lg:flex flex-col justify-between p-12 lg:p-16 relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
+        <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-24 -bottom-24 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
 
-      <p className="text-center text-xs text-black/40 mt-6">
-        ຍັງບໍ່ມີບັນຊີ?{" "}
-        <a href="#" className="text-blue-500 font-semibold hover:underline">
-          ລົງທະບຽນ
-        </a>
-      </p>
+        <div className="flex justify-end">
+          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 backdrop-blur-sm">
+            Enterprise Edition v2.0
+          </span>
+        </div>
+
+        <div className="my-auto max-w-md mx-auto space-y-6">
+          <div className="rounded-2xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl shadow-2xl shadow-black/40 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">ສັນຍາຮ່ວມທຸລະກິດ 2026</div>
+                  <div className="text-xs text-slate-400">ເລກທີ: DOC-2026-088 · 2.4 MB</div>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300">
+                <CheckCircle2 size={12} />
+                ອະນຸມັດແລ້ວ
+              </span>
+            </div>
+
+            <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+              <div className="h-full w-3/4 rounded-full bg-indigo-400" />
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-white/10">
+              <span>🗄️ ຕູ້ສັນຍາ &gt; 📁 ສັນຍາລູກຄ້າ</span>
+              <span>ກວດສອບໂດຍ: SuperAdmin</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-white leading-snug">
+              ຈັດລະບຽບເອກະສານຂອງທ່ານ <br />
+              <span className="text-indigo-400">ຢ່າງປອດໄພ ແລະ ວ່ອງໄວໃນບ່ອນດຽວ</span>
+            </h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              ຮອງຮັບການເກັບເອກະສານແບບ 3 ລະດັບ (ຕູ້ ➡️ ແຟ້ມ ➡️ ເອກະສານ) ພ້ອມລະບົບກວດສອບ, ອະນຸມັດ ແລະ ຕິດຕາມສະຖານະແບບ Real-time.
+            </p>
+          </div>
+        </div>
+
+        <div className="text-xs text-slate-500">
+          © 2026 DMS Document Management System. All rights reserved.
+        </div>
+      </div>
+
     </div>
   );
 }
-
-export default LoginForm;

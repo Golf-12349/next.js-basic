@@ -7,7 +7,8 @@ import { useDMS } from '../_dms-context'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
-import { Settings, Trash2, Tag } from 'lucide-react'
+import { Settings } from 'lucide-react'
+import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 
 const statusStyles: Record<DocumentStatus, string> = {
   draft: 'bg-slate-100 text-slate-700',
@@ -24,35 +25,35 @@ const statusLabels: Record<DocumentStatus, string> = {
 }
 
 export default function DocumentsPage() {
-  const { documents, categories, addCategory, removeCategory, deleteDocument, restoreDocument, updateDocument } = useDMS()
+  const { documents, categories, addCategory, removeCategory, cabinets, deleteDocument, restoreDocument } = useDMS()
   const [query, setQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
+  const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
   const [manageCategoryOpen, setManageCategoryOpen] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState('')
 
   useEffect(() => {
     // ensure categories include special 'ທັງໝົດ'
   }, [])
 
   const visible = useMemo(() => {
-    return documents.filter((d) => !d.deleted).filter((d) => {
+    return documents.filter((d) => !d.deleted && d.status !== 'pending').filter((d) => {
       const q = query.trim().toLowerCase()
       if (q) {
         if (!(d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q))) return false
       }
       if (filterCategory !== 'ທັງໝົດ' && d.category !== filterCategory) return false
+      if (filterCabinet !== 'ທັງໝົດ' && d.cabinetId !== filterCabinet) return false
       if (filterStatus !== 'ທັງໝົດ') {
         if (filterStatus === 'ຮ່າງ' && d.status !== 'draft') return false
-        if (filterStatus === 'ລໍຖ້າອະນຸມັດ' && d.status !== 'pending') return false
         if (filterStatus === 'ອະນຸມັດ' && d.status !== 'approved') return false
         if (filterStatus === 'ເກັບເຂົ້າຄັງ' && d.status !== 'archived') return false
       }
       return true
     })
-  }, [documents, query, filterCategory, filterStatus])
+  }, [documents, query, filterCategory, filterCabinet, filterStatus])
 
   function handleDelete(doc: Document) {
     setConfirmDelete(doc)
@@ -70,24 +71,12 @@ export default function DocumentsPage() {
     pushToast({ title: 'ການກູ້ຄືນສຳເລັດ' })
   }
 
-  async function handleApprove(id: string) {
-    await updateDocument(id, { status: 'approved' })
-    pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
-  }
-
-  async function handleReject(id: string) {
-    await updateDocument(id, { status: 'draft' })
-    pushToast({ title: 'ເອກະສານຖືກປະຕິເສດ' })
-  }
-
   function countDocsInCategory(category: string) {
     return documents.filter((d) => d.category === category && !d.deleted).length
   }
 
-  function handleAddCategory() {
-    if (!newCategoryName.trim()) return
-    addCategory(newCategoryName)
-    setNewCategoryName('')
+  function handleAddCategory(name: string) {
+    addCategory(name)
     pushToast({ title: 'ເພີ່ມໝວດໝູ່ສຳເລັດ' })
   }
 
@@ -121,8 +110,8 @@ export default function DocumentsPage() {
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="md:col-span-1">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">ຄົ້ນຫາ</label>
               <input
                 type="text"
@@ -153,11 +142,20 @@ export default function DocumentsPage() {
             </div>
 
             <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ຕູ້ເອກະສານ</label>
+              <select value={filterCabinet} onChange={(e) => setFilterCabinet(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
+                <option>ທັງໝົດ</option>
+                {cabinets.map((c) => (
+                  <option key={c.id} value={c.id}>🗄️ {c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">ສະຖານະ</label>
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
                 <option>ທັງໝົດ</option>
                 <option>ຮ່າງ</option>
-                <option>ລໍຖ້າອະນຸມັດ</option>
                 <option>ອະນຸມັດ</option>
                 <option>ເກັບເຂົ້າຄັງ</option>
               </select>
@@ -187,6 +185,11 @@ export default function DocumentsPage() {
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-900">{doc.title}</div>
                       <div className="text-xs text-gray-500">ID: {doc.id}</div>
+                      {(doc.cabinetName || doc.folderName) && (
+                        <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+                          🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.category}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.docNumber}</td>
@@ -210,17 +213,7 @@ export default function DocumentsPage() {
                         <button onClick={() => handleDelete(doc)} type="button" className="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100">
                           ລົບ
                         </button>
-                        {doc.status === 'pending' && (
-                          <>
-                            <button onClick={() => handleApprove(doc.id)} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
-                              ອະນຸມັດ
-                            </button>
-                            <button onClick={() => handleReject(doc.id)} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100">
-                              ປະຕິເສດ
-                            </button>
-                          </>
-                        )}
-                      </div>
+                       </div>
                     </td>
                   </tr>
                 ))}
@@ -261,56 +254,14 @@ export default function DocumentsPage() {
           </div>
         </Modal>
 
-        <Modal open={manageCategoryOpen} onClose={() => setManageCategoryOpen(false)} title="ຈັດການໝວດໝູ່">
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <input
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAddCategory() }}
-                placeholder="ຊື່ໝວດໝູ່ໃໝ່"
-                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
-              />
-              <button
-                onClick={handleAddCategory}
-                className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-              >
-                <Tag size={14} />
-                ເພີ່ມ
-              </button>
-            </div>
-
-            {categories.length === 0 ? (
-              <p className="py-6 text-center text-sm text-gray-400">ຍັງບໍ່ມີໝວດໝູ່</p>
-            ) : (
-              <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
-                {categories.map((c) => (
-                  <li key={c} className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm font-medium text-gray-800">
-                      {c} <span className="text-gray-400">({countDocsInCategory(c)})</span>
-                    </span>
-                    <button
-                      onClick={() => handleRemoveCategory(c)}
-                      title="ລຶບໝວດໝູ່"
-                      className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="flex justify-end">
-              <button
-                onClick={() => setManageCategoryOpen(false)}
-                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-              >
-                ປິດ
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <ManageCategoryModal
+          open={manageCategoryOpen}
+          onClose={() => setManageCategoryOpen(false)}
+          categories={categories}
+          onAdd={handleAddCategory}
+          onRemove={handleRemoveCategory}
+          countDocs={countDocsInCategory}
+        />
       </main>
     </DashboardLayout>
   )
