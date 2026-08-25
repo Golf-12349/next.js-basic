@@ -5,6 +5,17 @@ import { Cabinet, Document, Folder } from '@/types/document'
 import { User } from '@/types/user'
 
 type ApiCategory = { id: string; name: string }
+type ApiUser = {
+  id: string
+  name: string
+  email: string
+  role: User['role']
+  phone: string | null
+  department: string | null
+  status: User['status']
+  createdAt: string
+  updatedAt: string
+}
 type ApiDocument = {
   id: string
   title: string
@@ -44,11 +55,11 @@ type DMSContextType = {
   addCategory: (name: string) => Promise<void>
   removeCategory: (name: string) => Promise<void>
 
-  // User helpers (ยังเป็น local mock, ยังไม่ต่อ API ในรอบนี้)
-  addUser: (user: Omit<User, 'id'>) => User
-  updateUser: (id: string, patch: Partial<User>) => void
-  removeUser: (id: string) => void
-  toggleUserStatus: (id: string) => void
+  // User helpers (ตໍ່ API ຈິງ)
+  addUser: (user: Omit<User, 'id' | 'joinDate' | 'lastActive'>) => Promise<User>
+  updateUser: (id: string, patch: Partial<User>) => Promise<void>
+  removeUser: (id: string) => Promise<void>
+  toggleUserStatus: (id: string) => Promise<void>
 
   // 3-Level Archive (cabinets -> folders -> documents) helpers — ยังเป็น local mock
   cabinets: Cabinet[]
@@ -67,6 +78,20 @@ const DMSContext = createContext<DMSContextType | undefined>(undefined)
 // ฟังก์ชันช่วยสร้าง ID แบบไม่ซ้ำกัน, ใช้ prefix ได้ (เช่น 'USR', 'CAB', 'FLDR')
 function generateId(prefix: string) {
   return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`
+}
+
+function toFrontendUser(user: ApiUser): User {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone ?? undefined,
+    role: user.role,
+    department: user.department ?? '',
+    status: user.status,
+    joinDate: user.createdAt.slice(0, 10),
+    lastActive: user.updatedAt.slice(0, 10),
+  }
 }
 
 function toFrontendDocument(doc: ApiDocument): Document {
@@ -92,74 +117,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
   const [categoryList, setCategoryList] = useState<ApiCategory[]>([])
   const [loading, setLoading] = useState(true)
 
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 'USR-001',
-      name: 'ສົມສັກ ວົງສະຫວັນ',
-      email: 'somsack.v@dms.gov.la',
-      phone: '020 5551 0011',
-      role: 'SuperAdmin',
-      department: 'ຝ່າຍບໍລິຫານລະບົບ',
-      status: 'active',
-      joinDate: '2024-01-15',
-      lastActive: '2026-08-23',
-    },
-    {
-      id: 'USR-002',
-      name: 'ນາງ ທຳມະເພກ ພົມມະວົງ',
-      email: 'thammapheak.p@dms.gov.la',
-      phone: '020 5552 0022',
-      role: 'Admin',
-      department: 'ຝ່າຍທຸລະການ',
-      status: 'active',
-      joinDate: '2024-03-02',
-      lastActive: '2026-08-22',
-    },
-    {
-      id: 'USR-003',
-      name: 'ທ້າວ ອາລີ ໄຊຍະລາດ',
-      email: 'ali.s@dms.gov.la',
-      phone: '020 5553 0033',
-      role: 'Admin',
-      department: 'ຝ່າຍແຜນການ',
-      status: 'active',
-      joinDate: '2024-05-20',
-      lastActive: '2026-08-20',
-    },
-    {
-      id: 'USR-004',
-      name: 'ນາງ ຄຳນາ ສີວິໄລ',
-      email: 'khamna.s@dms.gov.la',
-      phone: '020 5554 0044',
-      role: 'User',
-      department: 'ຝ່າຍການເງິນ',
-      status: 'active',
-      joinDate: '2024-07-11',
-      lastActive: '2026-08-23',
-    },
-    {
-      id: 'USR-005',
-      name: 'ທ້າວ ລະມາ ບຸນມີ',
-      email: 'lama.b@dms.gov.la',
-      phone: '020 5555 0055',
-      role: 'User',
-      department: 'ຝ່າຍຊັບພະຍາກອນມະນຸດ',
-      status: 'inactive',
-      joinDate: '2024-09-09',
-      lastActive: '2026-07-30',
-    },
-    {
-      id: 'USR-006',
-      name: 'ທ້າວ ຊົມບູລີ ແກ້ວມະນີ',
-      email: 'sombouly.k@dms.gov.la',
-      phone: '020 5556 0066',
-      role: 'User',
-      department: 'ຝ່າຍເຕັກໂນໂລຊີ',
-      status: 'active',
-      joinDate: '2025-01-18',
-      lastActive: '2026-08-21',
-    },
-  ])
+  const [users, setUsers] = useState<User[]>([])
 
   // ── 3-Level Archive state: Cabinets & Folders (local mock ยังไม่ต่อ API) ──
   const [cabinets, setCabinets] = useState<Cabinet[]>([
@@ -217,6 +175,14 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
           ...activeDocsRes.data.data.map(toFrontendDocument),
           ...deletedDocsRes.data.data.map(toFrontendDocument),
         ])
+
+        // /users ต้องมีสิทธิ์ SuperAdmin/Admin — user ทั่วไปจะโดน 403 ซึ่งไม่ควรทำให้ข้อมูลส่วนอื่นโหลดไม่ได้
+        try {
+          const usersRes = await apiClient.get<ApiUser[]>('/users')
+          if (!cancelled) setUsers(usersRes.data.map(toFrontendUser))
+        } catch (err) {
+          console.warn('ໂຫຼດລາຍຊື່ຜູ້ໃຊ້ບໍ່ໄດ້ (ອາດຈະບໍ່ມີສິດ):', err)
+        }
       } catch (err) {
         console.error('ໂຫຼດຂໍ້ມູນ DMS ລົ້ມເຫຼວ:', err)
       } finally {
@@ -303,25 +269,40 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
     setCategories((prev) => prev.filter((c) => c !== name))
   }
 
-  // ---------- User helpers (ยังเป็น local state, ยังไม่ต่อ API ในรอบนี้) ----------
-  function addUser(user: Omit<User, 'id'>): User {
-    const newUser: User = { ...user, id: generateId('USR') }
+  // ---------- User helpers (ตໍ່ API ຈິງ) ----------
+  async function addUser(user: Omit<User, 'id' | 'joinDate' | 'lastActive'>): Promise<User> {
+    const res = await apiClient.post<ApiUser>('/users', {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      department: user.department,
+      status: user.status,
+    })
+    const newUser = toFrontendUser(res.data)
     setUsers((prev) => [newUser, ...prev])
     return newUser
   }
 
-  function updateUser(id: string, patch: Partial<User>) {
+  async function updateUser(id: string, patch: Partial<User>) {
+    const { joinDate: _joinDate, lastActive: _lastActive, ...rest } = patch
+    void _joinDate
+    void _lastActive
+    await apiClient.patch(`/users/${id}`, rest)
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
   }
 
-  function removeUser(id: string) {
+  async function removeUser(id: string) {
+    await apiClient.delete(`/users/${id}`)
     setUsers((prev) => prev.filter((u) => u.id !== id))
   }
 
-  function toggleUserStatus(id: string) {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' } : u))
-    )
+  async function toggleUserStatus(id: string) {
+    const target = users.find((u) => u.id === id)
+    if (!target) return
+    const status = target.status === 'active' ? 'inactive' : 'active'
+    await apiClient.patch(`/users/${id}`, { status })
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)))
   }
 
   // ---------- 3-Level Archive helpers (local mock) ----------
