@@ -1,5 +1,6 @@
 "use client"
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import secureLocalStorage from 'react-secure-storage'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDMS } from '../_dms-context'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -23,6 +24,7 @@ const ALL = 'ທັງໝົດ'
 export default function UsersPage() {
   const { users, addUser, updateUser, removeUser, toggleUserStatus } = useDMS()
 
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('SuperAdmin')
   const [query, setQuery] = useState('')
   const [filterRole, setFilterRole] = useState<'ທັງໝົດ' | UserRole>(ALL)
   const [filterDepartment, setFilterDepartment] = useState<string>(ALL)
@@ -33,6 +35,20 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [temporaryPasswordUser, setTemporaryPasswordUser] = useState<{ name: string; email: string; password: string } | null>(null)
+
+  useEffect(() => {
+    try {
+      const stored = secureLocalStorage.getItem('data')
+      if (stored) {
+        const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { role?: UserRole }
+        if (parsed?.role) {
+          setCurrentUserRole(parsed.role)
+        }
+      }
+    } catch {
+      // fallback to default
+    }
+  }, [])
 
   const departments = useMemo(() => {
     const set = new Set(users.map((u) => u.department).filter(Boolean))
@@ -65,6 +81,10 @@ export default function UsersPage() {
   }
 
   function openEditForm(user: User) {
+    if (currentUserRole === 'Admin' && user.role === 'SuperAdmin') {
+      pushToast({ title: 'ບໍ່ສາມາດແກ້ໄຂຂໍ້ມູນ SuperAdmin ໄດ້' })
+      return
+    }
     setEditingUser(user)
     setFormOpen(true)
   }
@@ -72,9 +92,17 @@ export default function UsersPage() {
   async function handleFormSubmit(values: UserFormValues) {
     try {
       if (editingUser) {
+        if (currentUserRole === 'Admin' && editingUser.role === 'SuperAdmin') {
+          pushToast({ title: 'ບໍ່ມີສິດແກ້ໄຂ SuperAdmin' })
+          return
+        }
         await updateUser(editingUser.id, { ...values })
         pushToast({ title: 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານສຳເລັດ' })
       } else {
+        if (currentUserRole === 'Admin' && values.role === 'SuperAdmin') {
+          pushToast({ title: 'Admin ບໍ່ສາມາດສ້າງ SuperAdmin ໄດ້' })
+          return
+        }
         const created = await addUser(values)
         pushToast({ title: 'ເພີ່ມຜູ້ໃຊ້ງານສຳເລັດ' })
         if (created.temporaryPassword) {
@@ -94,6 +122,10 @@ export default function UsersPage() {
   }
 
   async function handleToggleStatus(user: User) {
+    if (currentUserRole === 'Admin' && user.role === 'SuperAdmin') {
+      pushToast({ title: 'ບໍ່ສາມາດປ່ຽນສະຖານະຂອງ SuperAdmin ໄດ້' })
+      return
+    }
     await toggleUserStatus(user.id)
     pushToast({
       title: user.status === 'active' ? `ປິດການໃຊ້ງານຂອງ ${user.name}` : `ເປີດການໃຊ້ງານຂອງ ${user.name}`,
@@ -102,6 +134,11 @@ export default function UsersPage() {
 
   async function handleDeleteConfirm() {
     if (!deleteTarget) return
+    if (currentUserRole === 'Admin' && deleteTarget.role === 'SuperAdmin') {
+      pushToast({ title: 'ບໍ່ສາມາດລຶບ SuperAdmin ໄດ້' })
+      setDeleteTarget(null)
+      return
+    }
     await removeUser(deleteTarget.id)
     pushToast({ title: 'ລຶບຜູ້ໃຊ້ງານສຳເລັດ' })
     setDeleteTarget(null)
@@ -238,65 +275,74 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 ) : (
-                  visible.map((u) => (
-                    <tr key={u.id} className="border-t border-gray-100 align-top">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
-                            {initialsOf(u.name)}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-gray-900">{u.name}</div>
-                            <div className="text-xs text-gray-500">{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{u.department}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${roleStyles[u.role]}`}>
-                          {roleLabels[u.role]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[u.status]}`}>
-                          {statusLabels[u.status]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{u.lastActive || '-'}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => setDetailUser(u)}
-                            title="ເບິ່ງລາຍລະອຽດ"
-                            className="rounded-md border border-gray-200 p-1.5 text-gray-600 hover:bg-gray-50"
-                          >
-                            <Eye size={15} />
-                          </button>
-                          <button
-                            onClick={() => openEditForm(u)}
-                            title="ແກ້ໄຂ"
-                            className="rounded-md border border-indigo-200 bg-indigo-50 p-1.5 text-indigo-700 hover:bg-indigo-100"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            onClick={() => handleToggleStatus(u)}
-                            title={u.status === 'active' ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ'}
-                            className="rounded-md border border-amber-200 bg-amber-50 p-1.5 text-amber-700 hover:bg-amber-100"
-                          >
-                            {u.status === 'active' ? <Lock size={15} /> : <Unlock size={15} />}
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(u)}
-                            title="ລຶບ"
-                            className="rounded-md border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                    visible.map((u) => {
+                      const isSuperAdminRow = u.role === 'SuperAdmin'
+                      const canManageUser = currentUserRole === 'SuperAdmin' || !isSuperAdminRow
+
+                      return (
+                        <tr key={u.id} className="border-t border-gray-100 align-top">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
+                                {initialsOf(u.name)}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-900">{u.name}</div>
+                                <div className="text-xs text-gray-500">{u.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">{u.department}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${roleStyles[u.role]}`}>
+                              {roleLabels[u.role]}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[u.status]}`}>
+                              {statusLabels[u.status]}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">{u.lastActive || '-'}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => setDetailUser(u)}
+                                title="ເບິ່ງລາຍລະອຽດ"
+                                className="rounded-md border border-gray-200 p-1.5 text-gray-600 hover:bg-gray-50"
+                              >
+                                <Eye size={15} />
+                              </button>
+                              {canManageUser && (
+                                <>
+                                  <button
+                                    onClick={() => openEditForm(u)}
+                                    title="ແກ້ໄຂ"
+                                    className="rounded-md border border-indigo-200 bg-indigo-50 p-1.5 text-indigo-700 hover:bg-indigo-100"
+                                  >
+                                    <Pencil size={15} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleToggleStatus(u)}
+                                    title={u.status === 'active' ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ'}
+                                    className="rounded-md border border-amber-200 bg-amber-50 p-1.5 text-amber-700 hover:bg-amber-100"
+                                  >
+                                    {u.status === 'active' ? <Lock size={15} /> : <Unlock size={15} />}
+                                  </button>
+                                  <button
+                                    onClick={() => setDeleteTarget(u)}
+                                    title="ລຶບ"
+                                    className="rounded-md border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100"
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                 )}
               </tbody>
             </table>
@@ -309,6 +355,7 @@ export default function UsersPage() {
           open={formOpen}
           user={editingUser}
           departments={departments}
+          currentUserRole={currentUserRole}
           onClose={() => {
             setFormOpen(false)
             setEditingUser(null)

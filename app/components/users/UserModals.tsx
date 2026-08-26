@@ -148,12 +148,14 @@ export function UserFormModal({
   open,
   user,
   departments,
+  currentUserRole = 'SuperAdmin',
   onClose,
   onSubmit,
 }: {
   open: boolean
   user: User | null // null = add mode, otherwise edit mode
   departments: string[]
+  currentUserRole?: UserRole
   onClose: () => void
   onSubmit: (values: UserFormValues) => void
 }) {
@@ -172,20 +174,42 @@ export function UserFormModal({
         status: user.status,
       })
     } else {
-      setForm(emptyForm)
+      setForm({
+        ...emptyForm,
+        role: 'User',
+      })
     }
     setError(null)
-  }, [open, user])
+  }, [open, user, currentUserRole])
 
   function handleChange<K extends keyof UserFormValues>(key: K, value: UserFormValues[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
+
+  // Determine available roles based on who is performing the action
+  const availableRoles: UserRole[] =
+    currentUserRole === 'Admin' ? ['Admin', 'User'] : ['SuperAdmin', 'Admin', 'User']
+
+  // If editing a SuperAdmin and viewing user is not SuperAdmin, disallow role demotion / changes
+  const isEditingSuperAdmin = user?.role === 'SuperAdmin'
+  const isRoleDisabled = isEditingSuperAdmin && currentUserRole !== 'SuperAdmin'
 
   function handleSubmit() {
     if (!form.name.trim() || !form.email.trim() || !form.department.trim()) {
       setError('ກະລຸນາປ້ອນຊື່, ອີເມວ ແລະ ພະແນກໃຫ້ຄົບຖ້ວນ')
       return
     }
+
+    if (currentUserRole === 'Admin' && form.role === 'SuperAdmin') {
+      setError('Admin ບໍ່ມີສິດກຳນົດສິດເປັນ SuperAdmin')
+      return
+    }
+
+    if (user?.role === 'SuperAdmin' && form.role !== 'SuperAdmin' && currentUserRole !== 'SuperAdmin') {
+      setError('ສະເພາະ SuperAdmin ເທົ່ານັ້ນທີ່ສາມາດປ່ຽນສິດຂອງ SuperAdmin ໄດ້')
+      return
+    }
+
     onSubmit(form)
   }
 
@@ -244,13 +268,27 @@ export function UserFormModal({
             <label className="mb-1 block text-sm font-medium text-gray-700">ສິດນຳໃຊ້</label>
             <select
               value={form.role}
+              disabled={isRoleDisabled}
               onChange={(e) => handleChange('role', e.target.value as UserRole)}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400"
+              className={`w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400 ${
+                isRoleDisabled ? 'cursor-not-allowed bg-gray-100 opacity-70' : ''
+              }`}
             >
-              <option value="SuperAdmin">ຜູ້ດູແລລະບົບສູງສຸດ (SuperAdmin)</option>
-              <option value="Admin">ຜູ້ດູແລລະບົບ (Admin)</option>
-              <option value="User">ຜູ້ໃຊ້ງານ (User)</option>
+              {(availableRoles.includes('SuperAdmin') || isRoleDisabled) && (
+                <option value="SuperAdmin">ຜູ້ດູແລລະບົບສູງສຸດ (SuperAdmin)</option>
+              )}
+              {availableRoles.includes('Admin') && (
+                <option value="Admin">ຜູ້ດູແລລະບົບ (Admin)</option>
+              )}
+              {availableRoles.includes('User') && (
+                <option value="User">ຜູ້ໃຊ້ງານ (User)</option>
+              )}
             </select>
+            {isRoleDisabled && (
+              <p className="mt-1 text-xs text-amber-600">
+                ບໍ່ສາມາດປ່ຽນສິດຂອງ SuperAdmin ໄດ້ (ສະເພາະ SuperAdmin ເທົ່ານັ້ນ)
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">ສະຖານະ</label>
@@ -275,6 +313,58 @@ export function UserFormModal({
         </div>
       </div>
     </Modal>
+  )
+}
+
+export function AddUserModal({
+  open,
+  departments,
+  currentUserRole = 'SuperAdmin',
+  onClose,
+  onSubmit,
+}: {
+  open: boolean
+  departments: string[]
+  currentUserRole?: UserRole
+  onClose: () => void
+  onSubmit: (values: UserFormValues) => void
+}) {
+  return (
+    <UserFormModal
+      open={open}
+      user={null}
+      departments={departments}
+      currentUserRole={currentUserRole}
+      onClose={onClose}
+      onSubmit={onSubmit}
+    />
+  )
+}
+
+export function EditUserModal({
+  open,
+  user,
+  departments,
+  currentUserRole = 'SuperAdmin',
+  onClose,
+  onSubmit,
+}: {
+  open: boolean
+  user: User | null
+  departments: string[]
+  currentUserRole?: UserRole
+  onClose: () => void
+  onSubmit: (values: UserFormValues) => void
+}) {
+  return (
+    <UserFormModal
+      open={open}
+      user={user}
+      departments={departments}
+      currentUserRole={currentUserRole}
+      onClose={onClose}
+      onSubmit={onSubmit}
+    />
   )
 }
 

@@ -127,15 +127,27 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const [userName, setUserName] = useState('John Doe');
-  const [userRole, setUserRole] = useState('ຜູ້ບໍລິຫານລະບົບ');
+  const [userRole, setUserRole] = useState('ຜູ້ດູແລລະບົບ');
+  const [rawRole, setRawRole] = useState<string | null>(null);
 
   useEffect(() => {
     try {
       const stored = secureLocalStorage.getItem('data');
-      if (stored && typeof stored === 'object') {
-        const parsed = stored as { name?: string; role?: string };
+      if (stored) {
+        const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { name?: string; role?: string };
         if (parsed.name) setUserName(parsed.name);
-        if (parsed.role) setUserRole(parsed.role === 'Admin' || parsed.role === 'SuperAdmin' ? 'ຜູ້ບໍລິຫານລະບົບ' : parsed.role);
+        if (parsed.role) {
+          setRawRole(parsed.role);
+          if (parsed.role === 'SuperAdmin') {
+            setUserRole('ຜູ້ດູແລລະບົບສູງສຸດ');
+          } else if (parsed.role === 'Admin') {
+            setUserRole('ຜູ້ດູແລລະບົບ');
+          } else if (parsed.role === 'User') {
+            setUserRole('ຜູ້ໃຊ້ງານ');
+          } else {
+            setUserRole(parsed.role);
+          }
+        }
       }
     } catch {
       // fallback to default
@@ -234,11 +246,22 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
           </div>
 
           <nav className="space-y-5">
-            {menuSections.map((section) => (
-              <div key={section.title}>
-                <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  {section.title === 'MAIN' ? 'ເມນູຫຼັກ' : section.title === 'DOCUMENTS' ? 'ຈັດການເອກກະສານ' : 'ລະບົບ & ການຕັ້ງຄ່າ'}
-                </div>
+            {menuSections
+              .map((section) => ({
+                ...section,
+                items: section.items.filter((item) => {
+                  if (item.href === '/users' && rawRole === 'User') {
+                    return false;
+                  }
+                  return true;
+                }),
+              }))
+              .filter((section) => section.items.length > 0)
+              .map((section) => (
+                <div key={section.title}>
+                  <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    {section.title === 'MAIN' ? 'ເມນູຫຼັກ' : section.title === 'DOCUMENTS' ? 'ຈັດການເອກກະສານ' : 'ລະບົບ & ການຕັ້ງຄ່າ'}
+                  </div>
 
                 <div className="space-y-1">
                   {section.items.map((item) => {
