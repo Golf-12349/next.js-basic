@@ -1,5 +1,6 @@
 "use client"
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import secureLocalStorage from 'react-secure-storage'
 import apiClient from '@/config/axiosClient'
 import { Cabinet, Document, Folder } from '@/types/document'
 import { User } from '@/types/user'
@@ -135,6 +136,11 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false
 
     async function load() {
+      // ຍັງບໍ່ login (ບໍ່ມີ token) — ຂ້າມການໂຫຼດ ບໍ່ຕ້ອງຍິງ request ໄປໃຫ້ໂດນ 401
+      if (!secureLocalStorage.getItem('token')) {
+        setLoading(false)
+        return
+      }
       try {
         const [categoriesRes, activeDocsRes, deletedDocsRes, cabinetsRes, foldersRes] = await Promise.all([
           apiClient.get<ApiCategory[]>('/categories'),
