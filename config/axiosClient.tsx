@@ -34,35 +34,18 @@ axiosClient.interceptors.request.use(
 
 // Response Interceptor
 axiosClient.interceptors.response.use(
-  (response) => {
-    // Handle success responses
-    // if (response.status === 200 || response.status === 201) {
-    //   // return response?.data; // Return only the data for cleaner usage
-    //   return response; 
-    // }
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // if (error.response) {
-    //   const response = error.response;
-    //   if (response?.data?.code === 401 && response?.data?.error === "Unauthorized") {
-    //     // Handle unauthorized access (e.g., token expiration)
-    //     console.log("Unauthorized", error.response);
-    //     console.warn('Token expired or unauthorized, redirecting to login...');
-    //     // document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    //     localStorage.clear();
-    //     secureLocalStorage.clear();
-    //     window.location.replace('/auth/login');
-    //   } else {
-    //     console.error(
-    //       `API Error: ${response.status} - ${response.statusText}`
-    //     );
-    //   }
-    // } else {
-    //   console.error('Network/Server Error:', error.message);
-    // }
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      // token หมดอายุ/ถูก revoke (เช่น logout จากที่อื่น หรือ token เก่าก่อน backend เปลี่ยน tokenVersion)
+      // เคลียร์ session ทิ้งแล้วพากลับไปหน้า login เพื่อไม่ให้หน้าเว็บค้างเป็น request ที่ fail เงียบๆ
+      secureLocalStorage.removeItem('token');
+      secureLocalStorage.removeItem('data');
+      if (window.location.pathname !== '/') {
+        window.location.replace('/');
+      }
+    }
 
-    // Re-throw the error for further handling
     return Promise.reject(error);
   }
 );
