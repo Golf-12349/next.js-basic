@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import apiClient from "@/config/axiosClient";
 import toast from "react-hot-toast";
 import secureLocalStorage from "react-secure-storage";
@@ -54,7 +53,6 @@ export default function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
 
   // ── Password Strength Checker ──────────────────────────────
   const checkPasswordStrength = (pwd: string) => {
@@ -133,7 +131,8 @@ export default function LoginForm() {
 
       setSubmitStatus("success");
       await new Promise((resolve) => setTimeout(resolve, 800));
-      router.push("/dashboard");
+      // ໃຊ້ full reload (ບໍ່ໃຊ້ router.push) ເພື່ອໃຫ້ DMSProvider mount ໃໝ່ ແລ້ວໂຫຼດຂໍ້ມູນດ້ວຍ token ທີ່ຫາກໍ່ໄດ້ມາ
+      window.location.href = "/dashboard";
     } catch (err: any) {
       console.error("Login failed:", err);
       toast.error(
