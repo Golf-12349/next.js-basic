@@ -29,6 +29,16 @@ body {
   font-family: var(--font-noto-sans), var(--font-noto-sans-lao), sans-serif;
 }
 
+/* ---------- Dashboard: hide scrollbar on horizontal strips ---------- */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ---------- Print styles ---------- */
 @media print {
   body * {
