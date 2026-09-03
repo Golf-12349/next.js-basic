@@ -1,9 +1,10 @@
 'use client'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
-import { useDMS } from '../../_dms-context'
+import { useDocuments } from '../../context/DocumentsContext'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useMemo, useState } from 'react'
 import type { Document, DocumentFileType } from '@/types/document'
 import {
@@ -57,9 +58,10 @@ function formatMB(mb: number): string {
 
 // ── Main page ───────────────────────────────────────────────────────────────
 export default function TrashPage() {
-  const { documents, restoreDocument, permDeleteDocument } = useDMS()
+  const { documents, restoreDocument, permDeleteDocument } = useDocuments()
 
   const [query, setQuery] = useState('')
+  const debouncedQuery = useDebounce(query, 250)
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
@@ -68,7 +70,7 @@ export default function TrashPage() {
   const trash = useMemo(() => documents.filter((d) => d.deleted), [documents])
 
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = debouncedQuery.trim().toLowerCase()
     return trash.filter((d) => {
       if (q) {
         if (!(d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q))) return false
@@ -76,7 +78,7 @@ export default function TrashPage() {
       if (filterCategory !== 'ທັງໝົດ' && d.category !== filterCategory) return false
       return true
     })
-  }, [trash, query, filterCategory])
+  }, [trash, debouncedQuery, filterCategory])
 
   const reclaimableMB = useMemo(() => trash.reduce((sum, d) => sum + parseSizeToMB(d.fileSize), 0), [trash])
 

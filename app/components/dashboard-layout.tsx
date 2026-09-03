@@ -27,7 +27,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useDMS } from '../(main)/_dms-context';
+import { useDocuments } from '../(main)/context/DocumentsContext';
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -150,7 +150,7 @@ function getInitialUserData() {
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { documents } = useDMS();
+  const { documents } = useDocuments();
   const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -254,12 +254,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
 
   return (
     <div
-      className="flex h-screen bg-gray-50 text-gray-800"
-      style={{ fontFamily: "'Noto Sans Lao', 'Noto Sans', sans-serif" }}
+      className="flex h-screen bg-gray-50 text-gray-800 font-sans"
     >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap');
-      `}</style>
 
       {/* Sidebar */}
       <aside className="flex w-72 flex-col justify-between overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl">

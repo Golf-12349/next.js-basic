@@ -1,6 +1,7 @@
 "use client"
 import { DashboardLayout } from '@/app/components/dashboard-layout';
-import { useDMS } from '../../_dms-context';
+import { useDocuments } from '../../context/DocumentsContext';
+import { useArchive as useDMSArchive } from '../../context/ArchiveContext';
 import {
   CreateCabinetModal,
   CreateFolderModal,
@@ -14,16 +15,15 @@ import DocumentView, { Breadcrumbs, BackButton } from '@/app/components/archive/
 import { useArchive } from '@/app/components/archive/useArchive';
 
 export default function ArchivePage() {
+  const { documents, deleteDocument } = useDocuments();
   const {
     cabinets,
     folders,
-    documents,
     createCabinet,
     createFolder,
     deleteCabinet,
     deleteFolder,
-    deleteDocument,
-  } = useDMS();
+  } = useDMSArchive();
 
   const archive = useArchive(cabinets, folders, documents, {
     createCabinet,

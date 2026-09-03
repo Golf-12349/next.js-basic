@@ -2,8 +2,10 @@
 import Link from 'next/link'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import type { Document, DocumentStatus } from '@/types/document'
-import { useEffect, useMemo, useState } from 'react'
-import { useDMS } from '../_dms-context'
+import { useMemo, useState } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
+import { useDocuments } from '../context/DocumentsContext'
+import { useArchive } from '../context/ArchiveContext'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -25,7 +27,8 @@ const statusLabels: Record<DocumentStatus, string> = {
 }
 
 export default function DocumentsPage() {
-  const { documents, categories, addCategory, removeCategory, cabinets, deleteDocument, restoreDocument } = useDMS()
+  const { documents, categories, addCategory, removeCategory, deleteDocument, restoreDocument } = useDocuments()
+  const { cabinets } = useArchive()
   const [query, setQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
@@ -33,14 +36,11 @@ export default function DocumentsPage() {
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
   const [manageCategoryOpen, setManageCategoryOpen] = useState(false)
-
-  useEffect(() => {
-    // ensure categories include special 'ທັງໝົດ'
-  }, [])
+  const debouncedQuery = useDebounce(query, 250)
 
   const visible = useMemo(() => {
     return documents.filter((d) => !d.deleted && d.status !== 'pending').filter((d) => {
-      const q = query.trim().toLowerCase()
+      const q = debouncedQuery.trim().toLowerCase()
       if (q) {
         if (!(d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q))) return false
       }
@@ -53,7 +53,7 @@ export default function DocumentsPage() {
       }
       return true
     })
-  }, [documents, query, filterCategory, filterCabinet, filterStatus])
+  }, [documents, debouncedQuery, filterCategory, filterCabinet, filterStatus])
 
   function handleDelete(doc: Document) {
     setConfirmDelete(doc)
@@ -71,8 +71,25 @@ export default function DocumentsPage() {
     pushToast({ title: 'ການກູ້ຄືນສຳເລັດ' })
   }
 
+  function handleDownload(doc: Document) {
+    const url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
+    if (url && url !== '#') {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } else {
+      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })
+    }
+  }
+
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const d of documents) {
+      if (!d.deleted) counts.set(d.category, (counts.get(d.category ?? '') ?? 0) + 1)
+    }
+    return counts
+  }, [documents])
+
   function countDocsInCategory(category: string) {
-    return documents.filter((d) => d.category === category && !d.deleted).length
+    return categoryCounts.get(category) ?? 0
   }
 
   function handleAddCategory(name: string) {
@@ -207,7 +224,7 @@ export default function DocumentsPage() {
                         <button onClick={() => setPreviewDoc(doc)} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
                           ເບິ່ງ
                         </button>
-                        <button type="button" className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
+                        <button type="button" onClick={() => handleDownload(doc)} className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
                           ດາວໂຫຼດ
                         </button>
                         <button onClick={() => handleDelete(doc)} type="button" className="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100">
@@ -238,7 +255,7 @@ export default function DocumentsPage() {
               <DocumentPreview doc={previewDoc} />
               <div className="flex items-center justify-end gap-2">
                 <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
-                <button onClick={() => { pushToast({ title: 'ດາວໂຫຼດເອກະສານ' }) }} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
+                <button onClick={() => handleDownload(previewDoc)} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
               </div>
             </div>
           )}

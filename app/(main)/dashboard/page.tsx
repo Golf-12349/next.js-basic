@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
-import { useDMS } from '../_dms-context';
+import { useDocuments } from '../context/DocumentsContext';
 
 const statusStyles: Record<string, string> = {
   'ຮ່າງ': 'bg-slate-100 text-slate-700',
@@ -19,7 +19,7 @@ const statusLabelMap: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-  const { documents } = useDMS();
+  const { documents } = useDocuments();
 
   const active = useMemo(() => documents.filter((d) => !d.deleted), [documents]);
 

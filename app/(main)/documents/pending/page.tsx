@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
-import { useDMS } from '../../_dms-context'
+import { useDocuments } from '../../context/DocumentsContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
@@ -34,7 +34,7 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 export default function PendingDocumentsPage() {
-  const { documents, updateDocument } = useDMS()
+  const { documents, updateDocument } = useDocuments()
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const list = documents.filter((d) => d.status === 'pending' && !d.deleted)
 

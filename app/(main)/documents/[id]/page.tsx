@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import type { Document, DocumentStatus } from '@/types/document'
-import { useDMS } from '../../_dms-context'
+import { useDocuments } from '../../context/DocumentsContext'
 import { pushToast } from '@/app/components/ui/Toast'
 
 const statusStyles: Record<DocumentStatus, string> = {
@@ -23,7 +23,7 @@ const statusLabels: Record<DocumentStatus, string> = {
 export default function DocumentDetailPage() {
   const params = useParams()
   const id = params?.id
-  const { documents, setDocuments } = useDMS()
+  const { documents, updateDocument, deleteDocument } = useDocuments()
   const doc = documents.find((d) => d.id === id) as Document | undefined
 
   if (!doc) {
@@ -38,13 +38,13 @@ export default function DocumentDetailPage() {
 
   function handleDelete() {
     if (!doc) return
-    setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, deleted: true } : d)))
+    void deleteDocument(doc.id)
     pushToast({ title: 'ເອກະສານຖືກນໍາໄປ Trash' })
   }
 
   function handleApprove() {
     if (!doc) return
-    setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, status: 'approved' } : d)))
+    void updateDocument(doc.id, { status: 'approved' })
     pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
   }
 

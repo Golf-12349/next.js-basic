@@ -2,7 +2,8 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
-import { useDMS } from '../../_dms-context'
+import { useDocuments } from '../../context/DocumentsContext'
+import { useArchive } from '../../context/ArchiveContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentFileType, DocumentStatus } from '@/types/document'
 import { FileText, Loader2, RefreshCw, Trash2, Upload } from 'lucide-react'
@@ -52,7 +53,8 @@ function formatFileSize(bytes: number): string {
 
 export default function UploadDocumentPage() {
   const router = useRouter()
-  const { addDocument, uploadFile, categories, cabinets, folders } = useDMS()
+  const { addDocument, uploadFile, categories } = useDocuments()
+  const { cabinets, folders } = useArchive()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [title, setTitle] = useState('')

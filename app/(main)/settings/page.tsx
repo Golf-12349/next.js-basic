@@ -5,7 +5,7 @@ import { DashboardLayout } from "@/app/components/dashboard-layout";
 import { pushToast } from "@/app/components/ui/Toast";
 import { Camera, Check, Eye, EyeOff, Lock, ShieldCheck, Trash2, User as UserIcon } from "lucide-react";
 import { avatarColors, isAvatarImage } from "@/app/components/users/UserModals";
-import { useDMS } from "../_dms-context";
+import { useUsers } from "../context/UsersContext";
 import { edlStructure } from "@/types/user";
 import type { User, UserRole } from "@/types/user";
 
@@ -52,7 +52,7 @@ function findDivisionForDepartment(dept: string): string {
 }
 
 export default function SettingsPage() {
-  const { updateUser, setUsers } = useDMS();
+  const { updateUser, setUsers } = useUsers();
 
   // ---- Profile state (synced with the logged-in user) ----
   const [name, setName] = useState(() => getInitialProfile().name);

@@ -1,9 +1,8 @@
 'use client'
 import { useMemo, useRef } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
-import { useDMS } from '../_dms-context'
+import { useDocuments } from '../context/DocumentsContext'
 import { pushToast } from '@/app/components/ui/Toast'
-import * as XLSX from 'xlsx'
 
 const statusStyles: Record<string, string> = {
   'ອະນຸມັດ': 'bg-emerald-100 text-emerald-700',
@@ -20,7 +19,7 @@ const statusLabelMap: Record<string, string> = {
 };
 
 export default function ReportsPage() {
-  const { documents, categories: allCategories } = useDMS()
+  const { documents, categories: allCategories } = useDocuments()
   const active = useMemo(() => documents.filter((d) => !d.deleted), [documents])
 
   // ອ້າງອິງເຖິງ Element ທີ່ຈະຖືກພິມ (ຫໍ່ ເນື້ອຫາທັງໝົດຂອງໜ້ານີ້)
@@ -56,7 +55,8 @@ export default function ReportsPage() {
 
   // ---------- Export Excel ----------
   // ສ້າງໄຟລ໌ .xlsx ຈິງ ຈາກ documents[] ໃນ Context ແລ້ວດາວໂຫຼດອັດຕະໂນມັດ
-  function handleExportExcel() {
+  async function handleExportExcel() {
+    const XLSX = await import('xlsx')
     if (active.length === 0) {
       pushToast({ title: 'ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ' })
       return

@@ -1,7 +1,8 @@
 "use client"
 import { useEffect, useMemo, useState } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
-import { useDMS } from '../_dms-context'
+import { useUsers } from '../context/UsersContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { User, UserRole, UserStatus } from '@/types/user'
 import {
@@ -35,10 +36,11 @@ function getInitialUserRole(): UserRole {
 }
 
 export default function UsersPage() {
-  const { users, addUser, updateUser, removeUser, toggleUserStatus } = useDMS()
+  const { users, addUser, updateUser, removeUser, toggleUserStatus } = useUsers()
 
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>(getInitialUserRole)
   const [query, setQuery] = useState('')
+  const debouncedQuery = useDebounce(query, 250)
   const [filterRole, setFilterRole] = useState<'ທັງໝົດ' | UserRole>(ALL)
   const [filterDepartment, setFilterDepartment] = useState<string>(ALL)
   const [filterStatus, setFilterStatus] = useState<'ທັງໝົດ' | UserStatus>(ALL)
@@ -72,7 +74,7 @@ export default function UsersPage() {
   }, [users])
 
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = debouncedQuery.trim().toLowerCase()
     return users.filter((u) => {
       if (q && !(u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))) return false
       if (filterRole !== ALL && u.role !== filterRole) return false
@@ -80,7 +82,7 @@ export default function UsersPage() {
       if (filterStatus !== ALL && u.status !== filterStatus) return false
       return true
     })
-  }, [users, query, filterRole, filterDepartment, filterStatus])
+  }, [users, debouncedQuery, filterRole, filterDepartment, filterStatus])
 
   function openAddForm() {
     setEditingUser(null)
