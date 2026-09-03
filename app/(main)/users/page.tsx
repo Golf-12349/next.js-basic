@@ -1,6 +1,5 @@
 "use client"
 import { useEffect, useMemo, useState } from 'react'
-import secureLocalStorage from 'react-secure-storage'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDMS } from '../_dms-context'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -14,17 +13,31 @@ import {
   roleLabels,
   statusStyles,
   statusLabels,
-  initialsOf,
+  UserAvatar,
   type UserFormValues,
 } from '@/app/components/users/UserModals'
 import { Search, Users as UsersIcon, ShieldCheck, UserCheck, Eye, Pencil, Lock, Unlock, Trash2 } from 'lucide-react'
 
 const ALL = 'ທັງໝົດ'
 
+function getInitialUserRole(): UserRole {
+  if (typeof window === 'undefined') return 'SuperAdmin';
+  try {
+    const stored = sessionStorage.getItem('data');
+    if (stored) {
+      const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { role?: UserRole };
+      if (parsed?.role) return parsed.role;
+    }
+  } catch {
+    // fallback
+  }
+  return 'SuperAdmin';
+}
+
 export default function UsersPage() {
   const { users, addUser, updateUser, removeUser, toggleUserStatus } = useDMS()
 
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('SuperAdmin')
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole>(getInitialUserRole)
   const [query, setQuery] = useState('')
   const [filterRole, setFilterRole] = useState<'ທັງໝົດ' | UserRole>(ALL)
   const [filterDepartment, setFilterDepartment] = useState<string>(ALL)
@@ -37,17 +50,11 @@ export default function UsersPage() {
   const [temporaryPasswordUser, setTemporaryPasswordUser] = useState<{ name: string; email: string; password: string } | null>(null)
 
   useEffect(() => {
-    try {
-      const stored = secureLocalStorage.getItem('data')
-      if (stored) {
-        const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { role?: UserRole }
-        if (parsed?.role) {
-          setCurrentUserRole(parsed.role)
-        }
-      }
-    } catch {
-      // fallback to default
+    function syncRole() {
+      setCurrentUserRole(getInitialUserRole())
     }
+    window.addEventListener('storage', syncRole)
+    return () => window.removeEventListener('storage', syncRole)
   }, [])
 
   const departments = useMemo(() => {
@@ -283,9 +290,12 @@ export default function UsersPage() {
                         <tr key={u.id} className="border-t border-gray-100 align-top">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
-                                {initialsOf(u.name)}
-                              </div>
+                              <UserAvatar
+                                name={u.name}
+                                avatarUrl={u.avatarUrl}
+                                avatarClassName="h-9 w-9"
+                                textClassName="text-xs"
+                              />
                               <div>
                                 <div className="font-semibold text-gray-900">{u.name}</div>
                                 <div className="text-xs text-gray-500">{u.email}</div>
@@ -354,7 +364,6 @@ export default function UsersPage() {
         <UserFormModal
           open={formOpen}
           user={editingUser}
-          departments={departments}
           currentUserRole={currentUserRole}
           onClose={() => {
             setFormOpen(false)

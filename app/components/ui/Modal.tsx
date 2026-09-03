@@ -1,17 +1,30 @@
 "use client"
 import React from 'react'
 
-export default function Modal({ open, title, onClose, children }: { open: boolean; title?: string; onClose: () => void; children: React.ReactNode }) {
+export default function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  footer,
+}: {
+  open: boolean
+  title?: string
+  onClose: () => void
+  children: React.ReactNode
+  footer?: React.ReactNode
+}) {
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-lg w-full max-w-3xl mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="relative bg-white rounded-lg shadow-lg w-full max-w-3xl mx-4 p-6 flex max-h-[80vh] flex-col">
+        <div className="flex items-center justify-between mb-4 shrink-0">
           <h3 className="text-lg font-semibold">{title}</h3>
           <button onClick={onClose} className="text-black/50 hover:text-black">ປິດ</button>
         </div>
-        <div>{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">{children}</div>
+        {footer && <div className="mt-4 shrink-0">{footer}</div>}
       </div>
     </div>
   )

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
-import secureLocalStorage from 'react-secure-storage';
 
 const axiosClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api',
@@ -19,7 +18,8 @@ axiosClient.interceptors.request.use(
     if (isFormData) delete config.headers['Content-Type'];
 
     // Add Bearer Token if it exists
-    const token = secureLocalStorage.getItem('token');
+    const token =
+      typeof window !== 'undefined' ? sessionStorage.getItem('token') : null;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -39,8 +39,8 @@ axiosClient.interceptors.response.use(
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       // token หมดอายุ/ถูก revoke (เช่น logout จากที่อื่น หรือ token เก่าก่อน backend เปลี่ยน tokenVersion)
       // เคลียร์ session ทิ้งแล้วพากลับไปหน้า login เพื่อไม่ให้หน้าเว็บค้างเป็น request ที่ fail เงียบๆ
-      secureLocalStorage.removeItem('token');
-      secureLocalStorage.removeItem('data');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('data');
       if (window.location.pathname !== '/') {
         window.location.replace('/');
       }

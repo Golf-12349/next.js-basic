@@ -1,15 +1,70 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/app/components/dashboard-layout";
 import { pushToast } from "@/app/components/ui/Toast";
-import { Camera, Check, Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
+import { Camera, Check, Eye, EyeOff, Lock, ShieldCheck, Trash2, User as UserIcon } from "lucide-react";
+import { avatarColors, isAvatarImage } from "@/app/components/users/UserModals";
+import { useDMS } from "../_dms-context";
+import { edlStructure } from "@/types/user";
+import type { User, UserRole } from "@/types/user";
+
+type StoredProfile = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  department?: string;
+  division?: string;
+  avatarUrl?: string;
+};
+
+function getInitialProfile(): StoredProfile {
+  if (typeof window === "undefined") {
+    return { id: "", name: "", email: "", role: "User", department: "", division: "", avatarUrl: "" };
+  }
+  try {
+    const stored = sessionStorage.getItem("data");
+    if (stored) {
+      const parsed = (typeof stored === "string" ? JSON.parse(stored) : stored) as StoredProfile;
+      return {
+        id: parsed.id || "",
+        name: parsed.name || "",
+        email: parsed.email || "",
+        role: parsed.role || "User",
+        department: parsed.department || "",
+        division: parsed.division || "",
+        avatarUrl: parsed.avatarUrl || "",
+      };
+    }
+  } catch {
+    // fallback
+  }
+  return { id: "", name: "", email: "", role: "User", department: "", division: "", avatarUrl: "" };
+}
+
+/** ຊອກຫາຝ່າຍ/ຫ້ອງການ ທີ່ພະແນກ/ສູນ ນັ້ນຂຶ້ນກັບ (EDL structure) */
+function findDivisionForDepartment(dept: string): string {
+  for (const [div, departments] of Object.entries(edlStructure)) {
+    if (departments.includes(dept)) return div;
+  }
+  return "";
+}
 
 export default function SettingsPage() {
-  // ---- Profile state ----
-  const [name, setName] = useState("John Doe");
-  const [email, setEmail] = useState("john.doe@example.com");
-  const [role] = useState<"Admin" | "Staff">("Admin");
+  const { updateUser, setUsers } = useDMS();
+
+  // ---- Profile state (synced with the logged-in user) ----
+  const [name, setName] = useState(() => getInitialProfile().name);
+  const [email, setEmail] = useState(() => getInitialProfile().email);
+  const [role, setRole] = useState<UserRole>(() => getInitialProfile().role);
+  const [division, setDivision] = useState(() => {
+    const initial = getInitialProfile();
+    return initial.division || findDivisionForDepartment(initial.department || "");
+  });
+  const [department, setDepartment] = useState(() => getInitialProfile().department || "");
+  const [avatarUrl, setAvatarUrl] = useState(() => getInitialProfile().avatarUrl || "");
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(() => getInitialProfile().id || undefined);
 
   // ---- Security state ----
   const [currentPassword, setCurrentPassword] = useState("");
@@ -20,10 +75,66 @@ export default function SettingsPage() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // ---- Avatar helpers ----
+  function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") setAvatarUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  const userInitials = (name || "JD")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const roleLabel =
+    role === "SuperAdmin" ? "ຜູ້ດູແລລະບົບສູງສຸດ" : role === "Admin" ? "ຜູ້ບໍລິຫານລະບົບ" : "ພະນັກງານ";
+  const roleBadgeClass = role === "User" ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700";
+
   // ---- Handlers ----
-  function handleSaveProfile() {
-    if (!name.trim() || !email.trim()) return;
-    pushToast({ title: "ບັນທຶກການປ່ຽນແປງສຳເລັດ", description: "ຂໍ້ມູນໂປຣໄຟລ໌ຂອງທ່ານຖືກອັບເດດແລ້ວ" });
+  async function handleSaveProfile() {
+    if (!name.trim() || !email.trim()) {
+      pushToast({ title: "ກະລຸນາປ້ອນຊື່ ແລະ ອີເມວ ໃຫ້ຄົບຖ້ວນ" });
+      return;
+    }
+
+    // 1) Update session storage ("data") so Sidebar & Header reflect it immediately
+    const stored = sessionStorage.getItem("data");
+    const storedProfile = (typeof stored === "string" ? JSON.parse(stored) : stored) as StoredProfile;
+    const nextProfile: Record<string, unknown> = {
+      ...(storedProfile ?? {}),
+      name: name.trim(),
+      email: email.trim(),
+    };
+    if (avatarUrl) {
+      nextProfile.avatarUrl = avatarUrl;
+    } else {
+      delete nextProfile.avatarUrl;
+    }
+    sessionStorage.setItem("data", JSON.stringify(nextProfile));
+
+    // 2) Sync the matching record in DMS context (users list) + backend (best-effort)
+    if (currentUserId) {
+      const patch: Partial<User> = { name: name.trim(), email: email.trim() };
+      if (avatarUrl) patch.avatarUrl = avatarUrl;
+      try {
+        await updateUser(currentUserId, patch);
+      } catch {
+        // backend may not contain this demo user — local context update still applies
+      }
+      setUsers((prev) => prev.map((u) => (u.id === currentUserId ? { ...u, ...patch } : u)));
+    }
+
+    // 3) Notify the already-mounted DashboardLayout to re-read "data" (name/avatar in Sidebar & Header)
+    window.dispatchEvent(new Event("dms:user-profile-updated"));
+    pushToast({ title: "ບັນທຶກຂໍ້ມູນໂປຣໄຟລ໌ສຳເລັດແລ້ວ" });
   }
 
   function handleUpdatePassword() {
@@ -43,7 +154,7 @@ export default function SettingsPage() {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    pushToast({ title: "ອັບເດດລະຫັດຜ່ານສຳເລັດ", description: "ລະຫັດຜ່ານຂອງທ່ານຖືກປ່ຽນແລ້ວ" });
+    pushToast({ title: "ອັບເດດລະຫັດຜ່ານໃໝ່ສຳເລັດແລ້ວ", description: "ລະຫັດຜ່ານຂອງທ່ານຖືກປ່ຽນແລ້ວ" });
   }
 
   // ---- Shared input styling ----
@@ -63,7 +174,7 @@ export default function SettingsPage() {
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
-                <User className="h-5 w-5" />
+                <UserIcon className="h-5 w-5" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">ໂປຣໄຟລ໌ຂອງຂ້ອຍ</h2>
@@ -72,18 +183,55 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-              {/* Avatar + change photo */}
+              {/* Avatar + change photo + color picker */}
               <div className="flex flex-col items-center gap-2 sm:items-start">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 text-2xl font-bold text-white shadow-lg shadow-indigo-600/30">
-                  JD
+                <div className="relative">
+                  <div
+                    className={`flex h-20 w-20 items-center justify-center overflow-hidden rounded-full text-2xl font-bold text-white shadow-lg shadow-indigo-600/30 ${
+                      avatarUrl && avatarUrl.startsWith("#") ? "" : "bg-gradient-to-br from-indigo-500 to-indigo-700"
+                    }`}
+                    style={avatarUrl && avatarUrl.startsWith("#") ? { backgroundColor: avatarUrl } : undefined}
+                  >
+                    {isAvatarImage(avatarUrl) ? (
+                      <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span>{userInitials}</span>
+                    )}
+                  </div>
+                  {isAvatarImage(avatarUrl) && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarUrl("")}
+                      aria-label="ລຶບຮູບ"
+                      className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-rose-500 text-white shadow-sm transition-colors hover:bg-rose-600"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  className="mt-1 flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+                <label
+                  htmlFor="avatar-upload"
+                  className="mt-1 flex cursor-pointer items-center gap-1.5 text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700"
                 >
                   <Camera className="h-4 w-4" />
                   ປ່ຽນຮູບ
-                </button>
+                </label>
+                <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarFileChange} />
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-gray-400">ສີ:</span>
+                  {avatarColors.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setAvatarUrl(c)}
+                      aria-label={`ເລືອກສີ ${c}`}
+                      className={`h-5 w-5 rounded-full border-2 transition ${
+                        avatarUrl === c ? "scale-110 border-indigo-600 ring-2 ring-indigo-600/30" : "border-white shadow-sm hover:scale-110"
+                      }`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* Fields */}
@@ -113,18 +261,30 @@ export default function SettingsPage() {
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຕຳແໜ່ງ</label>
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                        role === "Admin"
-                          ? "bg-indigo-100 text-indigo-700"
-                          : "bg-emerald-100 text-emerald-700"
-                      }`}
-                    >
-                      {role === "Admin" ? "ຜູ້ບໍລິຫານລະບົບ" : "ພະນັກງານ"}
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${roleBadgeClass}`}>
+                      {roleLabel}
                     </span>
                     <span className="text-xs text-gray-400">(ບໍ່ສາມາດແກ້ໄຂໄດ້)</span>
                   </div>
                 </div>
+
+                {(division || department) && (
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຝ່າຍ / ພະແນກ</label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {division && (
+                        <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 ring-1 ring-indigo-100">
+                          ຝ່າຍ: {division}
+                        </span>
+                      )}
+                      {department && (
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                          ພະແນກ: {department}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex justify-end pt-1">
                   <button

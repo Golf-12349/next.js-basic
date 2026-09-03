@@ -1,20 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import apiClient from "@/config/axiosClient";
+import { isAxiosError } from "axios";
 import toast from "react-hot-toast";
-import secureLocalStorage from "react-secure-storage";
 import {
-  FolderOpen,
-  ShieldCheck,
-  Lock,
-  Mail,
+  ArrowRight,
+  Check,
+  CheckCircle2,
   Eye,
   EyeOff,
-  ArrowRight,
-  CheckCircle2,
   FileText,
+  FolderOpen,
+  Loader2,
+  Lock,
+  Mail,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
 } from "lucide-react";
+
+type LoginTab = "email" | "phone";
 
 type LoginForm = {
   email: string;
@@ -24,6 +29,7 @@ type LoginForm = {
 type LoginErrors = {
   email?: string | null;
   password?: string | null;
+  terms?: string | null;
 };
 
 type PasswordStrengthChecks = {
@@ -34,7 +40,6 @@ type PasswordStrengthChecks = {
   special: boolean;
 };
 
-type PasswordStrengthKey = keyof PasswordStrengthChecks;
 type SubmitStatus = "success" | "error" | null;
 
 type APIResponse = {
@@ -47,12 +52,99 @@ type APIResponse = {
   };
 };
 
+type APIErrorResponse = {
+  message?: string | string[];
+  error?: string;
+};
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const EMAIL_FORMAT_ERROR =
+  "ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ (ຕົວຢ່າງ: name@gmail.com)";
+const DEFAULT_ERROR_MESSAGE = "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ";
+const RATE_LIMIT_ERROR =
+  "ທ່ານປ້ອນລະຫັດຜິດຫຼາຍຄັ້ງເກີນໄປ, ກະລຸນາລໍຖ້າຈັກໜ່ອຍແລ້ວລອງໃໝ່";
+const RATE_LIMIT_MESSAGE_KEYWORDS = ["throttlerexception", "too many requests"];
+const COOLDOWN_SECONDS = 30;
+
+// ── Typed error helpers (no untyped `any`) ──────────────────
+function getErrorMessage(error: unknown): string {
+  if (isAxiosError<APIErrorResponse>(error)) {
+    const data = error.response?.data;
+    if (data && typeof data.message === "string" && data.message.trim().length > 0) {
+      return data.message;
+    }
+    if (data && Array.isArray(data.message) && data.message.length > 0) {
+      return data.message.join(", ");
+    }
+    if (data && typeof data.error === "string" && data.error.trim().length > 0) {
+      return data.error;
+    }
+    return error.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return DEFAULT_ERROR_MESSAGE;
+}
+
+function isRateLimitError(error: unknown, message: string): boolean {
+  if (isAxiosError<APIErrorResponse>(error) && error.response?.status === 429) {
+    return true;
+  }
+  const normalized = message.toLowerCase();
+  return RATE_LIMIT_MESSAGE_KEYWORDS.some((keyword) =>
+    normalized.includes(keyword)
+  );
+}
+
+// ── Floating glass notification bubble (purely visual) ───────
+function GlassBubble({
+  icon,
+  title,
+  subtitle,
+  className = "",
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`dms-bubble pointer-events-none absolute flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-xl shadow-blue-500/10 backdrop-blur-xl ${className}`}
+    >
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-blue-600">
+        {icon}
+      </div>
+      <div>
+        <div className="text-xs font-semibold text-slate-700">{title}</div>
+        {subtitle && (
+          <div className="mt-0.5 text-[10px] font-medium text-slate-400">{subtitle}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function LoginForm() {
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
   const [errors, setErrors] = useState<LoginErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState<LoginTab>("email");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  useEffect(() => {
+    if (cooldownSeconds === 0) return;
+
+    const intervalId = window.setInterval(() => {
+      setCooldownSeconds((seconds) => Math.max(seconds - 1, 0));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [cooldownSeconds]);
 
   // ── Password Strength Checker ──────────────────────────────
   const checkPasswordStrength = (pwd: string) => {
@@ -95,10 +187,15 @@ export default function LoginForm() {
       if (submitStatus) setSubmitStatus(null);
     };
 
-  const validateForm = () => {
+  const validateForm = (): boolean => {
     const newErrors: LoginErrors = {};
-    if (!form.email.trim()) {
-      newErrors.email = "ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ";
+    const email = form.email.trim();
+    if (!email || !EMAIL_PATTERN.test(email)) {
+      newErrors.email = EMAIL_FORMAT_ERROR;
+    }
+    if (!acceptedTerms) {
+      newErrors.terms =
+        "ກະລຸນາຍອມຮັບເງື່ອນໄຂການນຳໃຊ້ ແລະ ນະໂຍບາຍຄວາມປອດໄພ";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -109,6 +206,7 @@ export default function LoginForm() {
     e.preventDefault();
     setSubmitStatus(null);
 
+    if (cooldownSeconds > 0) return;
     if (!validateForm()) return;
 
     setIsSubmitting(true);
@@ -125,234 +223,359 @@ export default function LoginForm() {
         throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
       }
 
+      toast.dismiss();
       toast.success("ເຂົ້າສູ່ລະບົບສຳເລັດ");
-      secureLocalStorage.setItem("token", accessToken);
-      secureLocalStorage.setItem("data", JSON.stringify(user));
+      // Save session in sessionStorage so closing the tab auto-logs out
+      sessionStorage.setItem("token", accessToken);
+      sessionStorage.setItem("data", JSON.stringify(user));
 
       setSubmitStatus("success");
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      // ໃຊ້ full reload (ບໍ່ໃຊ້ router.push) ເພື່ອໃຫ້ DMSProvider mount ໃໝ່ ແລ້ວໂຫຼດຂໍ້ມູນດ້ວຍ token ທີ່ຫາກໍ່ໄດ້ມາ
-      window.location.href = "/dashboard";
-    } catch (err: any) {
+      window.location.replace('/dashboard');
+    } catch (err: unknown) {
       console.error("Login failed:", err);
-      toast.error(
-        err.response?.data?.message ?? err?.message ?? "ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ"
-      );
-      setSubmitStatus("error");
+
+      // Type-safe extraction of the API error message (no untyped `any`).
+      const errorMessage = getErrorMessage(err);
+
+      // Dismiss any existing toasts to avoid stacked popups.
+      toast.dismiss();
+
+      // Detect 429 / NestJS ThrottlerException / "Too Many Requests".
+      if (isRateLimitError(err, errorMessage)) {
+        setCooldownSeconds(COOLDOWN_SECONDS);
+        toast.error(RATE_LIMIT_ERROR);
+      } else {
+        toast.error(errorMessage);
+        setSubmitStatus("error");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full grid lg:grid-cols-2 bg-white font-sans text-slate-900">
-      
-      {/* ── ຝັ່ງຊ້າຍ: ຟອມເຂົ້າສູ່ລະບົບ (Left-aligned Clean Form) ── */}
-      <div className="flex flex-col justify-between p-8 sm:p-12 lg:p-16 xl:p-24 min-h-screen">
-        {/* Brand Logo */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md shadow-slate-900/20">
-            <FolderOpen size={22} />
-          </div>
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
-              DMS SYSTEM
-            </div>
-            <div className="text-base font-bold text-slate-900">
-              ລະບົບຈັດການເອກະສານ
-            </div>
-          </div>
-        </div>
+    <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-tr from-blue-50 via-indigo-50/40 to-slate-100 font-sans text-slate-900">
+      {/* ── Fluid gradient background blobs (soft light-blue / indigo / purple glow) ── */}
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
+        <div className="dms-blob absolute -left-32 -top-32 h-[34rem] w-[34rem] rounded-full bg-gradient-to-br from-blue-200/70 via-sky-200/60 to-indigo-300/50 blur-3xl" />
+        <div className="dms-blob dms-blob-delayed absolute -right-40 top-1/3 h-[30rem] w-[30rem] rounded-full bg-gradient-to-br from-indigo-200/60 via-violet-200/50 to-purple-300/40 blur-3xl" />
+        <div className="dms-blob-reverse absolute -bottom-40 left-1/4 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-sky-100/80 via-cyan-200/50 to-blue-300/40 blur-3xl" />
+        <div className="dms-blob dms-blob-delayed absolute -left-32 top-1/2 h-72 w-72 rounded-full bg-purple-200/40 blur-3xl" />
+      </div>
+      <div
+        className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-tr from-white/30 via-transparent to-indigo-100/20"
+        aria-hidden="true"
+      />
 
-        {/* Form Container */}
-        <div className="w-full max-w-md my-auto py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              ເຂົ້າສູ່ລະບົບ
+      <div className="relative z-10 grid min-h-screen w-full lg:grid-cols-2">
+        {/* ── ຝັ່ງຊ້າຍ: Brand identity + floating glass bubbles ── */}
+        <div className="relative hidden min-h-screen flex-col justify-between p-10 lg:flex lg:p-16 xl:p-20">
+          {/* Top-left logo */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30">
+              <FolderOpen size={22} />
+            </div>
+            <div>
+              <div className="text-sm font-bold tracking-tight text-slate-900">DMS</div>
+              <div className="text-[11px] font-medium tracking-wide text-slate-500">
+                Document Management System
+              </div>
+            </div>
+          </div>
+
+          {/* Center title + floating bubbles */}
+          <div className="relative my-auto max-w-lg pb-28">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/60 px-3.5 py-1.5 text-xs font-semibold text-blue-700 shadow-sm backdrop-blur-md">
+              <Sparkles size={14} className="text-blue-500" />
+              ລະບົບຈັດການເອກະສານ 3 ລະດັບ
+            </div>
+
+            <h1 className="text-7xl font-black italic tracking-tight text-slate-900 xl:text-8xl">
+              DMS
             </h1>
-            <p className="mt-2 text-sm text-slate-500">
-              ຍິນດີຕ້ອນຮັບກັບຄືນ, ກະລຸນາປ້ອນຂໍ້ມູນຂອງທ່ານ
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                ຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ
-              </label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="name@company.com"
-                  value={form.email}
-                  onChange={handleChange("email")}
-                  className={`w-full rounded-xl border bg-slate-50/50 py-2.5 pl-10 pr-3.5 text-xs text-slate-900 outline-none transition focus:bg-white focus:ring-1 focus:ring-slate-900 ${
-                    errors.email
-                      ? "border-rose-400 focus:border-rose-500"
-                      : "border-slate-200 focus:border-slate-900"
-                  }`}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-[11px] text-rose-600 mt-1">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
-                  ລະຫັດຜ່ານ
-                </label>
-                <a href="#" className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700">
-                  ລືມລະຫັດຜ່ານ?
-                </a>
-              </div>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={handleChange("password")}
-                  className={`w-full rounded-xl border bg-slate-50/50 py-2.5 pl-10 pr-10 text-xs text-slate-900 outline-none transition focus:bg-white focus:ring-1 focus:ring-slate-900 ${
-                    errors.password
-                      ? "border-rose-400 focus:border-rose-500"
-                      : "border-slate-200 focus:border-slate-900"
-                  }`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-[11px] text-rose-600 mt-1">{errors.password}</p>
-              )}
-
-              {/* Password Strength Bar */}
-              {form.password.length > 0 && (
-                <div className="mt-2.5 space-y-1.5">
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1 flex-1 rounded-full transition-colors ${
-                          i < strength.score ? strength.barColor : "bg-slate-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className={`font-semibold ${strength.color}`}>
-                      ຄວາມປອດໄພ: {strength.label}
-                    </span>
-                    <span className="text-slate-400">{strength.score}/5</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Status Messages */}
-            {submitStatus === "success" && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-medium text-emerald-700">
-                ເຂົ້າສູ່ລະບົບສຳເລັດ! ກຳລັງພາໄປໜ້າຫຼັກ...
-              </div>
-            )}
-            {submitStatus === "error" && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-medium text-rose-700">
-                ເກີດຂໍ້ຜິດພາດ, ກະລຸນາກວດສອບອີເມວ ແລະ ລະຫັດຜ່ານ
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-semibold text-white shadow-md shadow-slate-900/10 transition hover:bg-slate-800 disabled:bg-slate-400"
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span>ກຳລັງເຂົ້າສູ່ລະບົບ...</span>
-                </>
-              ) : (
-                <>
-                  <span>ເຂົ້າສູ່ລະບົບ</span>
-                  <ArrowRight size={14} />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Security Footer Badge */}
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <ShieldCheck size={16} className="text-emerald-600" />
-          <span>ລະບົບປອດໄພດ້ວຍການເຂົ້າລະຫັດ 256-bit SSL · ສະເພາະພາຍໃນອົງກອນ</span>
-        </div>
-      </div>
-
-      {/* ── ຝັ່ງຂວາ: Visual Branding & Floating Glass Card ── */}
-      <div className="hidden lg:flex flex-col justify-between p-12 lg:p-16 relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white">
-        <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl pointer-events-none" />
-        <div className="absolute -left-24 -bottom-24 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
-
-        <div className="flex justify-end">
-          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 backdrop-blur-sm">
-            Enterprise Edition v2.0
-          </span>
-        </div>
-
-        <div className="my-auto max-w-md mx-auto space-y-6">
-          <div className="rounded-2xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl shadow-2xl shadow-black/40 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
-                  <FileText size={20} />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-white">ສັນຍາຮ່ວມທຸລະກິດ 2026</div>
-                  <div className="text-xs text-slate-400">ເລກທີ: DOC-2026-088 · 2.4 MB</div>
-                </div>
-              </div>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300">
-                <CheckCircle2 size={12} />
-                ອະນຸມັດແລ້ວ
+            <p className="mt-4 max-w-md text-xl font-semibold leading-snug text-slate-800">
+              THE FUTURE OF{" "}
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                DOCUMENT MANAGEMENT
               </span>
-            </div>
+            </p>
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-slate-500">
+              ເກັບຮັກສາ · ກວດສອບ · ອະນຸມັດ ໃນແພລດຟອມດຽວ ຢ່າງປອດໄພ ແລະ ທັນສະໄໝ
+            </p>
 
-            <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full w-3/4 rounded-full bg-indigo-400" />
+            {/* Floating glass bubbles */}
+            <GlassBubble
+              icon={<ShieldCheck size={18} />}
+              title="ກວດສອບຄວາມປອດໄພ"
+              subtitle="256-bit SSL Encryption"
+              className="right-0 top-0 lg:-right-6"
+            />
+            <div className="dms-bubble dms-bubble-delay-1 pointer-events-none absolute right-10 top-24 hidden flex-col items-end gap-1.5 rounded-2xl rounded-tr-sm border border-white/60 bg-white/70 px-4 py-3 shadow-xl shadow-blue-500/10 backdrop-blur-xl sm:flex lg:-right-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <FileText size={15} className="text-indigo-500" />
+                DMS-2026-088.pdf
+              </div>
+              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                <CheckCircle2 size={12} />
+                ສຳເລັດ
+              </div>
             </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-white/10">
-              <span>🗄️ ຕູ້ສັນຍາ &gt; 📁 ສັນຍາລູກຄ້າ</span>
-              <span>ກວດສອບໂດຍ: SuperAdmin</span>
+            <GlassBubble
+              icon={<CheckCircle2 size={18} />}
+              title="ເອກະສານໄດ້ຮັບການອະນຸມັດ"
+              subtitle="SuperAdmin · ບໍ່ດົນມານີ້"
+              className="bottom-6 left-4 lg:left-0"
+            />
+            <div className="dms-bubble dms-bubble-delay-2 pointer-events-none absolute bottom-32 right-16 hidden xl:block">
+              <div className="rounded-2xl rounded-br-sm border border-white/60 bg-white/70 px-4 py-3 shadow-xl shadow-blue-500/10 backdrop-blur-xl">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  ອັບໂຫຼດສຳເລັດ
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-xs font-semibold text-indigo-600">
+                  <Sparkles size={14} className="text-blue-500" />
+                  ຮ່າງເອກະສານພ້ອມສົ່ງອະນຸມັດ...
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-white leading-snug">
-              ຈັດລະບຽບເອກະສານຂອງທ່ານ <br />
-              <span className="text-indigo-400">ຢ່າງປອດໄພ ແລະ ວ່ອງໄວໃນບ່ອນດຽວ</span>
-            </h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              ຮອງຮັບການເກັບເອກະສານແບບ 3 ລະດັບ (ຕູ້ ➡️ ແຟ້ມ ➡️ ເອກະສານ) ພ້ອມລະບົບກວດສອບ, ອະນຸມັດ ແລະ ຕິດຕາມສະຖານະແບບ Real-time.
-            </p>
+          {/* Bottom-left trust line */}
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+            <ShieldCheck size={15} className="text-emerald-500" />
+            ລະບົບປອດໄພດ້ວຍການເຂົ້າລະຫັດ 256-bit SSL · © 2026 DMS
           </div>
         </div>
 
-        <div className="text-xs text-slate-500">
-          © 2026 DMS Document Management System. All rights reserved.
+        {/* ── ຝັ່ງຂວາ: Frosted glass login card ── */}
+        <div className="relative flex min-h-screen items-center justify-center p-6 sm:p-10">
+          <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white/80 p-8 shadow-2xl shadow-blue-500/10 backdrop-blur-xl sm:p-10">
+            {/* Card Header */}
+            <div className="mb-8">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30">
+                <Lock size={22} />
+              </div>
+              <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
+                ເຂົ້າສູ່ລະບົບ DMS
+              </h2>
+              <p className="mt-1.5 text-sm text-slate-500">
+                ຍິນດີຕ້ອນຮັບກັບຄືນ, ກະລຸນາປ້ອນຂໍ້ມູນຂອງທ່ານ
+              </p>
+            </div>
+
+            {/* Switcher Tabs */}
+            <div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200/70 bg-slate-100/70 p-1">
+              {(
+                [
+                  { key: "email" as LoginTab, label: "ອີເມວ", icon: <Mail size={15} /> },
+                  {
+                    key: "phone" as LoginTab,
+                    label: "ເບີໂທ",
+                    icon: <Smartphone size={15} />,
+                  },
+                ] as { key: LoginTab; label: string; icon: React.ReactNode }[]
+              ).map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-all ${
+                    activeTab === tab.key
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSubmit} noValidate className="space-y-5">
+              {/* Identifier input (Email / Phone) */}
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                  {activeTab === "email" ? "ຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ" : "ເບີໂທລະບົບ"}
+                </label>
+                <div className="relative">
+                  {activeTab === "email" ? (
+                    <Mail
+                      size={16}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                  ) : (
+                    <Smartphone
+                      size={16}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                  )}
+                  <input
+                    type="text"
+                    placeholder={
+                      activeTab === "email" ? "name@company.com" : "+856 20 1234 5678"
+                    }
+                    value={form.email}
+                    onChange={handleChange("email")}
+                    disabled={cooldownSeconds > 0}
+                    className={`w-full rounded-xl border border-slate-200/60 bg-slate-50/80 py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 ${
+                      errors.email ? "border-rose-400" : ""
+                    }`}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">{errors.email}</p>
+                )}
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    ລະຫັດຜ່ານ
+                  </label>
+                  <a
+                    href="#"
+                    className="text-[11px] font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    ລືມລະຫັດຜ່ານ?
+                  </a>
+                </div>
+                <div className="relative">
+                  <Lock
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={handleChange("password")}
+                    disabled={cooldownSeconds > 0}
+                    className={`w-full rounded-xl border border-slate-200/60 bg-slate-50/80 py-3 pl-11 pr-12 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 ${
+                      errors.password ? "border-rose-400" : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "ຊ່ອນລະຫັດຜ່ານ" : "ສະແດງລະຫັດຜ່ານ"}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-blue-600"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">
+                    {errors.password}
+                  </p>
+                )}
+
+                {/* Password Strength Bar */}
+                {form.password.length > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    <div className="flex gap-1">
+                      {[0, 1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+                            i < strength.score ? strength.barColor : "bg-slate-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className={`font-semibold ${strength.color}`}>
+                        ຄວາມປອດໄພ: {strength.label}
+                      </span>
+                      <span className="text-slate-400">{strength.score}/5</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="flex cursor-pointer items-start gap-2.5">
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={acceptedTerms}
+                    aria-label="ຍອມຮັບເງື່ອນໄຂ ແລະ ນະໂຍບາຍ"
+                    onClick={() => setAcceptedTerms(!acceptedTerms)}
+                    className={`mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-md border transition ${
+                      acceptedTerms
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-slate-300 bg-white text-transparent hover:border-blue-400"
+                    }`}
+                  >
+                    <Check size={12} strokeWidth={3} />
+                  </button>
+                  <span className="text-xs leading-relaxed text-slate-500">
+                    ຂ້າພະເຈົ້າໄດ້ອ່ານ ແລະ ຍອມຮັບ{" "}
+                    <a href="#" className="font-semibold text-blue-600 hover:text-blue-700">
+                      ເງື່ອນໄຂການນຳໃຊ້
+                    </a>{" "}
+                    ແລະ{" "}
+                    <a href="#" className="font-semibold text-blue-600 hover:text-blue-700">
+                      ນະໂຍບາຍຄວາມປອດໄພ
+                    </a>
+                  </span>
+                </label>
+                {errors.terms && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">{errors.terms}</p>
+                )}
+              </div>
+
+              {/* Rate-Limit Cooldown Warning */}
+              {cooldownSeconds > 0 && (
+                <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-3.5 py-2.5 text-xs font-medium text-amber-700">
+                  <span role="img" aria-hidden="true">
+                    ⏳
+                  </span>
+                  ທ່ານປ້ອນລະຫັດຜິດຫຼາຍຄັ້ງ, ກະລຸນາລໍຖ້າອີກ{" "}
+                  {cooldownSeconds}{" "}
+                  ວິນາທີ
+                </div>
+              )}
+
+              {/* Status Messages */}
+              {submitStatus === "success" && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/80 px-3.5 py-2.5 text-xs font-medium text-emerald-700">
+                  <CheckCircle2 size={15} />
+                  ເຂົ້າສູ່ລະບົບສຳເລັດ! ກຳລັງພາໄປໜ້າຫຼັກ...
+                </div>
+              )}
+              {submitStatus === "error" && (
+                <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/80 px-3.5 py-2.5 text-xs font-medium text-rose-700">
+                  ເກີດຂໍ້ຜິດພາດ, ກະລຸນາກວດສອບອີເມວ ແລະ ລະຫັດຜ່ານ
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting || cooldownSeconds > 0}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-blue-400 disabled:shadow-none"
+              >
+                {cooldownSeconds > 0 ? (
+                  <span>ກະລຸນາລໍຖ້າ ({cooldownSeconds}s)...</span>
+                ) : isSubmitting ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>ກຳລັງເຂົ້າສູ່ລະບົບ...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>ເຂົ້າສູ່ລະບົບ</span>
+                    <ArrowRight size={15} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Card Footer */}
+            <div className="mt-6 flex items-center gap-2 text-[11px] font-medium text-slate-400">
+              <ShieldCheck size={14} className="text-emerald-500" />
+              ລະບົບປອດໄພດ້ວຍການເຂົ້າລະຫັດ 256-bit SSL · ສະເພາະພາຍໃນອົງກອນ
+            </div>
+          </div>
         </div>
       </div>
-
     </div>
   );
 }

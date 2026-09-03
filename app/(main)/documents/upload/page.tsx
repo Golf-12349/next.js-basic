@@ -1,18 +1,14 @@
 "use client"
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDMS } from '../../_dms-context'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentFileType, DocumentStatus } from '@/types/document'
+import { FileText, Loader2, RefreshCw, Trash2, Upload } from 'lucide-react'
+import { edlStructure } from '@/types/user'
 
-const departmentOptions = [
-  'ພະແນກບໍລິຫານ & ຈັດຕັ້ງ',
-  'ພະແນກການເງິນ & ບັນຊີ',
-  'ພະແນກໄອທີ & ເຕັກໂນໂລຊີ',
-  'ພະແນກການຕະຫຼາດ & ຂາຍ',
-  'ພະແນກແຜນການ & ໂຄງການ',
-]
+const edlDivisions = Object.keys(edlStructure)
 
 const documentTypeOptions = [
   'ເອກະສານການເງິນ',
@@ -21,6 +17,17 @@ const documentTypeOptions = [
   'ບົດລາຍງານ',
   'ຄຳສັ່ງ / ມະຕິ',
   'ອື່ນໆ',
+]
+
+// ໝວດໝູ່ມານົອກ DMS — ເຫົ່ດືຶມປົວໝົດ ເມື່ອ categories ຈາກ useDMS ຍັງວາງເປົ້ອຍ (e.g. ເວົເປືອຍ ກ່ອນການລົ້ດ from backend)
+const DEFAULT_CATEGORIES = [
+  'ຂາເຂົ້າ',
+  'ຂາອອກ',
+  'ຄຳສັ່ງ',
+  'ແຈ້ງການ',
+  'ສັນຍາ',
+  'ລາຍງານ',
+  'ທົ່ວໄປ',
 ]
 
 // ສ້າງເລກທີເອກະສານອັດຕະໂນມັດ ເຊັ່ນ DOC-2026-001
@@ -51,17 +58,32 @@ export default function UploadDocumentPage() {
   const [title, setTitle] = useState('')
   // ອັດຕະໂນມັດຕື່ມເລກທີ reacts ເມື່ອເຂົ້າມາໜ້ານີ້ (ຜູ້ໃຊ້ສາມາດແກ້ໄຂໄດ້)
   const [docNumber, setDocNumber] = useState(generateDocNumber)
-  const [category, setCategory] = useState('')
+  // ໝວດໝູ່ ເລືອກໄດ້ຄຳອນຕົ້ມັດົດ ກັບຕົວເລືອກທຳອິດ — ສະນັ້ງ dropdown ບໍ່ວາງເປົ້ອຍ
+  const categoryOptions = useMemo(
+    () => Array.from(new Set([...DEFAULT_CATEGORIES, ...categories])),
+    [categories]
+  )
+  const [category, setCategory] = useState(DEFAULT_CATEGORIES[0])
+  const [division, setDivision] = useState('')
   const [department, setDepartment] = useState('')
   const [documentType, setDocumentType] = useState('')
   const [uploadDate, setUploadDate] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
+  const [pdfLoading, setPdfLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!category && categories.length > 0) setCategory(categories[0])
-  }, [categories, category])
+    // ຮັກບັກໃຫ້ category ທີ່ເລືອກ ຍັງຢູ່ໃນໝວດໝູ່; ຖົ້ບໍ່, ຣີເຊັດໄປທີ່ທຳອິດ ເພື່ອບໍ່ໃຫ້ dropdown ວາງເປົ້ອຍ
+    if (!category || !categoryOptions.includes(category)) setCategory(categoryOptions[0])
+  }, [categories, category, categoryOptions])
+
+  // ລຶບ object URL ເມື່ອປ່ຽນໄຟລ໌ ຫຼື ອອກໜ້າການ ເພື່ອປ້ອງກັນການຮົ່ວໄຫຼ
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
+    }
+  }, [filePreviewUrl])
 
   // 3-Level archive: cabinet + folder selection
   const [cabinetId, setCabinetId] = useState('')
@@ -76,6 +98,14 @@ export default function UploadDocumentPage() {
     setFolderId('') // ຣີເຊັດແຟ້ມເມື່ອປ່ຽນຕູ້
   }
 
+  // ສະແດງພະແນກ/ສູນ ພາຍໃຕ້ຝ່າຍທີ່ເລືອກ ແລະ ຣີເຊັດພະແນກ ເມື່ອປ່ຽນຝ່າຍ
+  function handleDivisionChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value
+    setDivision(value)
+    const available = value ? (edlStructure[value] ?? []) : []
+    if (!available.includes(department)) setDepartment('')
+  }
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
@@ -83,7 +113,18 @@ export default function UploadDocumentPage() {
       if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
       setSelectedFile(file)
       setFilePreviewUrl(URL.createObjectURL(file))
+      setPdfLoading(true)
     }
+    // ຣີເຊັດຄ່າ input ເພື່ອໃຫ້ສາມາດເລືອກໄຟລ໌ເດີມ ໄດ້ອີກຄັ້ງ
+    e.target.value = ''
+  }
+
+  function handleRemoveFile() {
+    if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
+    setSelectedFile(null)
+    setFilePreviewUrl('')
+    setError(null)
+
   }
 
   function validateForm(): boolean {
@@ -95,8 +136,12 @@ export default function UploadDocumentPage() {
       setError('ກະລຸນາປ້ອນຍັງທີ')
       return false
     }
+    if (!division) {
+      setError('ກະລຸນາເລືອກຝ່າຍ / ຫ້ອງການ')
+      return false
+    }
     if (!department) {
-      setError('ກະລຸນາເລືອກພະແນກ')
+      setError('ກະລຸນາເລືອກພະແນກ / ສູນ')
       return false
     }
     if (!documentType) {
@@ -134,6 +179,7 @@ export default function UploadDocumentPage() {
         title: title.trim(),
         docNumber: docNumber.trim(),
         category,
+        division,
         department,
         documentType,
         status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບສົ່ງອະນຸມັດ
@@ -175,24 +221,91 @@ export default function UploadDocumentPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">
               ໄຟລ໌ <span className="text-red-500">*</span>
             </label>
-            <label
-              htmlFor="file-input"
-              className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-8 text-center"
-            >
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl text-indigo-600">
-                ⤴
+
+            {selectedFile ? (
+              <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                {resolveFileType(selectedFile.name) === 'image' ? (
+                  <div className="flex flex-1 items-center justify-center overflow-hidden bg-gray-50 p-4">
+                    <img
+                      src={filePreviewUrl}
+                      alt={selectedFile.name}
+                      className="max-h-full max-w-full rounded-xl object-contain shadow-sm"
+                    />
+                  </div>
+                ) : resolveFileType(selectedFile.name) === 'pdf' ? (
+                  <div className="relative flex-1 overflow-hidden bg-gray-100">
+                    {pdfLoading && (
+                      <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-indigo-50/80 px-3 py-1.5 text-xs font-medium text-indigo-700">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ກຳລັງໂຫຼດ PDF...
+                      </div>
+                    )}
+                    <iframe
+                      src={filePreviewUrl}
+                      title={selectedFile.name}
+                      className="h-full w-full"
+                      onLoad={() => setPdfLoading(false)}
+                      onError={() => setPdfLoading(false)}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-gray-50 p-8 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
+                      <FileText className="h-8 w-8 text-indigo-600" />
+                    </div>
+                    <p className="text-sm text-gray-500">ໄຟລ໌ປະເພດນີ້ບໍ່ສາມາດສະແດງຕົວຢ່າງໄດ້</p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <FileText className="h-5 w-5 shrink-0 text-indigo-500" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-900">{selectedFile.name}</p>
+                      <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <label
+                      htmlFor="file-input"
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      ປ່ຽນໄຟລ໌
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRemoveFile}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-100"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      ລຶບໄຟລ໌
+                    </button>
+                  </div>
+                </div>
               </div>
-              <p className="text-lg font-semibold text-gray-900">
-                {selectedFile ? selectedFile.name : 'ລາກແລະວາງໄຟລ໌ທີ່ທ່ານຕ້ອງການອັບໂຫຼດ'}
-              </p>
-              <p className="mt-2 text-sm text-gray-500">
-                {selectedFile ? formatFileSize(selectedFile.size) : 'PDF, DOC, PNG, JPG ຈະຖືກຮັບຮອງໃນລະບົບ'}
-              </p>
-              <input id="file-input" type="file" className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" onChange={handleFileChange} />
-              <span className="mt-5 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-                ເລືອກໄຟລ໌
-              </span>
-            </label>
+            ) : (
+              <label
+                htmlFor="file-input"
+                className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-8 text-center"
+              >
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100">
+                  <Upload className="h-6 w-6 text-indigo-600" />
+                </div>
+                <p className="text-lg font-semibold text-gray-900">ລາກແລະວາງໄຟລ໌ທີ່ທ່ານຕ້ອງການອັບໂຫຼດ</p>
+                <p className="mt-2 text-sm text-gray-500">PDF, DOC, PNG, JPG ຈະຖືກຮັບຮອງໃນລະບົບ</p>
+                <span className="mt-5 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                  ເລືອກໄຟລ໌
+                </span>
+              </label>
+            )}
+            <input
+              id="file-input"
+              type="file"
+              className="hidden"
+              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              onChange={handleFileChange}
+            />
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -231,7 +344,7 @@ export default function UploadDocumentPage() {
                   onChange={handleCabinetChange}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                 >
-                  <option value="">— ເລືອກຕູ້ເອກະສານ —</option>
+                  <option value=""> ເລືອກຕູ້ເອກະສານ </option>
                   {cabinets.map((c) => (
                     <option key={c.id} value={c.id}>🗄️ {c.name}</option>
                   ))}
@@ -260,15 +373,31 @@ export default function UploadDocumentPage() {
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                  ພະແນກ <span className="text-red-500">*</span>
+                  ຝ່າຍ / ຫ້ອງການ / ສະຖາບັນ <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={division}
+                  onChange={handleDivisionChange}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                >
+                  <option value=""> ເລືອກຝ່າຍ / ຫ້ອງການ </option>
+                  {edlDivisions.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  ພະແນກ / ສູນ <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                  disabled={!division}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                 >
-                  <option value="">— ເລືອກພະແນກ —</option>
-                  {departmentOptions.map((d) => (
+                  <option value="">{division ? '— ເລືອກພະແນກ / ສູນ —' : '— ເລືອກຝ່າຍກ່ອນ —'}</option>
+                  {(division ? (edlStructure[division] ?? []) : []).map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
@@ -282,7 +411,7 @@ export default function UploadDocumentPage() {
                   onChange={(e) => setDocumentType(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                 >
-                  <option value="">— ເລືອກປະເພດເອກະສານ —</option>
+                  <option value="">ເລືອກປະເພດເອກະສານ</option>
                   {documentTypeOptions.map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -295,7 +424,7 @@ export default function UploadDocumentPage() {
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                 >
-                  {categories.map((c) => (
+                  {categoryOptions.map((c) => (
                     <option key={c}>{c}</option>
                   ))}
                 </select>

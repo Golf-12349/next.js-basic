@@ -1,6 +1,5 @@
 "use client"
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import secureLocalStorage from 'react-secure-storage'
 import apiClient from '@/config/axiosClient'
 import { Cabinet, Document, Folder } from '@/types/document'
 import { User } from '@/types/user'
@@ -14,6 +13,8 @@ type ApiUser = {
   phone: string | null
   department: string | null
   status: User['status']
+  division?: string | null
+  avatarUrl?: string | null
   createdAt: string
   updatedAt: string
   // ມີແຕ່ຄັ້ງດຽວຕອນສ້າງ user ໃໝ່ໂດຍບໍ່ໄດ້ໃສ່ password ມາເອງ — backend ສຸ່ມໃຫ້ແລ້ວສົ່ງກັບມາຄັ້ງດຽວ
@@ -92,8 +93,10 @@ function toFrontendUser(user: ApiUser): User {
     email: user.email,
     phone: user.phone ?? undefined,
     role: user.role,
+    division: user.division ?? undefined,
     department: user.department ?? '',
     status: user.status,
+    avatarUrl: user.avatarUrl ?? undefined,
     joinDate: user.createdAt.slice(0, 10),
     lastActive: user.updatedAt.slice(0, 10),
   }
@@ -137,7 +140,7 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
 
     async function load() {
       // ຍັງບໍ່ login (ບໍ່ມີ token) — ຂ້າມການໂຫຼດ ບໍ່ຕ້ອງຍິງ request ໄປໃຫ້ໂດນ 401
-      if (!secureLocalStorage.getItem('token')) {
+      if (!sessionStorage.getItem('token')) {
         setLoading(false)
         return
       }
@@ -275,16 +278,25 @@ export function DMSProvider({ children }: { children: React.ReactNode }) {
       phone: user.phone,
       department: user.department,
       status: user.status,
+      ...(user.division ? { division: user.division } : {}),
+      ...(user.avatarUrl ? { avatarUrl: user.avatarUrl } : {}),
+      ...(user.password ? { password: user.password } : {}),
     })
     const newUser = toFrontendUser(res.data)
     setUsers((prev) => [newUser, ...prev])
-    return { ...newUser, temporaryPassword: res.data.temporaryPassword }
+    return {
+      ...newUser,
+      division: user.division || newUser.division,
+      avatarUrl: user.avatarUrl || newUser.avatarUrl,
+      temporaryPassword: res.data.temporaryPassword,
+    }
   }
 
   async function updateUser(id: string, patch: Partial<User>) {
-    const { joinDate: _joinDate, lastActive: _lastActive, ...rest } = patch
+    const { joinDate: _joinDate, lastActive: _lastActive, password: _password, ...rest } = patch
     void _joinDate
     void _lastActive
+    void _password
     await apiClient.patch(`/users/${id}`, rest)
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
   }

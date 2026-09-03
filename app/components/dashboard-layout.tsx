@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import secureLocalStorage from 'react-secure-storage';
-import apiClient from '@/config/axiosClient';
 import {
+  AlertCircle,
   Archive,
   BarChart3,
   Bell,
@@ -19,12 +18,14 @@ import {
   FolderOpen,
   LayoutDashboard,
   LogOut,
+  Search,
   Settings,
   Trash2,
   Upload,
   UserCog,
   UserPlus,
   Users,
+  X,
 } from 'lucide-react';
 import { useDMS } from '../(main)/_dms-context';
 
@@ -52,14 +53,14 @@ type NotificationItem = {
   time: string;
   link: string;
   read: boolean;
-  type: 'pending' | 'approved' | 'user';
+  type: 'pending' | 'approved' | 'user' | 'alert';
 };
 
 const initialNotifications: NotificationItem[] = [
   {
     id: 'notif-1',
     title: 'ເອກະສານໃໝ່ລໍຖ້າອະນຸມັດ',
-    detail: 'Doc: K-2026-001',
+    detail: 'Doc: K-2026-001 (ໃບສະເໜີຈັດຊື້)',
     time: '2 ນາທີກ່ອນ',
     link: '/documents/pending',
     read: false,
@@ -68,7 +69,7 @@ const initialNotifications: NotificationItem[] = [
   {
     id: 'notif-2',
     title: 'ເອກະສານຖືກອະນຸມັດແລ້ວ',
-    detail: 'Doc: CT-2026-021',
+    detail: 'Doc: CT-2026-021 (ສັນຍາຈັດຊື້-ຈັດຈ້າງ)',
     time: '10 ນາທີກ່ອນ',
     link: '/documents',
     read: false,
@@ -76,8 +77,17 @@ const initialNotifications: NotificationItem[] = [
   },
   {
     id: 'notif-3',
+    title: 'ແຈ້ງເຕືອນລະບົບ',
+    detail: 'ກະລຸນາກວດສອບລາຍງານສະຖິຕິປະຈຳເດືອນ',
+    time: '30 ນາທີກ່ອນ',
+    link: '/reports',
+    read: false,
+    type: 'alert',
+  },
+  {
+    id: 'notif-4',
     title: 'ເພີ່ມຜູ້ໃຊ້ງານໃໝ່',
-    detail: 'User: ທ້າວ ອາລີ',
+    detail: 'User: ທ້າວ ອາລີ (ພະແນກໄອທີ)',
     time: '1 ຊົ່ວໂມງກ່ອນ',
     link: '/users',
     read: false,
@@ -111,12 +121,39 @@ const menuSections: MenuSection[] = [
   },
 ];
 
+function getInitialUserData() {
+  if (typeof window === 'undefined') {
+    return { name: 'John Doe', role: 'ຜູ້ດູແລລະບົບ', rawRole: null as string | null };
+  }
+  try {
+    const stored = sessionStorage.getItem('data');
+    if (stored) {
+      const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { name?: string; role?: string };
+      let roleText = 'ຜູ້ດູແລລະບົບ';
+      if (parsed.role === 'SuperAdmin') roleText = 'ຜູ້ດູແລລະບົບສູງສຸດ';
+      else if (parsed.role === 'Admin') roleText = 'ຜູ້ດູແລລະບົບ';
+      else if (parsed.role === 'User') roleText = 'ຜູ້ໃຊ້ງານ';
+      else if (parsed.role) roleText = parsed.role;
+
+      return {
+        name: parsed.name || 'John Doe',
+        role: roleText,
+        rawRole: parsed.role || null,
+      };
+    }
+  } catch {
+    // fallback
+  }
+  return { name: 'John Doe', role: 'ຜູ້ດູແລລະບົບ', rawRole: null as string | null };
+}
+
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { documents } = useDMS();
   const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -126,32 +163,14 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const [userName, setUserName] = useState('John Doe');
-  const [userRole, setUserRole] = useState('ຜູ້ດູແລລະບົບ');
-  const [rawRole, setRawRole] = useState<string | null>(null);
+  const [userData, setUserData] = useState(getInitialUserData);
 
   useEffect(() => {
-    try {
-      const stored = secureLocalStorage.getItem('data');
-      if (stored) {
-        const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { name?: string; role?: string };
-        if (parsed.name) setUserName(parsed.name);
-        if (parsed.role) {
-          setRawRole(parsed.role);
-          if (parsed.role === 'SuperAdmin') {
-            setUserRole('ຜູ້ດູແລລະບົບສູງສຸດ');
-          } else if (parsed.role === 'Admin') {
-            setUserRole('ຜູ້ດູແລລະບົບ');
-          } else if (parsed.role === 'User') {
-            setUserRole('ຜູ້ໃຊ້ງານ');
-          } else {
-            setUserRole(parsed.role);
-          }
-        }
-      }
-    } catch {
-      // fallback to default
+    function syncUserData() {
+      setUserData(getInitialUserData());
     }
+    window.addEventListener('storage', syncUserData);
+    return () => window.removeEventListener('storage', syncUserData);
   }, []);
 
   // Close dropdowns when clicking outside
@@ -168,17 +187,10 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  async function handleLogout() {
-    // เรียก backend ให้ revoke token ปัจจุบันทันที (เพิ่ม tokenVersion) — ไม่รอผลลัพธ์นาน
-    // เพราะต่อให้ request ล้มเหลว (เช่น เน็ตหลุด) ก็ยังต้องเคลียร์ token ฝั่ง client ต่อไปตามปกติ
-    try {
-      await apiClient.post('/auth/logout');
-    } catch (err) {
-      console.error('Logout request failed:', err);
-    }
-    secureLocalStorage.removeItem('token');
-    secureLocalStorage.removeItem('data');
-    router.push('/');
+  function handleLogout() {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('data');
+    window.location.replace('/');
   }
 
   function handleMarkAllAsRead() {
@@ -191,6 +203,16 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     );
     setNotifOpen(false);
     router.push(item.link);
+  }
+
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const query = searchQuery.trim();
+    if (query) {
+      router.push(`/documents?search=${encodeURIComponent(query)}`);
+    } else {
+      router.push('/documents');
+    }
   }
 
   function getNotificationIcon(type: NotificationItem['type']) {
@@ -207,6 +229,12 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
             <CheckCircle2 className="h-4 w-4" />
           </div>
         );
+      case 'alert':
+        return (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+            <AlertCircle className="h-4 w-4" />
+          </div>
+        );
       case 'user':
         return (
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
@@ -216,8 +244,9 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     }
   }
 
-  const userInitials = userName
+  const userInitials = userData.name
     .split(' ')
+    .filter(Boolean)
     .map((w) => w[0])
     .join('')
     .slice(0, 2)
@@ -250,7 +279,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
               .map((section) => ({
                 ...section,
                 items: section.items.filter((item) => {
-                  if (item.href === '/users' && rawRole === 'User') {
+                  if (item.href === '/users' && userData.rawRole === 'User') {
                     return false;
                   }
                   return true;
@@ -263,37 +292,37 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                     {section.title === 'MAIN' ? 'ເມນູຫຼັກ' : section.title === 'DOCUMENTS' ? 'ຈັດການເອກກະສານ' : 'ລະບົບ & ການຕັ້ງຄ່າ'}
                   </div>
 
-                <div className="space-y-1">
-                  {section.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
-                    const itemBadge = item.href === '/documents/pending' && pendingCount > 0 ? String(pendingCount) : item.badge;
+                  <div className="space-y-1">
+                    {section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
+                      const itemBadge = item.href === '/documents/pending' && pendingCount > 0 ? String(pendingCount) : item.badge;
 
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-                          isActive
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-700/30'
-                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                        }`}
-                      >
-                        <span className="flex items-center gap-3">
-                          <Icon className="h-4 w-4" />
-                          {item.name}
-                        </span>
-                        {itemBadge ? (
-                          <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
-                            {itemBadge}
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                            isActive
+                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-700/30'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          <span className="flex items-center gap-3">
+                            <Icon className="h-4 w-4" />
+                            {item.name}
                           </span>
-                        ) : null}
-                      </Link>
-                    );
-                  })}
+                          {itemBadge ? (
+                            <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
+                              {itemBadge}
+                            </span>
+                          ) : null}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </nav>
         </div>
 
@@ -303,8 +332,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
               {userInitials}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-white">{userName}</div>
-              <div className="text-xs text-slate-400">{userRole}</div>
+              <div className="truncate text-sm font-semibold text-white">{userData.name}</div>
+              <div className="text-xs text-slate-400">{userData.role}</div>
             </div>
           </div>
 
@@ -327,7 +356,29 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
             <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Global Search Input in Header */}
+            <form onSubmit={handleSearchSubmit} className="relative">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ຄົ້ນຫາເອກະສານ, ລະຫັດ, ຜູ້ໃຊ້..."
+                className="w-44 sm:w-60 md:w-72 rounded-xl border border-slate-200 bg-slate-50/80 py-2 pl-9 pr-8 text-xs sm:text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="ລຶບຂໍ້ຄວາມຄົ້ນຫາ"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </form>
+
             {/* Notification Bell Dropdown */}
             <div className="relative" ref={notifRef}>
               <button
@@ -378,7 +429,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                       className="flex items-center gap-1 text-xs font-medium text-indigo-600 transition-colors hover:text-indigo-800"
                     >
                       <CheckCheck className="h-3.5 w-3.5" />
-                      ໝາຍວ່າອ່ານແລ້ວທັງໝົດ
+                      ອ່ານທັງໝົດ
                     </button>
                   )}
                 </div>
@@ -456,8 +507,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                   {userInitials}
                 </div>
                 <div className="hidden text-left sm:block">
-                  <p className="text-sm font-semibold leading-none text-gray-900">{userName}</p>
-                  <p className="mt-1 text-xs text-gray-500">{userRole}</p>
+                  <p className="text-sm font-semibold leading-none text-gray-900">{userData.name}</p>
+                  <p className="mt-1 text-xs text-gray-500">{userData.role}</p>
                 </div>
                 <ChevronDown
                   className={`h-4 w-4 text-gray-400 transition-transform duration-300 ${
@@ -480,8 +531,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                       {userInitials}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-gray-900">{userName}</p>
-                      <p className="text-xs text-gray-500">{userRole}</p>
+                      <p className="truncate text-sm font-semibold text-gray-900">{userData.name}</p>
+                      <p className="text-xs text-gray-500">{userData.role}</p>
                     </div>
                   </div>
                 </div>

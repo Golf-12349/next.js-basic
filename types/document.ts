@@ -34,7 +34,8 @@ export type Document = {
   fileName?: string;
   pdfUrl?: string;
   deleted?: boolean;
-  department?: string;
+  division?: string; // ຝ່າຍ / ຫ້ອງການ / ສະຖາບັນ
+  department?: string; // ພະແນກ / ສູນ
   documentType?: string;
   // 3-Level archive fields
   cabinetId?: string;

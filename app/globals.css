@@ -45,3 +45,51 @@ body {
     width: 100%;
   }
 }
+
+/* ---------- DMS Login: fluid background & floating glass bubbles ---------- */
+@keyframes dms-drift {
+  0%,
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(40px, -28px) scale(1.07);
+  }
+  66% {
+    transform: translate(-28px, 24px) scale(0.95);
+  }
+}
+
+@keyframes dms-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+.dms-blob {
+  animation: dms-drift 20s ease-in-out infinite;
+}
+
+.dms-blob-delayed {
+  animation-delay: -7s;
+}
+
+.dms-blob-reverse {
+  animation: dms-drift 26s ease-in-out infinite reverse;
+}
+
+.dms-bubble {
+  animation: dms-float 6s ease-in-out infinite;
+}
+
+.dms-bubble-delay-1 {
+  animation-delay: 1.4s;
+}
+
+.dms-bubble-delay-2 {
+  animation-delay: 2.8s;
+}

@@ -22,7 +22,7 @@ const statusLabels: Record<DocumentStatus, string> = {
 
 export default function DocumentDetailPage() {
   const params = useParams()
-  const id = (params as any)?.id
+  const id = params?.id
   const { documents, setDocuments } = useDMS()
   const doc = documents.find((d) => d.id === id) as Document | undefined
 
