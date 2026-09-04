@@ -20,9 +20,13 @@ export default function Guard({ children }: Props) {
 
       try {
         const token =
-          typeof window !== 'undefined' ? sessionStorage.getItem('token') : null
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem('token') || localStorage.getItem('token')
+            : null
         const stored =
-          typeof window !== 'undefined' ? sessionStorage.getItem('data') : null
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem('data') || localStorage.getItem('data')
+            : null
 
         if (!token) {
           setAuthorized(false)
@@ -38,7 +42,7 @@ export default function Guard({ children }: Props) {
 
         // Check access to /users route
         if (pathname === '/users' || pathname.startsWith('/users/')) {
-          if (role === 'User') {
+          if (role === 'User' || role === 'Staff') {
             pushToast({ title: 'ສະເພາະ Admin ເທົ່ານັ້ນທີ່ມີສິດເຂົ້າເຖິງໜ້ານີ້' })
             setAuthorized(false)
             router.replace('/dashboard')

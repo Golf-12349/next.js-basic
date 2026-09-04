@@ -7,7 +7,7 @@ import { useArchive } from '../../context/ArchiveContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentFileType, DocumentStatus } from '@/types/document'
 import { FileText, Loader2, RefreshCw, Trash2, Upload } from 'lucide-react'
-import { edlStructure } from '@/types/user'
+import { edlStructure, getStoredUser } from '@/types/user'
 
 const edlDivisions = Object.keys(edlStructure)
 
@@ -183,7 +183,7 @@ export default function UploadDocumentPage() {
         fileType: resolveFileType(selectedFile.name),
         fileSize: uploaded.fileSize,
         uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
-        uploadedBy: '-', // backend ຈະໃຊ້ user ທີ່ login ຢູ່ ແທນຄ່ານີ້
+        uploadedBy: getStoredUser()?.name || 'ຜູ້ໃຊ້ງານ',
         fileUrl: uploaded.fileUrl,
         fileName: uploaded.fileName,
         // 3-Level archive: save cabinet + folder
@@ -223,6 +223,7 @@ export default function UploadDocumentPage() {
               <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                 {resolveFileType(selectedFile.name) === 'image' ? (
                   <div className="flex flex-1 items-center justify-center overflow-hidden bg-gray-50 p-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={filePreviewUrl}
                       alt={selectedFile.name}

@@ -96,20 +96,21 @@ const menuSections: MenuSection[] = [
 
 function getInitialUserData() {
   if (typeof window === 'undefined') {
-    return { name: 'John Doe', role: 'ຜູ້ດູແລລະບົບ', rawRole: null as string | null };
+    return { name: 'ຜູ້ໃຊ້ງານ', role: 'ຜູ້ໃຊ້ງານ', rawRole: null as string | null };
   }
   try {
-    const stored = sessionStorage.getItem('data');
+    const stored = sessionStorage.getItem('data') || localStorage.getItem('data');
     if (stored) {
       const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { name?: string; role?: string };
-      let roleText = 'ຜູ້ດູແລລະບົບ';
+      let roleText = 'ຜູ້ໃຊ້ງານ';
       if (parsed.role === 'SuperAdmin') roleText = 'ຜູ້ດູແລລະບົບສູງສຸດ';
       else if (parsed.role === 'Admin') roleText = 'ຜູ້ດູແລລະບົບ';
+      else if (parsed.role === 'Staff') roleText = 'ພະນັກງານ';
       else if (parsed.role === 'User') roleText = 'ຜູ້ໃຊ້ງານ';
       else if (parsed.role) roleText = parsed.role;
 
       return {
-        name: parsed.name || 'John Doe',
+        name: parsed.name || 'ຜູ້ໃຊ້ງານ',
         role: roleText,
         rawRole: parsed.role || null,
       };
@@ -117,7 +118,7 @@ function getInitialUserData() {
   } catch {
     // fallback
   }
-  return { name: 'John Doe', role: 'ຜູ້ດູແລລະບົບ', rawRole: null as string | null };
+  return { name: 'ຜູ້ໃຊ້ງານ', role: 'ຜູ້ໃຊ້ງານ', rawRole: null as string | null };
 }
 
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
@@ -204,7 +205,11 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
       setUserData(getInitialUserData());
     }
     window.addEventListener('storage', syncUserData);
-    return () => window.removeEventListener('storage', syncUserData);
+    window.addEventListener('dms:user-profile-updated', syncUserData);
+    return () => {
+      window.removeEventListener('storage', syncUserData);
+      window.removeEventListener('dms:user-profile-updated', syncUserData);
+    };
   }, []);
 
   // Close dropdowns when clicking outside
@@ -224,6 +229,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   function handleLogout() {
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('data');
+    localStorage.removeItem('token');
+    localStorage.removeItem('data');
     window.location.replace('/');
   }
 
@@ -283,7 +290,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     .map((w) => w[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase() || 'JD';
+    .toUpperCase() || 'U';
 
   return (
     <div

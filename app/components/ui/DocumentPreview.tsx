@@ -80,6 +80,7 @@ export default function DocumentPreview({ doc, className = '' }: { doc: Document
           </a>
         </div>
       ) : (
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={url}
           alt={doc.title}

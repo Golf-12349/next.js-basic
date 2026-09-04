@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DashboardLayout } from "@/app/components/dashboard-layout";
 import { pushToast } from "@/app/components/ui/Toast";
 import { Camera, Check, Eye, EyeOff, Lock, ShieldCheck, Trash2, User as UserIcon } from "lucide-react";
@@ -25,7 +25,7 @@ function getInitialProfile(): StoredProfile {
     return { id: "", name: "", email: "", phone: "", role: "User", department: "", division: "", avatarUrl: "" };
   }
   try {
-    const stored = sessionStorage.getItem("data");
+    const stored = sessionStorage.getItem("data") || localStorage.getItem("data");
     if (stored) {
       const parsed = (typeof stored === "string" ? JSON.parse(stored) : stored) as StoredProfile;
       return {
@@ -57,17 +57,15 @@ export default function SettingsPage() {
   const { updateUser, setUsers } = useUsers();
 
   // ---- Profile state (synced with the logged-in user) ----
-  const [name, setName] = useState(() => getInitialProfile().name);
-  const [email, setEmail] = useState(() => getInitialProfile().email);
-  const [role, setRole] = useState<UserRole>(() => getInitialProfile().role);
-  const [division, setDivision] = useState(() => {
-    const initial = getInitialProfile();
-    return initial.division || findDivisionForDepartment(initial.department || "");
-  });
-  const [department, setDepartment] = useState(() => getInitialProfile().department || "");
-  const [avatarUrl, setAvatarUrl] = useState(() => getInitialProfile().avatarUrl || "");
-  const [phone, setPhone] = useState(() => getInitialProfile().phone || "");
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>(() => getInitialProfile().id || undefined);
+  const initialProfile = getInitialProfile();
+  const [name, setName] = useState(initialProfile.name);
+  const [email, setEmail] = useState(initialProfile.email);
+  const [phone, setPhone] = useState(initialProfile.phone || "");
+  const [avatarUrl, setAvatarUrl] = useState(initialProfile.avatarUrl || "");
+  const role = initialProfile.role;
+  const division = initialProfile.division || findDivisionForDepartment(initialProfile.department || "");
+  const department = initialProfile.department || "";
+  const currentUserId = initialProfile.id || undefined;
 
   // ---- Security state ----
   const [currentPassword, setCurrentPassword] = useState("");
@@ -197,6 +195,7 @@ export default function SettingsPage() {
                     style={avatarUrl && avatarUrl.startsWith("#") ? { backgroundColor: avatarUrl } : undefined}
                   >
                     {isAvatarImage(avatarUrl) ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
                     ) : (
                       <span>{userInitials}</span>

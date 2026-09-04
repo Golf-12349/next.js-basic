@@ -1,4 +1,4 @@
-import type { Cabinet, Document, Folder } from '@/types/document'
+import type { Document } from '@/types/document'
 import type { User } from '@/types/user'
 
 export type ApiCategory = { id: string; name: string }

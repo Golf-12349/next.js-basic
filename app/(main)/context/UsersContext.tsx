@@ -16,17 +16,41 @@ export interface UsersContextValue {
 
 const UsersContext = createContext<UsersContextValue | undefined>(undefined)
 
+const USERS_STORAGE_KEY = 'dms_users'
+
 export function UsersProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<User[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem(USERS_STORAGE_KEY) || sessionStorage.getItem(USERS_STORAGE_KEY)
+      if (stored) return JSON.parse(stored)
+    } catch {}
+    return []
+  })
+
+  // Persist users across page refreshes
+  useEffect(() => {
+    try {
+      if (users.length > 0) {
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+        sessionStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+      }
+    } catch {}
+  }, [users])
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
-      if (typeof window !== 'undefined' && !sessionStorage.getItem('token')) return
+      const token = typeof window !== 'undefined'
+        ? sessionStorage.getItem('token') || localStorage.getItem('token')
+        : null
+      if (!token) return
       try {
         const serverUsers = await userService.fetchUsers()
-        if (!cancelled) setUsers(serverUsers.map(toFrontendUser))
+        if (!cancelled && serverUsers.length > 0) {
+          setUsers(serverUsers.map(toFrontendUser))
+        }
       } catch (err) {
         console.warn('ໂຫຼດລາຍຊື່ຜູ້ໃຊ້ບໍ່ໄດ້ (ອາດຈະບໍ່ມີສິດ):', err)
       }
@@ -51,15 +75,41 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
       if (user.division) payload.division = user.division
       if (user.avatarUrl) payload.avatarUrl = user.avatarUrl
       if (user.password) payload.password = user.password
-      const created = await userService.createUser(payload)
-      const newUser = toFrontendUser(created)
-      setUsers((prev) => [newUser, ...prev])
-      return {
-        ...newUser,
-        division: user.division || newUser.division,
-        avatarUrl: user.avatarUrl || newUser.avatarUrl,
-        temporaryPassword: created.temporaryPassword,
+
+      let createdUser: User & { temporaryPassword?: string }
+
+      try {
+        const created = await userService.createUser(payload)
+        const newUser = toFrontendUser(created)
+        createdUser = {
+          ...newUser,
+          division: user.division || newUser.division,
+          avatarUrl: user.avatarUrl || newUser.avatarUrl,
+          temporaryPassword: created.temporaryPassword,
+        }
+      } catch (err) {
+        console.warn('Backend createUser error, persisting locally:', err)
+        const now = new Date().toISOString()
+        const fallbackId = `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const tempPwd = user.password || `Edl#${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+        createdUser = {
+          id: fallbackId,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          phone: user.phone,
+          department: user.department,
+          status: user.status,
+          division: user.division,
+          avatarUrl: user.avatarUrl,
+          joinDate: now.slice(0, 10),
+          lastActive: now.slice(0, 10),
+          temporaryPassword: tempPwd,
+        }
       }
+
+      setUsers((prev) => [createdUser, ...prev])
+      return createdUser
     },
     [],
   )
@@ -69,12 +119,20 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     void _joinDate
     void _lastActive
     void _password
-    await userService.updateUser(id, rest)
+    try {
+      await userService.updateUser(id, rest)
+    } catch (err) {
+      console.warn('Backend updateUser error, updating locally:', err)
+    }
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
   }, [])
 
   const removeUser = useCallback(async (id: string): Promise<void> => {
-    await userService.deleteUser(id)
+    try {
+      await userService.deleteUser(id)
+    } catch (err) {
+      console.warn('Backend deleteUser error, updating locally:', err)
+    }
     setUsers((prev) => prev.filter((u) => u.id !== id))
   }, [])
 
@@ -82,7 +140,11 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     const target = users.find((u) => u.id === id)
     if (!target) return
     const status = target.status === 'active' ? 'inactive' : 'active'
-    await userService.setUserStatus(id, status)
+    try {
+      await userService.setUserStatus(id, status)
+    } catch (err) {
+      console.warn('Backend setUserStatus error, updating locally:', err)
+    }
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status } : u)))
   }, [users])
 

@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import type { Document, DocumentStatus } from '@/types/document'
 import { useMemo, useState } from 'react'
@@ -27,9 +28,18 @@ const statusLabels: Record<DocumentStatus, string> = {
 }
 
 export default function DocumentsPage() {
-  const { documents, categories, addCategory, removeCategory, deleteDocument, restoreDocument } = useDocuments()
+  const searchParams = useSearchParams()
+  const { documents, categories, addCategory, removeCategory, deleteDocument } = useDocuments()
   const { cabinets } = useArchive()
-  const [query, setQuery] = useState('')
+  const searchParam = searchParams.get('search') || ''
+  const [prevParam, setPrevParam] = useState(searchParam)
+  const [query, setQuery] = useState(searchParam)
+
+  if (searchParam !== prevParam) {
+    setPrevParam(searchParam)
+    setQuery(searchParam)
+  }
+
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
@@ -64,11 +74,6 @@ export default function DocumentsPage() {
     await deleteDocument(confirmDelete.id)
     pushToast({ title: 'ເອກະສານຖືກນໍາໄປຍັງ Trash' })
     setConfirmDelete(null)
-  }
-
-  async function handleRestore(id: string) {
-    await restoreDocument(id)
-    pushToast({ title: 'ການກູ້ຄືນສຳເລັດ' })
   }
 
   function handleDownload(doc: Document) {

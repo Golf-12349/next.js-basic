@@ -25,12 +25,14 @@ export const roleStyles: Record<UserRole, string> = {
   SuperAdmin: 'bg-violet-100 text-violet-700',
   Admin: 'bg-indigo-100 text-indigo-700',
   User: 'bg-slate-100 text-slate-700',
+  Staff: 'bg-slate-100 text-slate-700',
 }
 
 export const roleLabels: Record<UserRole, string> = {
   SuperAdmin: 'ຜູ້ດູແລລະບົບສູງສຸດ',
   Admin: 'ຜູ້ດູແລລະບົບ',
   User: 'ຜູ້ໃຊ້ງານ',
+  Staff: 'ພະນັກງານ',
 }
 
 export const statusStyles: Record<UserStatus, string> = {
@@ -98,6 +100,7 @@ export function UserAvatar({
 }) {
   if (isAvatarImage(avatarUrl)) {
     return (
+      /* eslint-disable-next-line @next/next/no-img-element */
       <img src={avatarUrl} alt={name} className={`shrink-0 rounded-full object-cover ${avatarClassName}`} />
     )
   }

@@ -1,4 +1,4 @@
-export type UserRole = 'SuperAdmin' | 'Admin' | 'User';
+export type UserRole = 'SuperAdmin' | 'Admin' | 'User' | 'Staff';
 
 export type UserStatus = 'active' | 'inactive';
 
@@ -28,7 +28,7 @@ export type CurrentUser = {
 export function getStoredUser(): CurrentUser | null {
   if (typeof window === 'undefined') return null;
   try {
-    const stored = sessionStorage.getItem('data');
+    const stored = sessionStorage.getItem('data') || localStorage.getItem('data');
     if (!stored) return null;
     if (typeof stored === 'string') {
       return JSON.parse(stored);

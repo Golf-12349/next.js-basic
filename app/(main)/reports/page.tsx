@@ -45,7 +45,7 @@ export default function ReportsPage() {
       const count = active.filter((d) => d.category === name).length
       return { name, value: Math.round((count / total) * 100), count }
     })
-  }, [active])
+  }, [active, allCategories])
 
   const recentEntries = useMemo(() => {
     return [...active]
