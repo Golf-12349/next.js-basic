@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   AlertCircle,
   Archive,
@@ -56,44 +56,17 @@ type NotificationItem = {
   type: 'pending' | 'approved' | 'user' | 'alert';
 };
 
-const initialNotifications: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    title: 'ເອກະສານໃໝ່ລໍຖ້າອະນຸມັດ',
-    detail: 'Doc: K-2026-001 (ໃບສະເໜີຈັດຊື້)',
-    time: '2 ນາທີກ່ອນ',
-    link: '/documents/pending',
-    read: false,
-    type: 'pending',
-  },
-  {
-    id: 'notif-2',
-    title: 'ເອກະສານຖືກອະນຸມັດແລ້ວ',
-    detail: 'Doc: CT-2026-021 (ສັນຍາຈັດຊື້-ຈັດຈ້າງ)',
-    time: '10 ນາທີກ່ອນ',
-    link: '/documents',
-    read: false,
-    type: 'approved',
-  },
-  {
-    id: 'notif-3',
-    title: 'ແຈ້ງເຕືອນລະບົບ',
-    detail: 'ກະລຸນາກວດສອບລາຍງານສະຖິຕິປະຈຳເດືອນ',
-    time: '30 ນາທີກ່ອນ',
-    link: '/reports',
-    read: false,
-    type: 'alert',
-  },
-  {
-    id: 'notif-4',
-    title: 'ເພີ່ມຜູ້ໃຊ້ງານໃໝ່',
-    detail: 'User: ທ້າວ ອາລີ (ພະແນກໄອທີ)',
-    time: '1 ຊົ່ວໂມງກ່ອນ',
-    link: '/users',
-    read: false,
-    type: 'user',
-  },
-];
+const NOTIF_READ_KEY = 'dms:read-notifications';
+
+function formatNotifTime(dateStr: string): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  const days = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return 'ມື້ນີ້';
+  if (days === 1) return '1 ມື້ກ່ອນ';
+  return `${days} ມື້ກ່ອນ`;
+}
 
 const menuSections: MenuSection[] = [
   {
@@ -153,6 +126,9 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   const { documents } = useDocuments();
   const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
 
+  // Routes where the global header search is visible
+  const searchAllowedRoutes = ['/dashboard', '/', '/documents', '/documents/archive'];
+
   const [searchQuery, setSearchQuery] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -160,8 +136,66 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Persist which notification IDs the user has read (mark-all-read survives navigation)
+  const [readNotifIds, setReadNotifIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = sessionStorage.getItem(NOTIF_READ_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.filter((x): x is string => typeof x === 'string')
+        : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (readNotifIds.length > 0) {
+        sessionStorage.setItem(NOTIF_READ_KEY, JSON.stringify(readNotifIds));
+      } else {
+        sessionStorage.removeItem(NOTIF_READ_KEY);
+      }
+    } catch {
+      // sessionStorage unavailable — ignore
+    }
+  }, [readNotifIds]);
+
+  // Real DMS notifications derived from actual documents
+  const notifications = useMemo<NotificationItem[]>(() => {
+    const pending = documents
+      .filter((d) => d.status === 'pending' && !d.deleted)
+      .map<NotificationItem>((d) => ({
+        id: `pending-${d.id}`,
+        title: 'ເອກະສານໃໝ່ລໍຖ້າອະນຸມັດ',
+        detail: `${d.docNumber} • ${d.title}`,
+        time: formatNotifTime(d.uploadDate),
+        link: '/documents/pending',
+        read: readNotifIds.includes(`pending-${d.id}`),
+        type: 'pending',
+      }));
+
+    const recentApproved = documents
+      .filter((d) => d.status === 'approved' && !d.deleted)
+      .sort((a, b) => (b.uploadDate || '').localeCompare(a.uploadDate || ''))
+      .slice(0, 5)
+      .map<NotificationItem>((d) => ({
+        id: `approved-${d.id}`,
+        title: 'ເອກະສານຖືກອະນຸມັດແລ້ວ',
+        detail: `${d.docNumber} • ${d.title}`,
+        time: formatNotifTime(d.uploadDate),
+        link: `/documents/${d.id}`,
+        read: readNotifIds.includes(`approved-${d.id}`),
+        type: 'approved',
+      }));
+
+    return [...pending, ...recentApproved];
+  }, [documents, readNotifIds]);
+
+  // Badge is driven by the actual pending documents that are still unread
+  const unreadCount = notifications.filter((n) => n.type === 'pending' && !n.read).length;
 
   const [userData, setUserData] = useState(getInitialUserData);
 
@@ -194,13 +228,12 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   }
 
   function handleMarkAllAsRead() {
-    setNotifications((prev) => prev.map((item) => ({ ...item, read: true })));
+    const allIds = notifications.map((n) => n.id);
+    setReadNotifIds((prev) => Array.from(new Set([...prev, ...allIds])));
   }
 
   function handleNotificationClick(item: NotificationItem) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === item.id ? { ...n, read: true } : n))
-    );
+    setReadNotifIds((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
     setNotifOpen(false);
     router.push(item.link);
   }
@@ -353,7 +386,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Global Search Input in Header */}
+            {/* Global Search Input in Header (visible only on /dashboard, /, /documents, /documents/archive) */}
+            {searchAllowedRoutes.includes(pathname) && (
             <form onSubmit={handleSearchSubmit} className="relative">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -374,6 +408,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                 </button>
               )}
             </form>
+            )}
 
             {/* Notification Bell Dropdown */}
             <div className="relative" ref={notifRef}>

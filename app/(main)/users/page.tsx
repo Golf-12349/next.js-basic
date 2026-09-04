@@ -1,4 +1,5 @@
 "use client"
+import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
@@ -37,6 +38,7 @@ function getInitialUserRole(): UserRole {
 
 export default function UsersPage() {
   const { users, addUser, updateUser, removeUser, toggleUserStatus } = useUsers()
+  const router = useRouter()
 
   const [currentUserRole, setCurrentUserRole] = useState<UserRole>(getInitialUserRole)
   const [query, setQuery] = useState('')
@@ -83,6 +85,30 @@ export default function UsersPage() {
       return true
     })
   }, [users, debouncedQuery, filterRole, filterDepartment, filterStatus])
+
+  // ── RBAC: only Admin / SuperAdmin may manage users ─────────────────────
+  if (currentUserRole === 'User') {
+    return (
+      <DashboardLayout title="ຈັດການຜູ້ໃຊ້ງານ">
+        <main className="flex flex-col items-center justify-center p-10">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+            <ShieldCheck className="h-10 w-10" />
+          </div>
+          <h1 className="mt-5 text-2xl font-bold text-gray-900">ບໍ່ມີສິດເຂົ້າເຖິງ</h1>
+          <p className="mt-2 max-w-md text-center text-sm text-gray-500">
+            ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້. ພຽງ ຜູ້ດູແລລະບົບ ຫຼື ຜູ້ດູແລລະບົບສູງສຸດ ສາມາດຈັດການຜູ້ໃຊ້ງານ.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard')}
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+          >
+            ກັບໄປໜ້າຫຼັກ
+          </button>
+        </main>
+      </DashboardLayout>
+    )
+  }
 
   function openAddForm() {
     setEditingUser(null)

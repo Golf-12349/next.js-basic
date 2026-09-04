@@ -1,10 +1,24 @@
 "use client"
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import type { Document, DocumentStatus } from '@/types/document'
+import type { UserRole } from '@/types/user'
 import { useDocuments } from '../../context/DocumentsContext'
 import { pushToast } from '@/app/components/ui/Toast'
+
+function getSessionRole(): UserRole | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = sessionStorage.getItem('data')
+    if (!stored) return null
+    const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { role?: UserRole }
+    return parsed?.role ?? null
+  } catch {
+    return null
+  }
+}
 
 const statusStyles: Record<DocumentStatus, string> = {
   draft: 'bg-slate-100 text-slate-700',
@@ -25,6 +39,19 @@ export default function DocumentDetailPage() {
   const id = params?.id
   const { documents, updateDocument, deleteDocument } = useDocuments()
   const doc = documents.find((d) => d.id === id) as Document | undefined
+
+  const [currentRole, setCurrentRole] = useState<UserRole | null>(getSessionRole)
+
+  useEffect(() => {
+    function syncRole() {
+      setCurrentRole(getSessionRole())
+    }
+    window.addEventListener('storage', syncRole)
+    return () => window.removeEventListener('storage', syncRole)
+  }, [])
+
+  // RBAC: only Admin / SuperAdmin may approve documents
+  const canModerate = currentRole === 'Admin' || currentRole === 'SuperAdmin'
 
   if (!doc) {
     return (
@@ -107,7 +134,7 @@ export default function DocumentDetailPage() {
                 <button onClick={() => pushToast({ title: 'ເບິ່ງເອກະສານ' })} type="button" className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">ເບິ່ງໄຟລ໌</button>
                 <button onClick={() => pushToast({ title: 'ດາວໂຫຼດເອກະສານ' })} type="button" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100">ດາວໂຫຼດ</button>
                 <button onClick={handleDelete} type="button" className="w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 hover:bg-rose-100">ລົບເອກະສານ</button>
-                {doc.status === 'pending' && <button onClick={handleApprove} className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">ອະນຸມັດ</button>}
+                {canModerate && doc.status === 'pending' && <button onClick={handleApprove} className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">ອະນຸມັດ</button>}
               </div>
             </div>
 

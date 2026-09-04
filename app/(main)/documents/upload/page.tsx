@@ -75,11 +75,6 @@ export default function UploadDocumentPage() {
   const [pdfLoading, setPdfLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    // ຮັກບັກໃຫ້ category ທີ່ເລືອກ ຍັງຢູ່ໃນໝວດໝູ່; ຖົ້ບໍ່, ຣີເຊັດໄປທີ່ທຳອິດ ເພື່ອບໍ່ໃຫ້ dropdown ວາງເປົ້ອຍ
-    if (!category || !categoryOptions.includes(category)) setCategory(categoryOptions[0])
-  }, [categories, category, categoryOptions])
-
   // ລຶບ object URL ເມື່ອປ່ຽນໄຟລ໌ ຫຼື ອອກໜ້າການ ເພື່ອປ້ອງກັນການຮົ່ວໄຫຼ
   useEffect(() => {
     return () => {

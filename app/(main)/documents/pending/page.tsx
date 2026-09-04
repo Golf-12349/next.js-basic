@@ -1,13 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../../context/DocumentsContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import type { Document } from '@/types/document'
+import type { UserRole } from '@/types/user'
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+
+function getSessionRole(): UserRole | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = sessionStorage.getItem('data')
+    if (!stored) return null
+    const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { role?: UserRole }
+    return parsed?.role ?? null
+  } catch {
+    return null
+  }
+}
 
 const categoryBadgeStyles: Record<string, string> = {
   'ຂາເຂົ້າ': 'bg-blue-100 text-blue-800',
@@ -36,6 +49,18 @@ function CategoryBadge({ category }: { category: string }) {
 export default function PendingDocumentsPage() {
   const { documents, updateDocument } = useDocuments()
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
+  const [currentRole, setCurrentRole] = useState<UserRole | null>(getSessionRole)
+
+  useEffect(() => {
+    function syncRole() {
+      setCurrentRole(getSessionRole())
+    }
+    window.addEventListener('storage', syncRole)
+    return () => window.removeEventListener('storage', syncRole)
+  }, [])
+
+  // RBAC: only Admin / SuperAdmin may approve or reject
+  const canModerate = currentRole === 'Admin' || currentRole === 'SuperAdmin'
   const list = documents.filter((d) => d.status === 'pending' && !d.deleted)
 
   async function approve(id: string) {
@@ -88,8 +113,12 @@ export default function PendingDocumentsPage() {
                         <button onClick={() => setPreviewDoc(d)} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
                           ເບິ່ງ
                         </button>
-                        <button onClick={() => approve(d.id)} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">ອະນຸມັດ</button>
-                        <button onClick={() => reject(d.id)} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">ປະຕິເສດ</button>
+                        {canModerate && (
+                          <>
+                            <button onClick={() => approve(d.id)} className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">ອະນຸມັດ</button>
+                            <button onClick={() => reject(d.id)} className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">ປະຕິເສດ</button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -114,14 +143,16 @@ export default function PendingDocumentsPage() {
               </div>
               <DocumentPreview doc={previewDoc} />
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <button onClick={() => { approve(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
-                    ອະນຸມັດ
-                  </button>
-                  <button onClick={() => { reject(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100">
-                    ປະຕິເສດ
-                  </button>
-                </div>
+                {canModerate && (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => { approve(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
+                      ອະນຸມັດ
+                    </button>
+                    <button onClick={() => { reject(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100">
+                      ປະຕິເສດ
+                    </button>
+                  </div>
+                  )}
                 <div className="flex items-center gap-2">
                   <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
                   <button onClick={() => { pushToast({ title: 'ດາວໂຫຼດເອກະສານ' }) }} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>

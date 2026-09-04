@@ -13,6 +13,7 @@ type StoredProfile = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   department?: string;
   division?: string;
@@ -21,7 +22,7 @@ type StoredProfile = {
 
 function getInitialProfile(): StoredProfile {
   if (typeof window === "undefined") {
-    return { id: "", name: "", email: "", role: "User", department: "", division: "", avatarUrl: "" };
+    return { id: "", name: "", email: "", phone: "", role: "User", department: "", division: "", avatarUrl: "" };
   }
   try {
     const stored = sessionStorage.getItem("data");
@@ -31,6 +32,7 @@ function getInitialProfile(): StoredProfile {
         id: parsed.id || "",
         name: parsed.name || "",
         email: parsed.email || "",
+        phone: parsed.phone || "",
         role: parsed.role || "User",
         department: parsed.department || "",
         division: parsed.division || "",
@@ -40,7 +42,7 @@ function getInitialProfile(): StoredProfile {
   } catch {
     // fallback
   }
-  return { id: "", name: "", email: "", role: "User", department: "", division: "", avatarUrl: "" };
+  return { id: "", name: "", email: "", phone: "", role: "User", department: "", division: "", avatarUrl: "" };
 }
 
 /** ຊອກຫາຝ່າຍ/ຫ້ອງການ ທີ່ພະແນກ/ສູນ ນັ້ນຂຶ້ນກັບ (EDL structure) */
@@ -64,6 +66,7 @@ export default function SettingsPage() {
   });
   const [department, setDepartment] = useState(() => getInitialProfile().department || "");
   const [avatarUrl, setAvatarUrl] = useState(() => getInitialProfile().avatarUrl || "");
+  const [phone, setPhone] = useState(() => getInitialProfile().phone || "");
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(() => getInitialProfile().id || undefined);
 
   // ---- Security state ----
@@ -112,6 +115,7 @@ export default function SettingsPage() {
       ...(storedProfile ?? {}),
       name: name.trim(),
       email: email.trim(),
+      phone: phone.trim(),
     };
     if (avatarUrl) {
       nextProfile.avatarUrl = avatarUrl;
@@ -122,7 +126,7 @@ export default function SettingsPage() {
 
     // 2) Sync the matching record in DMS context (users list) + backend (best-effort)
     if (currentUserId) {
-      const patch: Partial<User> = { name: name.trim(), email: email.trim() };
+      const patch: Partial<User> = { name: name.trim(), email: email.trim(), phone: phone.trim() };
       if (avatarUrl) patch.avatarUrl = avatarUrl;
       try {
         await updateUser(currentUserId, patch);
@@ -255,6 +259,17 @@ export default function SettingsPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className={inputBase}
                     placeholder="ອີເມວ"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ເບີໂລມົບປື໋ (ທ້ອນພົນ)</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={inputBase}
+                    placeholder="ເບີໂລມົບປື໋"
                   />
                 </div>
 
