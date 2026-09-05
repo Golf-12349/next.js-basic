@@ -57,6 +57,16 @@ export type ApiDocument = {
   folder: ApiFolder | null
 }
 
+export type ApiNotification = {
+  id: string
+  type: 'pending' | 'approved' | 'user' | 'alert'
+  title: string
+  detail: string | null
+  link: string | null
+  read: boolean
+  createdAt: string
+}
+
 export function toFrontendUser(user: ApiUser): User {
   return {
     id: user.id,

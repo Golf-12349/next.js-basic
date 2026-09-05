@@ -16,8 +16,16 @@ import {
   useUsers,
   type UsersContextValue,
 } from './UsersContext'
+import {
+  NotificationsProvider,
+  useNotifications,
+  type NotificationsContextValue,
+} from './NotificationsContext'
 
-export type DMSContextType = DocumentsContextValue & UsersContextValue & ArchiveContextValue
+export type DMSContextType = DocumentsContextValue &
+  UsersContextValue &
+  ArchiveContextValue &
+  NotificationsContextValue
 
 /**
  * Combines the three focused providers (documents/categories, archive,cabinet/folder,,,, users):
@@ -33,7 +41,9 @@ export function DMSProvider({ children }: { children: ReactNode }) {
   return (
     <DocumentsProvider>
       <ArchiveProvider>
-        <UsersProvider>{children}</UsersProvider>
+        <UsersProvider>
+          <NotificationsProvider>{children}</NotificationsProvider>
+        </UsersProvider>
       </ArchiveProvider>
     </DocumentsProvider>
   )
@@ -43,9 +53,12 @@ export function useDMS(): DMSContextType {
   const documents = useDocuments()
   const archive = useArchive()
   const users = useUsers()
+  const notifications = useNotifications()
 
   return useMemo(
-    () => ({ ...documents, ...archive, ...users }) as DMSContextType,
-    [documents, archive, users],
+    () => ({ ...documents, ...archive, ...users, ...notifications }) as DMSContextType,
+    [documents, archive, users, notifications],
   )
 }
+
+export { useNotifications }
