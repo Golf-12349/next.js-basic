@@ -40,6 +40,7 @@ export interface UpdateOwnProfilePayload {
   name?: string
   phone?: string
   department?: string
+  avatarUrl?: string
 }
 
 // ต่างจาก updateUser() — endpoint นี้ (/users/me/profile) เปิดให้ทุก role แก้โปรไฟล์ตัวเองได้
