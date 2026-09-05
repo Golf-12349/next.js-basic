@@ -28,6 +28,7 @@ import {
   X,
 } from 'lucide-react';
 import { useDocuments } from '../(main)/context/DocumentsContext';
+import { useNotifications } from '../(main)/context/NotificationsContext';
 import apiClient from '@/config/axiosClient';
 
 type DashboardLayoutProps = {
@@ -47,17 +48,7 @@ type MenuSection = {
   items: MenuItem[];
 };
 
-type NotificationItem = {
-  id: string;
-  title: string;
-  detail: string;
-  time: string;
-  link: string;
-  read: boolean;
-  type: 'pending' | 'approved' | 'user' | 'alert';
-};
-
-const NOTIF_READ_KEY = 'dms:read-notifications';
+type NotificationType = 'pending' | 'approved' | 'user' | 'alert';
 
 function formatNotifTime(dateStr: string): string {
   if (!dateStr) return '';
@@ -138,66 +129,22 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  // Persist which notification IDs the user has read (mark-all-read survives navigation)
-  const [readNotifIds, setReadNotifIds] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const raw = sessionStorage.getItem(NOTIF_READ_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed)
-        ? parsed.filter((x): x is string => typeof x === 'string')
-        : [];
-    } catch {
-      return [];
-    }
-  });
+  // ດຶງການແຈ້ງເຕືອນຈິງຈາກ backend (persist ໃນຖານຂໍ້ມູນ ບໍ່ຜູກກັບ sessionStorage/ເຄື່ອງໃດເຄື່ອງໜຶ່ງອີກຕໍ່ໄປ)
+  const { notifications: apiNotifications, unreadCount, markRead, markAllRead } = useNotifications();
 
-  useEffect(() => {
-    try {
-      if (readNotifIds.length > 0) {
-        sessionStorage.setItem(NOTIF_READ_KEY, JSON.stringify(readNotifIds));
-      } else {
-        sessionStorage.removeItem(NOTIF_READ_KEY);
-      }
-    } catch {
-      // sessionStorage unavailable — ignore
-    }
-  }, [readNotifIds]);
-
-  // Real DMS notifications derived from actual documents
-  const notifications = useMemo<NotificationItem[]>(() => {
-    const pending = documents
-      .filter((d) => d.status === 'pending' && !d.deleted)
-      .map<NotificationItem>((d) => ({
-        id: `pending-${d.id}`,
-        title: 'ເອກະສານໃໝ່ລໍຖ້າອະນຸມັດ',
-        detail: `${d.docNumber} • ${d.title}`,
-        time: formatNotifTime(d.uploadDate),
-        link: '/documents/pending',
-        read: readNotifIds.includes(`pending-${d.id}`),
-        type: 'pending',
-      }));
-
-    const recentApproved = documents
-      .filter((d) => d.status === 'approved' && !d.deleted)
-      .sort((a, b) => (b.uploadDate || '').localeCompare(a.uploadDate || ''))
-      .slice(0, 5)
-      .map<NotificationItem>((d) => ({
-        id: `approved-${d.id}`,
-        title: 'ເອກະສານຖືກອະນຸມັດແລ້ວ',
-        detail: `${d.docNumber} • ${d.title}`,
-        time: formatNotifTime(d.uploadDate),
-        link: `/documents/${d.id}`,
-        read: readNotifIds.includes(`approved-${d.id}`),
-        type: 'approved',
-      }));
-
-    return [...pending, ...recentApproved];
-  }, [documents, readNotifIds]);
-
-  // Badge is driven by the actual pending documents that are still unread
-  const unreadCount = notifications.filter((n) => n.type === 'pending' && !n.read).length;
+  const notifications = useMemo(
+    () =>
+      apiNotifications.map((n) => ({
+        id: n.id,
+        title: n.title,
+        detail: n.detail ?? '',
+        time: formatNotifTime(n.createdAt),
+        link: n.link ?? '/documents',
+        read: n.read,
+        type: n.type,
+      })),
+    [apiNotifications],
+  );
 
   const [userData, setUserData] = useState(getInitialUserData);
 
@@ -243,12 +190,11 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   }
 
   function handleMarkAllAsRead() {
-    const allIds = notifications.map((n) => n.id);
-    setReadNotifIds((prev) => Array.from(new Set([...prev, ...allIds])));
+    void markAllRead();
   }
 
-  function handleNotificationClick(item: NotificationItem) {
-    setReadNotifIds((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
+  function handleNotificationClick(item: (typeof notifications)[number]) {
+    void markRead(item.id);
     setNotifOpen(false);
     router.push(item.link);
   }
@@ -263,7 +209,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     }
   }
 
-  function getNotificationIcon(type: NotificationItem['type']) {
+  function getNotificationIcon(type: NotificationType) {
     switch (type) {
       case 'pending':
         return (
