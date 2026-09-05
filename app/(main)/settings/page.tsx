@@ -8,6 +8,8 @@ import { avatarColors, isAvatarImage } from "@/app/components/users/UserModals";
 import { useUsers } from "../context/UsersContext";
 import { edlStructure } from "@/types/user";
 import type { User, UserRole } from "@/types/user";
+import * as userService from "@/lib/dms/userService";
+import { isAxiosError } from "axios";
 
 type StoredProfile = {
   id: string;
@@ -54,7 +56,7 @@ function findDivisionForDepartment(dept: string): string {
 }
 
 export default function SettingsPage() {
-  const { updateUser, setUsers } = useUsers();
+  const { setUsers } = useUsers();
 
   // ---- Profile state (synced with the logged-in user) ----
   const initialProfile = getInitialProfile();
@@ -122,15 +124,18 @@ export default function SettingsPage() {
     }
     sessionStorage.setItem("data", JSON.stringify(nextProfile));
 
-    // 2) Sync the matching record in DMS context (users list) + backend (best-effort)
+    // 2) Sync the matching record in DMS context (users list) + backend
     if (currentUserId) {
+      // ໃຊ້ /users/me/profile (ບໍ່ແມ່ນ PATCH /users/:id ທີ່ຕ້ອງການສິດ Admin/SuperAdmin) —
+      // endpoint ນີ້ຮັບແຄ່ name/phone/department, ບໍ່ຮັບ email/avatarUrl (backend ຍັງບໍ່ມີ column ນີ້
+      // ເກັບຖາວອນ) ຈຶ່ງຍັງເກັບ email/avatarUrl ໄວ້ໃນ sessionStorage/local state ຢ່າງດຽວເໝືອນເດີມ
+      try {
+        await userService.updateOwnProfile({ name: name.trim(), phone: phone.trim(), department });
+      } catch (err) {
+        console.warn("ບໍ່ສາມາດບັນທຶກໂປຣໄຟລ໌ຂຶ້ນ backend ໄດ້:", err);
+      }
       const patch: Partial<User> = { name: name.trim(), email: email.trim(), phone: phone.trim() };
       if (avatarUrl) patch.avatarUrl = avatarUrl;
-      try {
-        await updateUser(currentUserId, patch);
-      } catch {
-        // backend may not contain this demo user — local context update still applies
-      }
       setUsers((prev) => prev.map((u) => (u.id === currentUserId ? { ...u, ...patch } : u)));
     }
 
@@ -139,7 +144,7 @@ export default function SettingsPage() {
     pushToast({ title: "ບັນທຶກຂໍ້ມູນໂປຣໄຟລ໌ສຳເລັດແລ້ວ" });
   }
 
-  function handleUpdatePassword() {
+  async function handleUpdatePassword() {
     const err: string[] = [];
     if (!currentPassword) err.push("ກະລຸນາປ້ອນລະຫັດຜ່ານປັດຈຸບັນ");
     if (newPassword.length < 8) err.push("ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຢ່າງໜ້ອຍ 8 ໂຕອັກສອນ");
@@ -148,6 +153,17 @@ export default function SettingsPage() {
     if (err.length > 0) {
       setPasswordError(err.join(" • "));
       // Clear the error after 4 seconds so the user can retype without a stale message
+      setTimeout(() => setPasswordError(""), 4000);
+      return;
+    }
+
+    try {
+      await userService.updateOwnPassword(currentPassword, newPassword);
+    } catch (apiErr: unknown) {
+      const message = isAxiosError<{ message?: string }>(apiErr)
+        ? apiErr.response?.data?.message ?? "ອັບເດດລະຫັດຜ່ານບໍ່ສຳເລັດ"
+        : "ອັບເດດລະຫັດຜ່ານບໍ່ສຳເລັດ";
+      setPasswordError(message);
       setTimeout(() => setPasswordError(""), 4000);
       return;
     }

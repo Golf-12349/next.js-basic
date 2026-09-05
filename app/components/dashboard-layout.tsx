@@ -28,6 +28,7 @@ import {
   X,
 } from 'lucide-react';
 import { useDocuments } from '../(main)/context/DocumentsContext';
+import apiClient from '@/config/axiosClient';
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -226,7 +227,14 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  function handleLogout() {
+  async function handleLogout() {
+    // best-effort — ต้อง revoke token ฝั่ง server ด้วย (tokenVersion) ไม่ใช่แค่ลบ storage เฉยๆ
+    // ถ้า request ล้มเหลว (เช่น network ขาด) ก็ยังต้องเคลียร์ storage แล้ว logout ต่อไปได้ปกติ
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // ignore — เคลียร์ session ต่อไปแม้ revoke ฝั่ง server ไม่สำเร็จ
+    }
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('data');
     localStorage.removeItem('token');

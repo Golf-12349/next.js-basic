@@ -35,3 +35,20 @@ export async function deleteUser(id: string): Promise<void> {
 export async function setUserStatus(id: string, status: UserStatus): Promise<void> {
   await apiClient.patch(`/users/${id}`, { status })
 }
+
+export interface UpdateOwnProfilePayload {
+  name?: string
+  phone?: string
+  department?: string
+}
+
+// ต่างจาก updateUser() — endpoint นี้ (/users/me/profile) เปิดให้ทุก role แก้โปรไฟล์ตัวเองได้
+// (ไม่ต้องมีสิทธิ์ Admin/SuperAdmin) แต่รับแค่ name/phone/department เท่านั้น ไม่มี email/role/status
+export async function updateOwnProfile(patch: UpdateOwnProfilePayload): Promise<ApiUser> {
+  const res = await apiClient.patch<ApiUser>('/users/me/profile', patch)
+  return res.data
+}
+
+export async function updateOwnPassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiClient.patch('/users/me/password', { currentPassword, newPassword })
+}
