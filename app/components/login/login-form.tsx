@@ -49,6 +49,10 @@ type APIResponse = {
     name: string;
     email: string;
     role: string;
+    phone?: string | null;
+    department?: string | null;
+    division?: string | null;
+    avatarUrl?: string | null;
   };
 };
 

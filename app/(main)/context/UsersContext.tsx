@@ -134,6 +134,21 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
+
+    // ຖ້າແກ້ບັນຊີຕົນເອງຜ່ານໜ້າ "ຈັດການຜູ້ໃຊ້ງານ" (ບໍ່ແມ່ນຜ່ານໜ້າ Settings) ໃຫ້ sync
+    // sessionStorage['data'] + ແຈ້ງ DashboardLayout ດ້ວຍ ບໍ່ຄືແບບເກົ່າທີ່ Sidebar/Header ບໍ່ອັບເດດຈົນກວ່າຈະ login ໃໝ່
+    try {
+      const stored = sessionStorage.getItem('data')
+      if (stored) {
+        const parsed = JSON.parse(stored) as { id?: string }
+        if (parsed.id === id) {
+          sessionStorage.setItem('data', JSON.stringify({ ...parsed, ...patch }))
+          window.dispatchEvent(new Event('dms:user-profile-updated'))
+        }
+      }
+    } catch {
+      // sessionStorage unavailable — ignore
+    }
   }, [])
 
   const removeUser = useCallback(async (id: string): Promise<void> => {

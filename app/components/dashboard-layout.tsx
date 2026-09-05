@@ -30,6 +30,7 @@ import {
 import { useDocuments } from '../(main)/context/DocumentsContext';
 import { useNotifications } from '../(main)/context/NotificationsContext';
 import apiClient from '@/config/axiosClient';
+import { UserAvatar } from '@/app/components/users/UserModals';
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -93,7 +94,11 @@ function getInitialUserData() {
   try {
     const stored = sessionStorage.getItem('data') || localStorage.getItem('data');
     if (stored) {
-      const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { name?: string; role?: string };
+      const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as {
+        name?: string;
+        role?: string;
+        avatarUrl?: string;
+      };
       let roleText = 'ຜູ້ໃຊ້ງານ';
       if (parsed.role === 'SuperAdmin') roleText = 'ຜູ້ດູແລລະບົບສູງສຸດ';
       else if (parsed.role === 'Admin') roleText = 'ຜູ້ດູແລລະບົບ';
@@ -105,12 +110,13 @@ function getInitialUserData() {
         name: parsed.name || 'ຜູ້ໃຊ້ງານ',
         role: roleText,
         rawRole: parsed.role || null,
+        avatarUrl: parsed.avatarUrl || undefined,
       };
     }
   } catch {
     // fallback
   }
-  return { name: 'ຜູ້ໃຊ້ງານ', role: 'ຜູ້ໃຊ້ງານ', rawRole: null as string | null };
+  return { name: 'ຜູ້ໃຊ້ງານ', role: 'ຜູ້ໃຊ້ງານ', rawRole: null as string | null, avatarUrl: undefined as string | undefined };
 }
 
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
@@ -238,14 +244,6 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     }
   }
 
-  const userInitials = userData.name
-    .split(' ')
-    .filter(Boolean)
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'U';
-
   return (
     <div
       className="flex h-screen bg-gray-50 text-gray-800 font-sans"
@@ -318,9 +316,12 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
 
         <div className="border-t border-slate-800 pt-4">
           <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-900/80 px-3 py-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
-              {userInitials}
-            </div>
+            <UserAvatar
+              name={userData.name}
+              avatarUrl={userData.avatarUrl}
+              avatarClassName="h-10 w-10"
+              textClassName="text-sm font-bold"
+            />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold text-white">{userData.name}</div>
               <div className="text-xs text-slate-400">{userData.role}</div>
@@ -495,9 +496,12 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                 }}
                 className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-gray-50"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
-                  {userInitials}
-                </div>
+                <UserAvatar
+                  name={userData.name}
+                  avatarUrl={userData.avatarUrl}
+                  avatarClassName="h-9 w-9"
+                  textClassName="text-sm font-bold"
+                />
                 <div className="hidden text-left sm:block">
                   <p className="text-sm font-semibold leading-none text-gray-900">{userData.name}</p>
                   <p className="mt-1 text-xs text-gray-500">{userData.role}</p>
@@ -519,9 +523,12 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                 {/* User header */}
                 <div className="border-b border-gray-100 px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
-                      {userInitials}
-                    </div>
+                    <UserAvatar
+                      name={userData.name}
+                      avatarUrl={userData.avatarUrl}
+                      avatarClassName="h-10 w-10"
+                      textClassName="text-sm font-bold"
+                    />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-900">{userData.name}</p>
                       <p className="text-xs text-gray-500">{userData.role}</p>

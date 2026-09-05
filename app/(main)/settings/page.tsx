@@ -127,10 +127,10 @@ export default function SettingsPage() {
     // 2) Sync the matching record in DMS context (users list) + backend
     if (currentUserId) {
       // ໃຊ້ /users/me/profile (ບໍ່ແມ່ນ PATCH /users/:id ທີ່ຕ້ອງການສິດ Admin/SuperAdmin) —
-      // endpoint ນີ້ຮັບແຄ່ name/phone/department, ບໍ່ຮັບ email/avatarUrl (backend ຍັງບໍ່ມີ column ນີ້
-      // ເກັບຖາວອນ) ຈຶ່ງຍັງເກັບ email/avatarUrl ໄວ້ໃນ sessionStorage/local state ຢ່າງດຽວເໝືອນເດີມ
+      // email ບໍ່ສົ່ງໄປ backend ໂດຍຕັ້ງໃຈ (ບໍ່ມີ column ຖາວອນ ແລະ ບໍ່ຢູ່ໃນ UpdateOwnProfileDto)
+      // ຈຶ່ງຍັງເກັບ email ໄວ້ໃນ sessionStorage/local state ຢ່າງດຽວ ສ່ວນ avatarUrl ຕອນນີ້ backend ຮັບແລ້ວ
       try {
-        await userService.updateOwnProfile({ name: name.trim(), phone: phone.trim(), department });
+        await userService.updateOwnProfile({ name: name.trim(), phone: phone.trim(), department, avatarUrl });
       } catch (err) {
         console.warn("ບໍ່ສາມາດບັນທຶກໂປຣໄຟລ໌ຂຶ້ນ backend ໄດ້:", err);
       }
