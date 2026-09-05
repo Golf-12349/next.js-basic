@@ -115,14 +115,23 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
   )
 
   const updateUser = useCallback(async (id: string, patch: Partial<User>): Promise<void> => {
-    const { joinDate: _joinDate, lastActive: _lastActive, password: _password, ...rest } = patch
-    void _joinDate
-    void _lastActive
-    void _password
-    try {
-      await userService.updateUser(id, rest)
-    } catch (err) {
-      console.warn('Backend updateUser error, updating locally:', err)
+    // ສົ່ງໄປ backend ສະເພາະ field ທີ່ PATCH /users/:id ຮັບຈິງ — email ບໍ່ມີ column ຢູ່ backend
+    // ຈຶ່ງບໍ່ສົ່ງ (ສົ່ງໄປຈະໂດນ 400) ຄົງໄວ້ local ຢ່າງດຽວ, ສ່ວນ name/role/phone/department/division/avatarUrl/status ສົ່ງໄດ້ປົກກະຕິ
+    const backendPatch: Record<string, unknown> = {}
+    if (patch.name !== undefined) backendPatch.name = patch.name
+    if (patch.role !== undefined) backendPatch.role = patch.role
+    if (patch.phone !== undefined) backendPatch.phone = patch.phone
+    if (patch.department !== undefined) backendPatch.department = patch.department
+    if (patch.division !== undefined) backendPatch.division = patch.division
+    if (patch.avatarUrl !== undefined) backendPatch.avatarUrl = patch.avatarUrl
+    if (patch.status !== undefined) backendPatch.status = patch.status
+
+    if (Object.keys(backendPatch).length > 0) {
+      try {
+        await userService.updateUser(id, backendPatch)
+      } catch (err) {
+        console.warn('Backend updateUser error, updating locally:', err)
+      }
     }
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
   }, [])
