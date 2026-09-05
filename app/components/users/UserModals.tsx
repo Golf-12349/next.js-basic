@@ -21,6 +21,9 @@ import {
   Trash2,
 } from 'lucide-react'
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+const EMAIL_FORMAT_ERROR = 'ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ (ຕົວຢ່າງ: name@gmail.com)'
+
 export const roleStyles: Record<UserRole, string> = {
   SuperAdmin: 'bg-violet-100 text-violet-700',
   Admin: 'bg-indigo-100 text-indigo-700',
@@ -318,6 +321,11 @@ export function UserFormModal({
   function handleSubmit() {
     if (!form.name.trim() || !form.email.trim() || !form.division.trim() || !form.department.trim()) {
       setError('ກະລຸນາປ້ອນຊື່, ອີເມວ, ຝ່າຍ/ຫ້ອງການ ແລະ ພະແນກ/ສູນ ໃຫ້ຄົບຖ້ວນ')
+      return
+    }
+
+    if (!EMAIL_PATTERN.test(form.email.trim())) {
+      setError(EMAIL_FORMAT_ERROR)
       return
     }
 
