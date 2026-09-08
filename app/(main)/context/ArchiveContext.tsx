@@ -24,29 +24,34 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
   const [cabinets, setCabinets] = useState<Cabinet[]>([])
   const [folders, setFolders] = useState<Folder[]>([])
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      if (typeof window !== 'undefined' && !sessionStorage.getItem('token')) return
-      try {
-        const [cabinetGroup, folderGroup] = await Promise.all([
-          archiveService.fetchCabinets(),
-          archiveService.fetchFolders(),
-        ])
-        if (cancelled) return
-        setCabinets(cabinetGroup)
-        setFolders(folderGroup)
-      } catch (err) {
-        console.error('ໂຫຼດຕູ້/ແຟ້ມເອກະສານລົ້ມເຫຼວ:', err)
-      }
-    }
-
-    load()
-    return () => {
-      cancelled = true
+  const reloadArchive = useCallback(async () => {
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('token')) return
+    try {
+      const [cabinetGroup, folderGroup] = await Promise.all([
+        archiveService.fetchCabinets(),
+        archiveService.fetchFolders(),
+      ])
+      setCabinets(cabinetGroup)
+      setFolders(folderGroup)
+    } catch (err) {
+      console.warn('ໂຫຼດຕູ້/ແຟ້ມເອກະສານລົ້ມເຫຼວ:', err)
     }
   }, [])
+
+  useEffect(() => {
+    void reloadArchive()
+  }, [reloadArchive])
+
+  // Real-time synchronization: reload cabinets and folders whenever backend broadcasts a change
+  useEffect(() => {
+    const handleArchiveChanged = () => {
+      void reloadArchive()
+    }
+    window.addEventListener('dms:archive-changed', handleArchiveChanged)
+    return () => {
+      window.removeEventListener('dms:archive-changed', handleArchiveChanged)
+    }
+  }, [reloadArchive])
 
   const createCabinet = useCallback(async (data: archiveService.CreateCabinetPayload): Promise<void> => {
     const created = await archiveService.createCabinet(data)

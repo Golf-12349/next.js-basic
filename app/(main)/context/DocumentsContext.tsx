@@ -68,48 +68,58 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [categories])
 
-  useEffect(() => {
-    let cancelled = false
+  const reload = useCallback(async () => {
+    const token = typeof window !== 'undefined'
+      ? sessionStorage.getItem('token') || localStorage.getItem('token')
+      : null
 
-    async function load() {
-      const token = typeof window !== 'undefined'
-        ? sessionStorage.getItem('token') || localStorage.getItem('token')
-        : null
-
-      if (!token) {
-        setLoading(false)
-        return
-      }
-      try {
-        const [serverCategories, activeDocs, deletedDocs] = await Promise.all([
-          categoryService.fetchCategories(),
-          documentService.fetchDocuments({ limit: 100 }),
-          documentService.fetchDocuments({ limit: 100, deleted: 'true' }),
-        ])
-        if (cancelled) return
-        setCategoryList(serverCategories)
-        if (serverCategories.length > 0) {
-          setCategories(serverCategories.map((c) => c.name))
-        }
-        const fetchedDocs = [
-          ...activeDocs.map(toFrontendDocument),
-          ...deletedDocs.map(toFrontendDocument),
-        ]
-        if (fetchedDocs.length > 0) {
-          setDocuments(fetchedDocs)
-        }
-      } catch (err) {
-        console.error('ໂຫຼດຂໍ້ມູນ DMS ລົ້ມເຫຼວ:', err)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+    if (!token) {
+      setLoading(false)
+      return
     }
-
-    load()
-    return () => {
-      cancelled = true
+    try {
+      const [serverCategories, activeDocs, deletedDocs] = await Promise.all([
+        categoryService.fetchCategories(),
+        documentService.fetchDocuments({ limit: 100 }),
+        documentService.fetchDocuments({ limit: 100, deleted: 'true' }),
+      ])
+      setCategoryList(serverCategories)
+      if (serverCategories.length > 0) {
+        setCategories(serverCategories.map((c) => c.name))
+      }
+      const fetchedDocs = [
+        ...activeDocs.map(toFrontendDocument),
+        ...deletedDocs.map(toFrontendDocument),
+      ]
+      if (fetchedDocs.length > 0) {
+        setDocuments(fetchedDocs)
+      }
+    } catch (err) {
+      console.error('ໂຫຼດຂໍ້ມູນ DMS ລົ້ມເຫຼວ:', err)
+    } finally {
+      setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  // Real-time synchronization: reload documents and categories whenever backend broadcasts a change
+  useEffect(() => {
+    const handleDocsChanged = () => {
+      void reload()
+    }
+    const handleCatsChanged = () => {
+      void reload()
+    }
+    window.addEventListener('dms:documents-changed', handleDocsChanged)
+    window.addEventListener('dms:categories-changed', handleCatsChanged)
+    return () => {
+      window.removeEventListener('dms:documents-changed', handleDocsChanged)
+      window.removeEventListener('dms:categories-changed', handleCatsChanged)
+    }
+  }, [reload])
 
   const uploadFile = useCallback(
     (file: File) => documentService.uploadFile(file),

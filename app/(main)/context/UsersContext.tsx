@@ -38,29 +38,35 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [users])
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      const token = typeof window !== 'undefined'
-        ? sessionStorage.getItem('token') || localStorage.getItem('token')
-        : null
-      if (!token) return
-      try {
-        const serverUsers = await userService.fetchUsers()
-        if (!cancelled && serverUsers.length > 0) {
-          setUsers(serverUsers.map(toFrontendUser))
-        }
-      } catch (err) {
-        console.warn('ໂຫຼດລາຍຊື່ຜູ້ໃຊ້ບໍ່ໄດ້ (ອາດຈະບໍ່ມີສິດ):', err)
+  const reloadUsers = useCallback(async () => {
+    const token = typeof window !== 'undefined'
+      ? sessionStorage.getItem('token') || localStorage.getItem('token')
+      : null
+    if (!token) return
+    try {
+      const serverUsers = await userService.fetchUsers()
+      if (serverUsers.length > 0) {
+        setUsers(serverUsers.map(toFrontendUser))
       }
-    }
-
-    load()
-    return () => {
-      cancelled = true
+    } catch (err) {
+      console.warn('ໂຫຼດລາຍຊື່ຜູ້ໃຊ້ບໍ່ໄດ້ (ອາດຈະບໍ່ມີສິດ):', err)
     }
   }, [])
+
+  useEffect(() => {
+    void reloadUsers()
+  }, [reloadUsers])
+
+  // Real-time synchronization: reload users whenever backend broadcasts a change
+  useEffect(() => {
+    const handleUsersChanged = () => {
+      void reloadUsers()
+    }
+    window.addEventListener('dms:users-changed', handleUsersChanged)
+    return () => {
+      window.removeEventListener('dms:users-changed', handleUsersChanged)
+    }
+  }, [reloadUsers])
 
   const addUser = useCallback(
     async (user: Omit<User, 'id' | 'joinDate' | 'lastActive'>): Promise<User & { temporaryPassword?: string }> => {

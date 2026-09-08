@@ -5,5 +5,5 @@
 //   app/(main)/context/ArchiveContext.tsx   -> useArchive (cabinets + folders)
 //   app/(main)/context/UsersContext.tsx      -> useUsers (users)
 
-export { DMSProvider, useDMS } from './context'
-export type { DMSContextType } from './context'
+export { DMSProvider, useDMS, useRealtime, RealtimeProvider } from './context'
+export type { DMSContextType, RealtimeContextValue } from './context'

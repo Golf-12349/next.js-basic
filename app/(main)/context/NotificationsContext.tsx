@@ -16,27 +16,33 @@ const NotificationsContext = createContext<NotificationsContextValue | undefined
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<ApiNotification[]>([])
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      const token = typeof window !== 'undefined'
-        ? sessionStorage.getItem('token') || localStorage.getItem('token')
-        : null
-      if (!token) return
-      try {
-        const serverNotifications = await notificationService.fetchNotifications()
-        if (!cancelled) setNotifications(serverNotifications)
-      } catch (err) {
-        console.warn('ໂຫຼດການແຈ້ງເຕືອນບໍ່ໄດ້:', err)
-      }
-    }
-
-    load()
-    return () => {
-      cancelled = true
+  const reloadNotifications = useCallback(async () => {
+    const token = typeof window !== 'undefined'
+      ? sessionStorage.getItem('token') || localStorage.getItem('token')
+      : null
+    if (!token) return
+    try {
+      const serverNotifications = await notificationService.fetchNotifications()
+      setNotifications(serverNotifications)
+    } catch (err) {
+      console.warn('ໂຫຼດການແຈ້ງເຕືອນບໍ່ໄດ້:', err)
     }
   }, [])
+
+  useEffect(() => {
+    void reloadNotifications()
+  }, [reloadNotifications])
+
+  // Real-time synchronization: reload notifications whenever backend broadcasts a change
+  useEffect(() => {
+    const handleNotifsChanged = () => {
+      void reloadNotifications()
+    }
+    window.addEventListener('dms:notifications-changed', handleNotifsChanged)
+    return () => {
+      window.removeEventListener('dms:notifications-changed', handleNotifsChanged)
+    }
+  }, [reloadNotifications])
 
   const markRead = useCallback(async (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))

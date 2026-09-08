@@ -21,31 +21,38 @@ import {
   useNotifications,
   type NotificationsContextValue,
 } from './NotificationsContext'
+import {
+  RealtimeProvider,
+  useRealtime,
+  type RealtimeContextValue,
+} from './RealtimeContext'
 
 export type DMSContextType = DocumentsContextValue &
   UsersContextValue &
   ArchiveContextValue &
-  NotificationsContextValue
+  NotificationsContextValue &
+  RealtimeContextValue
 
 /**
- * Combines the three focused providers (documents/categories, archive,cabinet/folder,,,, users):
- *   DocumentsProvider > ArchiveProvider > UsersProvider
+ * Combines the focused providers (documents/categories, archive, users, notifications, realtime):
+ *   RealtimeProvider > DocumentsProvider > ArchiveProvider > UsersProvider > NotificationsProvider
  *
- * Granular hooks (`useDocuments`, `useArchive`, `useUsers`) are preferred for new code
+ * Granular hooks (`useDocuments`, `useArchive`, `useUsers`, `useRealtime`) are preferred for new code
  * — they re-render only when their own slice of state changes.
-
+ *
  * `useDMS` is kept as a backward-compatible convenience for consumers that need multiple slices.
-
  */
 export function DMSProvider({ children }: { children: ReactNode }) {
   return (
-    <DocumentsProvider>
-      <ArchiveProvider>
-        <UsersProvider>
-          <NotificationsProvider>{children}</NotificationsProvider>
-        </UsersProvider>
-      </ArchiveProvider>
-    </DocumentsProvider>
+    <RealtimeProvider>
+      <DocumentsProvider>
+        <ArchiveProvider>
+          <UsersProvider>
+            <NotificationsProvider>{children}</NotificationsProvider>
+          </UsersProvider>
+        </ArchiveProvider>
+      </DocumentsProvider>
+    </RealtimeProvider>
   )
 }
 
@@ -54,11 +61,13 @@ export function useDMS(): DMSContextType {
   const archive = useArchive()
   const users = useUsers()
   const notifications = useNotifications()
+  const realtime = useRealtime()
 
   return useMemo(
-    () => ({ ...documents, ...archive, ...users, ...notifications }) as DMSContextType,
-    [documents, archive, users, notifications],
+    () => ({ ...documents, ...archive, ...users, ...notifications, ...realtime }) as DMSContextType,
+    [documents, archive, users, notifications, realtime],
   )
 }
 
-export { useNotifications }
+export { useNotifications, useRealtime, RealtimeProvider }
+export type { RealtimeContextValue }

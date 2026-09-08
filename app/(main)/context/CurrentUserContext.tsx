@@ -112,13 +112,21 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
     function sync() {
       setUserState(readStoredUser())
     }
+    const handleRemoteUserChange = (e: Event) => {
+      const custom = e as CustomEvent<{ action?: string; userId?: string }>
+      if (custom.detail?.userId && user?.id && custom.detail.userId === user.id) {
+        void refreshUser()
+      }
+    }
     window.addEventListener('storage', sync)
     window.addEventListener('dms:user-profile-updated', sync)
+    window.addEventListener('dms:users-changed', handleRemoteUserChange)
     return () => {
       window.removeEventListener('storage', sync)
       window.removeEventListener('dms:user-profile-updated', sync)
+      window.removeEventListener('dms:users-changed', handleRemoteUserChange)
     }
-  }, [])
+  }, [user?.id, refreshUser])
 
   const updateProfile = useCallback(
     async (patch: Partial<CurrentUser>) => {
