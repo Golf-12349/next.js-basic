@@ -30,6 +30,7 @@ export type CurrentUser = {
   department?: string;
   division?: string;
   position?: string;
+  joinDate?: string; // ວັນທີເຂົ້າຮ່ວມ (ສະແດງໃນ Profile) — optional ເພາະ backend ອາດບໍ່ສົ່ງມາ
   status: UserStatus;
   avatarUrl?: string;
 };
@@ -86,6 +87,7 @@ export function normalizeAuthUser(raw: unknown): CurrentUser | null {
     department: pickText(r.department) ?? pickText(r.departmentName),
     division: pickText(r.division) ?? pickText(r.divisionName),
     position: pickText(r.position) ?? pickText(r.positionName),
+    joinDate: (pickText(r.joinDate) ?? pickText(r.createdAt) ?? pickText(r.created_at))?.slice(0, 10),
     status: pickStatus(r.status),
     avatarUrl: pickText(r.avatarUrl) ?? pickText(r.avatar) ?? pickText(r.avatar_url) ?? pickText(r.photoUrl),
   };
@@ -107,6 +109,7 @@ export function normalizeCurrentUser(value: unknown): CurrentUser | null {
     department: v.department,
     division: v.division,
     position: v.position,
+    joinDate: v.joinDate,
     status: v.status ?? 'active',
     avatarUrl: v.avatarUrl,
   };
