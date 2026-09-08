@@ -132,21 +132,15 @@ export default function PendingDocumentsPage() {
           </div>
         </div>
 
-        <Modal open={!!previewDoc} onClose={() => setPreviewDoc(null)} title={previewDoc?.title}>
-          {previewDoc && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-gray-500">ເລກທີ</div>
-                  <div className="font-semibold">{previewDoc.docNumber}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">ໝວດໝູ່</div>
-                  <div className="font-semibold">{previewDoc.category}</div>
-                </div>
-              </div>
-              <DocumentPreview doc={previewDoc} />
-              <div className="flex items-center justify-between gap-2">
+        <Modal
+          open={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc?.title}
+          scrollBody={false}
+          footer={
+            previewDoc && (
+              <>
+                {/* Left group: moderation actions */}
                 {canModerate && (
                   <div className="flex items-center gap-2">
                     <button onClick={() => { approve(previewDoc.id); setPreviewDoc(null) }} className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
@@ -156,12 +150,30 @@ export default function PendingDocumentsPage() {
                       ປະຕິເສດ
                     </button>
                   </div>
-                  )}
-                <div className="flex items-center gap-2">
+                )}
+                {/* Right group: close / download — ml-auto keeps it right-aligned even without moderation rights */}
+                <div className="ml-auto flex items-center gap-2">
                   <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
                   <button onClick={() => { pushToast({ title: 'ດາວໂຫຼດເອກະສານ' }) }} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
                 </div>
+              </>
+            )
+          }
+        >
+          {previewDoc && (
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
+              <div className="grid shrink-0 grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-gray-500">ເລກທີ</div>
+                  <div className="font-semibold">{previewDoc.docNumber}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ໝວດໝູ່</div>
+                  <div className="font-semibold">{previewDoc.category}</div>
+                </div>
               </div>
+              {/* PDF viewer fills the remaining space and scrolls independently inside the modal body */}
+              <DocumentPreview doc={previewDoc} heightClassName="min-h-0 flex-1" />
             </div>
           )}
         </Modal>

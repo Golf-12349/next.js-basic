@@ -326,10 +326,40 @@ export default function TrashPage() {
         )}
 
         {/* ── Preview Modal ─────────────────────────────────────── */}
-        <Modal open={!!previewDoc} onClose={() => setPreviewDoc(null)} title={previewDoc?.title}>
+        <Modal
+          open={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc?.title}
+          scrollBody={false}
+          footer={
+            previewDoc && (
+              <>
+                {/* Left group: restore action */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setPreviewDoc(null); handleRestore(previewDoc) }}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                  >
+                    <RotateCcw size={14} />
+                    ກູ້ຄືນ
+                  </button>
+                </div>
+                {/* Right group: close — ml-auto keeps it pinned right */}
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    onClick={() => setPreviewDoc(null)}
+                    className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                  >
+                    ປິດ
+                  </button>
+                </div>
+              </>
+            )
+          }
+        >
           {previewDoc && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
+              <div className="grid shrink-0 grid-cols-2 gap-4 sm:grid-cols-3">
                 <div>
                   <div className="text-xs text-gray-500">ເລກທີ</div>
                   <div className="text-sm font-semibold">{previewDoc.docNumber}</div>
@@ -345,22 +375,8 @@ export default function TrashPage() {
                   </div>
                 </div>
               </div>
-              <DocumentPreview doc={previewDoc} />
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  onClick={() => setPreviewDoc(null)}
-                  className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                >
-                  ປິດ
-                </button>
-                <button
-                  onClick={() => { setPreviewDoc(null); handleRestore(previewDoc) }}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-                >
-                  <RotateCcw size={14} />
-                  ກູ້ຄືນ
-                </button>
-              </div>
+              {/* PDF/image viewer fills the remaining space and scrolls independently inside the modal body */}
+              <DocumentPreview doc={previewDoc} heightClassName="min-h-0 flex-1" />
             </div>
           )}
         </Modal>

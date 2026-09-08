@@ -284,10 +284,35 @@ interface DocumentPreviewModalProps {
 
 export function DocumentPreviewModal({ doc, onClose, onDownload }: DocumentPreviewModalProps) {
   return (
-    <Modal open={!!doc} onClose={onClose} title={doc?.title}>
+    <Modal
+      open={!!doc}
+      onClose={onClose}
+      title={doc?.title}
+      scrollBody={false}
+      footer={
+        doc && (
+          /* Right group: close / download — ml-auto keeps it pinned right */
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            >
+              ປິດ
+            </button>
+            <button
+              onClick={() => onDownload(doc)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              <Download size={14} />
+              ດາວໂຫຼດ
+            </button>
+          </div>
+        )
+      }
+    >
       {doc && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
+          <div className="grid shrink-0 grid-cols-2 gap-4 sm:grid-cols-3">
             <div>
               <div className="text-xs text-gray-500">ເລກທີ</div>
               <div className="text-sm font-semibold">{doc.docNumber}</div>
@@ -303,22 +328,8 @@ export function DocumentPreviewModal({ doc, onClose, onDownload }: DocumentPrevi
               </div>
             </div>
           </div>
-          <DocumentPreview doc={doc} />
-          <div className="flex items-center justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-            >
-              ປິດ
-            </button>
-            <button
-              onClick={() => onDownload(doc)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              <Download size={14} />
-              ດາວໂຫຼດ
-            </button>
-          </div>
+          {/* PDF/image viewer fills the remaining space and scrolls independently inside the modal body */}
+          <DocumentPreview doc={doc} heightClassName="min-h-0 flex-1" />
         </div>
       )}
     </Modal>

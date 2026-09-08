@@ -248,10 +248,24 @@ export default function DocumentsPage() {
           </div>
         </div>
 
-        <Modal open={!!previewDoc} onClose={() => setPreviewDoc(null)} title={previewDoc?.title}>
+        <Modal
+          open={!!previewDoc}
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc?.title}
+          scrollBody={false}
+          footer={
+            previewDoc && (
+              /* Right group: close / download — ml-auto keeps it pinned right */
+              <div className="ml-auto flex items-center gap-2">
+                <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
+                <button onClick={() => handleDownload(previewDoc)} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
+              </div>
+            )
+          }
+        >
           {previewDoc && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
+              <div className="grid shrink-0 grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm text-gray-500">ເລກທີ</div>
                   <div className="font-semibold">{previewDoc.docNumber}</div>
@@ -261,11 +275,8 @@ export default function DocumentsPage() {
                   <div className="font-semibold">{previewDoc.category}</div>
                 </div>
               </div>
-              <DocumentPreview doc={previewDoc} />
-              <div className="flex items-center justify-end gap-2">
-                <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
-                <button onClick={() => handleDownload(previewDoc)} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
-              </div>
+              {/* PDF/image viewer fills the remaining space and scrolls independently inside the modal body */}
+              <DocumentPreview doc={previewDoc} heightClassName="min-h-0 flex-1" />
             </div>
           )}
         </Modal>

@@ -8,7 +8,16 @@ function isPdf(fileType: Document['fileType'], url: string): boolean {
   return /\.pdf($|\?)/i.test(url)
 }
 
-export default function DocumentPreview({ doc, className = '' }: { doc: Document; className?: string }) {
+export default function DocumentPreview({
+  doc,
+  className = '',
+  heightClassName = 'h-[500px]',
+}: {
+  doc: Document
+  className?: string
+  /** Height utilities for the preview box. Pass e.g. 'min-h-0 flex-1' to make it fill a flex column parent. */
+  heightClassName?: string
+}) {
   const [pdfError, setPdfError] = useState(false)
   const [imgError, setImgError] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(true)
@@ -19,7 +28,7 @@ export default function DocumentPreview({ doc, className = '' }: { doc: Document
 
   if (!hasUrl || (showPdf && pdfError) || (!showPdf && imgError)) {
     return (
-      <div className={`w-full h-[500px] border border-dashed border-gray-300 rounded bg-gray-50 flex items-center justify-center ${className}`}>
+      <div className={`w-full ${heightClassName} border border-dashed border-gray-300 rounded bg-gray-50 flex items-center justify-center ${className}`}>
         <div className="text-center text-gray-400 px-6">
           <FileWarning className="mx-auto mb-3 h-10 w-10" />
           <p className="text-sm font-medium text-gray-500">ບໍ່ສາມາດສະແດງເອກະສານນີ້ໄດ້</p>
@@ -42,7 +51,7 @@ export default function DocumentPreview({ doc, className = '' }: { doc: Document
 
   if (showPdf) {
     return (
-      <div className={`relative w-full h-[500px] border rounded bg-gray-100 overflow-hidden ${className}`}>
+      <div className={`relative w-full ${heightClassName} border rounded bg-gray-100 overflow-hidden ${className}`}>
         {pdfLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
             <div className="flex flex-col items-center text-gray-400">
@@ -64,7 +73,7 @@ export default function DocumentPreview({ doc, className = '' }: { doc: Document
 
   // image / other previewable file
   return (
-    <div className={`relative w-full h-[500px] border rounded bg-gray-50 flex items-center justify-center overflow-hidden ${className}`}>
+    <div className={`relative w-full ${heightClassName} border rounded bg-gray-50 flex items-center justify-center overflow-hidden ${className}`}>
       {imgError ? (
         <div className="text-center text-gray-400 px-6">
           <FileWarning className="mx-auto mb-3 h-10 w-10" />
