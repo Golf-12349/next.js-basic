@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import type { Document, DocumentStatus } from '@/types/document'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useDocuments } from '../context/DocumentsContext'
 import { useArchive } from '../context/ArchiveContext'
@@ -29,7 +29,11 @@ const statusLabels: Record<DocumentStatus, string> = {
 
 export default function DocumentsPage() {
   const searchParams = useSearchParams()
-  const { documents, categories, addCategory, removeCategory, deleteDocument } = useDocuments()
+  const { documents, categories, addCategory, removeCategory, deleteDocument, reload } = useDocuments()
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
   const { cabinets } = useArchive()
   const searchParam = searchParams.get('search') || ''
   const [prevParam, setPrevParam] = useState(searchParam)

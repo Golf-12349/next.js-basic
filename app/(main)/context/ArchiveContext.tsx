@@ -25,7 +25,10 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
   const [folders, setFolders] = useState<Folder[]>([])
 
   const reloadArchive = useCallback(async () => {
-    if (typeof window !== 'undefined' && !sessionStorage.getItem('token')) return
+    const token = typeof window !== 'undefined'
+      ? sessionStorage.getItem('token') || localStorage.getItem('token')
+      : null
+    if (!token) return
     try {
       const [cabinetGroup, folderGroup] = await Promise.all([
         archiveService.fetchCabinets(),

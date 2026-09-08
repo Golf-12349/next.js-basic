@@ -5,7 +5,7 @@ import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
 import { useDebounce } from '@/hooks/useDebounce'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Document, DocumentFileType } from '@/types/document'
 import {
   ArchiveRestore,
@@ -58,7 +58,11 @@ function formatMB(mb: number): string {
 
 // ── Main page ───────────────────────────────────────────────────────────────
 export default function TrashPage() {
-  const { documents, restoreDocument, permDeleteDocument } = useDocuments()
+  const { documents, restoreDocument, permDeleteDocument, reload } = useDocuments()
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
 
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebounce(query, 250)
