@@ -497,24 +497,26 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                     type="button"
                     onClick={() => {
                       setProfileOpen(false);
-                      router.push('/settings');
+                      router.push('/profile');
                     }}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
                   >
                     <UserCog className="h-4 w-4 text-gray-400" />
                     ແກ້ໄຂໂປຣໄຟລ໌
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      router.push('/settings');
-                    }}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                  >
-                    <Settings className="h-4 w-4 text-gray-400" />
-                    ຕັ້ງຄ່າລະບົບ
-                  </button>
+                  {(currentUser?.role === 'SuperAdmin' || currentUser?.role === 'Admin') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        router.push('/settings');
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    >
+                      <Settings className="h-4 w-4 text-gray-400" />
+                      ຕັ້ງຄ່າລະບົບ
+                    </button>
+                  )}
                 </div>
 
                 <div className="mx-3 my-1 border-t border-gray-100" />
