@@ -21,6 +21,7 @@ export interface DocumentsContextValue {
   archiveDocument: (id: string) => Promise<void>
   addCategory: (name: string) => Promise<void>
   removeCategory: (name: string) => Promise<void>
+  reload: () => Promise<void>
 }
 
 const DocumentsContext = createContext<DocumentsContextValue | undefined>(undefined)
@@ -91,9 +92,11 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         ...activeDocs.map(toFrontendDocument),
         ...deletedDocs.map(toFrontendDocument),
       ]
-      if (fetchedDocs.length > 0) {
-        setDocuments(fetchedDocs)
-      }
+      setDocuments(fetchedDocs)
+      try {
+        localStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(fetchedDocs))
+        sessionStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(fetchedDocs))
+      } catch {}
     } catch (err) {
       console.error('ໂຫຼດຂໍ້ມູນ DMS ລົ້ມເຫຼວ:', err)
     } finally {
@@ -152,9 +155,16 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         deleted: false,
       }
     }
-    setDocuments((prev) => [newDoc, ...prev])
+    setDocuments((prev) => {
+      const filtered = prev.filter((d) => d.id !== newDoc.id)
+      return [newDoc, ...filtered]
+    })
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('dms:documents-changed', { detail: { action: 'create', doc: newDoc } }))
+    }
+    void reload()
     return newDoc
-  }, [categoryList])
+  }, [categoryList, reload])
 
   const updateDocument = useCallback(async (id: string, patch: Partial<Document>): Promise<void> => {
     try {
@@ -250,6 +260,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       archiveDocument,
       addCategory,
       removeCategory,
+      reload,
     }),
     [
       documents,
@@ -266,6 +277,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       archiveDocument,
       addCategory,
       removeCategory,
+      reload,
     ],
   )
 

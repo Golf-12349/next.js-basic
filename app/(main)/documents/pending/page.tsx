@@ -47,9 +47,13 @@ function CategoryBadge({ category }: { category: string }) {
 }
 
 export default function PendingDocumentsPage() {
-  const { documents, updateDocument } = useDocuments()
+  const { documents, updateDocument, reload } = useDocuments()
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [currentRole, setCurrentRole] = useState<UserRole | null>(getSessionRole)
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
 
   useEffect(() => {
     function syncRole() {

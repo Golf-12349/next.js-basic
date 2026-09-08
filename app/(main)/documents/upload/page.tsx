@@ -55,7 +55,7 @@ function formatFileSize(bytes: number): string {
 export default function UploadDocumentPage() {
   const router = useRouter()
   const { user: currentUser } = useCurrentUser()
-  const { addDocument, uploadFile, categories } = useDocuments()
+  const { addDocument, uploadFile, categories, reload } = useDocuments()
   const { cabinets, folders } = useArchive()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -195,10 +195,15 @@ export default function UploadDocumentPage() {
         folderName: selectedFolder?.name,
       })
 
+      // Auto refresh data across contexts and pages
+      await reload()
+
       pushToast({
         title: status === 'draft' ? 'ບັນທຶກເປັນສະບັບຮ່າງສຳເລັດ' : 'ອັບໂຫຼດເອກະສານສຳເລັດ',
       })
-      router.push(status === 'draft' ? '/documents' : '/documents/pending')
+      const targetPath = status === 'draft' ? '/documents' : '/documents/pending'
+      router.push(targetPath)
+      router.refresh()
     } catch (err) {
       console.error('Upload failed:', err)
       setError('ອັບໂຫຼດເອກະສານລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່')
