@@ -15,7 +15,6 @@ import {
   Clock,
   Clock3,
   FileText,
-  FolderOpen,
   LayoutDashboard,
   LogOut,
   Search,
@@ -30,7 +29,10 @@ import {
 import { useDocuments } from '../(main)/context/DocumentsContext';
 import { useNotifications } from '../(main)/context/NotificationsContext';
 import apiClient from '@/config/axiosClient';
-import { UserAvatar } from '@/app/components/users/UserModals';
+import { useCurrentUser } from '../(main)/context/CurrentUserContext';
+import { roleLabel } from '@/types/user';
+import { BrandLogo } from './brand-logo';
+import { UserAvatar } from './users/UserModals';
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -87,38 +89,6 @@ const menuSections: MenuSection[] = [
   },
 ];
 
-function getInitialUserData() {
-  if (typeof window === 'undefined') {
-    return { name: 'ຜູ້ໃຊ້ງານ', role: 'ຜູ້ໃຊ້ງານ', rawRole: null as string | null };
-  }
-  try {
-    const stored = sessionStorage.getItem('data') || localStorage.getItem('data');
-    if (stored) {
-      const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as {
-        name?: string;
-        role?: string;
-        avatarUrl?: string;
-      };
-      let roleText = 'ຜູ້ໃຊ້ງານ';
-      if (parsed.role === 'SuperAdmin') roleText = 'ຜູ້ດູແລລະບົບສູງສຸດ';
-      else if (parsed.role === 'Admin') roleText = 'ຜູ້ດູແລລະບົບ';
-      else if (parsed.role === 'Staff') roleText = 'ພະນັກງານ';
-      else if (parsed.role === 'User') roleText = 'ຜູ້ໃຊ້ງານ';
-      else if (parsed.role) roleText = parsed.role;
-
-      return {
-        name: parsed.name || 'ຜູ້ໃຊ້ງານ',
-        role: roleText,
-        rawRole: parsed.role || null,
-        avatarUrl: parsed.avatarUrl || undefined,
-      };
-    }
-  } catch {
-    // fallback
-  }
-  return { name: 'ຜູ້ໃຊ້ງານ', role: 'ຜູ້ໃຊ້ງານ', rawRole: null as string | null, avatarUrl: undefined as string | undefined };
-}
-
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -152,19 +122,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     [apiNotifications],
   );
 
-  const [userData, setUserData] = useState(getInitialUserData);
-
-  useEffect(() => {
-    function syncUserData() {
-      setUserData(getInitialUserData());
-    }
-    window.addEventListener('storage', syncUserData);
-    window.addEventListener('dms:user-profile-updated', syncUserData);
-    return () => {
-      window.removeEventListener('storage', syncUserData);
-      window.removeEventListener('dms:user-profile-updated', syncUserData);
-    };
-  }, []);
+  const { user: currentUser, clearUser } = useCurrentUser();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -188,6 +146,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     } catch {
       // ignore — เคลียร์ session ต่อไปแม้ revoke ฝั่ง server ไม่สำเร็จ
     }
+    clearUser();
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('data');
     localStorage.removeItem('token');
@@ -252,14 +211,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
       {/* Sidebar */}
       <aside className="flex w-72 flex-col justify-between overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl">
         <div>
-          <div className="mb-6 flex items-center gap-3 border-b border-slate-800 px-2 pb-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-900/40">
-              <FolderOpen className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">DMS</div>
-              <div className="text-sm font-semibold text-white">ລະບົບເອກກະສານ</div>
-            </div>
+          <div className="mb-6 border-b border-slate-800 px-2 pb-4">
+            <BrandLogo variant="dark" subtitle="ລະບົບເອກກະສານ" />
           </div>
 
           <nav className="space-y-5">
@@ -267,7 +220,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
               .map((section) => ({
                 ...section,
                 items: section.items.filter((item) => {
-                  if (item.href === '/users' && userData.rawRole === 'User') {
+                  const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'SuperAdmin';
+                  if (item.href === '/users' && !isAdmin) {
                     return false;
                   }
                   return true;
@@ -317,14 +271,14 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
         <div className="border-t border-slate-800 pt-4">
           <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-900/80 px-3 py-3">
             <UserAvatar
-              name={userData.name}
-              avatarUrl={userData.avatarUrl}
-              avatarClassName="h-10 w-10"
+              name={currentUser?.name || 'ຜູ້ໃຊ້ງານ'}
+              avatarUrl={currentUser?.avatarUrl}
+              avatarClassName="h-10 w-10 bg-indigo-100 text-indigo-700"
               textClassName="text-sm font-bold"
             />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-white">{userData.name}</div>
-              <div className="text-xs text-slate-400">{userData.role}</div>
+              <div className="truncate text-sm font-semibold text-white">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</div>
+              <div className="text-xs text-slate-400">{roleLabel(currentUser?.role ?? 'User')}</div>
             </div>
           </div>
 
@@ -343,8 +297,9 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <BrandLogo size="sm" variant="light" />
+            <h1 className="truncate text-lg font-semibold text-gray-800">{title}</h1>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
@@ -497,14 +452,14 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                 className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-gray-50"
               >
                 <UserAvatar
-                  name={userData.name}
-                  avatarUrl={userData.avatarUrl}
-                  avatarClassName="h-9 w-9"
+                  name={currentUser?.name || 'ຜູ້ໃຊ້ງານ'}
+                  avatarUrl={currentUser?.avatarUrl}
+                  avatarClassName="h-9 w-9 bg-indigo-100 text-indigo-700"
                   textClassName="text-sm font-bold"
                 />
                 <div className="hidden text-left sm:block">
-                  <p className="text-sm font-semibold leading-none text-gray-900">{userData.name}</p>
-                  <p className="mt-1 text-xs text-gray-500">{userData.role}</p>
+                  <p className="text-sm font-semibold leading-none text-gray-900">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</p>
+                  <p className="mt-1 text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'User')}</p>
                 </div>
                 <ChevronDown
                   className={`h-4 w-4 text-gray-400 transition-transform duration-300 ${
@@ -524,14 +479,14 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                 <div className="border-b border-gray-100 px-4 py-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar
-                      name={userData.name}
-                      avatarUrl={userData.avatarUrl}
-                      avatarClassName="h-10 w-10"
+                      name={currentUser?.name || 'ຜູ້ໃຊ້ງານ'}
+                      avatarUrl={currentUser?.avatarUrl}
+                      avatarClassName="h-10 w-10 bg-indigo-100 text-indigo-700"
                       textClassName="text-sm font-bold"
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-gray-900">{userData.name}</p>
-                      <p className="text-xs text-gray-500">{userData.role}</p>
+                      <p className="truncate text-sm font-semibold text-gray-900">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</p>
+                      <p className="text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'User')}</p>
                     </div>
                   </div>
                 </div>

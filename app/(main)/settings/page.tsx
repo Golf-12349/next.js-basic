@@ -1,51 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { User } from "@/types/user";
 import { DashboardLayout } from "@/app/components/dashboard-layout";
 import { pushToast } from "@/app/components/ui/Toast";
 import { Camera, Check, Eye, EyeOff, Lock, ShieldCheck, Trash2, User as UserIcon } from "lucide-react";
 import { avatarColors, isAvatarImage } from "@/app/components/users/UserModals";
 import { useUsers } from "../context/UsersContext";
-import { edlStructure } from "@/types/user";
-import type { User, UserRole } from "@/types/user";
+import { useCurrentUser } from "@/app/(main)/context/CurrentUserContext";
+import { edlStructure, roleLabel } from "@/types/user";
 import * as userService from "@/lib/dms/userService";
 import { isAxiosError } from "axios";
-
-type StoredProfile = {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  role: UserRole;
-  department?: string;
-  division?: string;
-  avatarUrl?: string;
-};
-
-function getInitialProfile(): StoredProfile {
-  if (typeof window === "undefined") {
-    return { id: "", name: "", email: "", phone: "", role: "User", department: "", division: "", avatarUrl: "" };
-  }
-  try {
-    const stored = sessionStorage.getItem("data") || localStorage.getItem("data");
-    if (stored) {
-      const parsed = (typeof stored === "string" ? JSON.parse(stored) : stored) as StoredProfile;
-      return {
-        id: parsed.id || "",
-        name: parsed.name || "",
-        email: parsed.email || "",
-        phone: parsed.phone || "",
-        role: parsed.role || "User",
-        department: parsed.department || "",
-        division: parsed.division || "",
-        avatarUrl: parsed.avatarUrl || "",
-      };
-    }
-  } catch {
-    // fallback
-  }
-  return { id: "", name: "", email: "", phone: "", role: "User", department: "", division: "", avatarUrl: "" };
-}
 
 /** ຊອກຫາຝ່າຍ/ຫ້ອງການ ທີ່ພະແນກ/ສູນ ນັ້ນຂຶ້ນກັບ (EDL structure) */
 function findDivisionForDepartment(dept: string): string {
@@ -57,17 +22,31 @@ function findDivisionForDepartment(dept: string): string {
 
 export default function SettingsPage() {
   const { setUsers } = useUsers();
+  const { user: currentUser, updateProfile } = useCurrentUser();
 
-  // ---- Profile state (synced with the logged-in user) ----
-  const initialProfile = getInitialProfile();
-  const [name, setName] = useState(initialProfile.name);
-  const [email, setEmail] = useState(initialProfile.email);
-  const [phone, setPhone] = useState(initialProfile.phone || "");
-  const [avatarUrl, setAvatarUrl] = useState(initialProfile.avatarUrl || "");
-  const role = initialProfile.role;
-  const division = initialProfile.division || findDivisionForDepartment(initialProfile.department || "");
-  const department = initialProfile.department || "";
-  const currentUserId = initialProfile.id || undefined;
+  // ---- Profile state (single source: CurrentUserContext) ----
+  const [name, setName] = useState(currentUser?.name ?? "");
+  const [email, setEmail] = useState(currentUser?.email ?? "");
+  const [phone, setPhone] = useState(currentUser?.phone ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatarUrl ?? "");
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  // Sync form ເມື່ອ currentUser ປ່ຽນ (e.g.  ອັບເດດຈາກໜ້າອື່ນ) —  ບໍ່ໃຫ້ໃຊ້ data ເກົ່າ
+  useEffect(() => {
+    const syncForm = () => {
+      setName(currentUser?.name ?? "");
+      setEmail(currentUser?.email ?? "");
+      setPhone(currentUser?.phone ?? "");
+      setAvatarUrl(currentUser?.avatarUrl ?? "");
+    };
+    syncForm();
+  }, [currentUser]);
+
+  const role = currentUser?.role ?? "User";
+  const division = currentUser?.division || findDivisionForDepartment(currentUser?.department || "");
+  const department = currentUser?.department || "";
+  const currentUserId = currentUser?.id;
 
   // ---- Security state ----
   const [currentPassword, setCurrentPassword] = useState("");
@@ -97,8 +76,6 @@ export default function SettingsPage() {
     .slice(0, 2)
     .toUpperCase();
 
-  const roleLabel =
-    role === "SuperAdmin" ? "ຜູ້ດູແລລະບົບສູງສຸດ" : role === "Admin" ? "ຜູ້ບໍລິຫານລະບົບ" : "ພະນັກງານ";
   const roleBadgeClass = role === "User" ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700";
 
   // ---- Handlers ----
@@ -108,21 +85,17 @@ export default function SettingsPage() {
       return;
     }
 
-    // 1) Update session storage ("data") so Sidebar & Header reflect it immediately
-    const stored = sessionStorage.getItem("data");
-    const storedProfile = (typeof stored === "string" ? JSON.parse(stored) : stored) as StoredProfile;
-    const nextProfile: Record<string, unknown> = {
-      ...(storedProfile ?? {}),
+    setSaving(true);
+    setFormError(null);
+
+    // 1) Update global user state via CurrentUserContext (Single Source of Truth)
+    const profilePatch: { name: string; email: string; phone?: string; avatarUrl?: string } = {
       name: name.trim(),
       email: email.trim(),
-      phone: phone.trim(),
+      phone: phone.trim() || undefined,
+      avatarUrl: avatarUrl || undefined,
     };
-    if (avatarUrl) {
-      nextProfile.avatarUrl = avatarUrl;
-    } else {
-      delete nextProfile.avatarUrl;
-    }
-    sessionStorage.setItem("data", JSON.stringify(nextProfile));
+    const result = await updateProfile(profilePatch);
 
     // 2) Sync the matching record in DMS context (users list) + backend
     if (currentUserId) {
@@ -139,9 +112,13 @@ export default function SettingsPage() {
       setUsers((prev) => prev.map((u) => (u.id === currentUserId ? { ...u, ...patch } : u)));
     }
 
-    // 3) Notify the already-mounted DashboardLayout to re-read "data" (name/avatar in Sidebar & Header)
-    window.dispatchEvent(new Event("dms:user-profile-updated"));
-    pushToast({ title: "ບັນທຶກຂໍ້ມູນໂປຣໄຟລ໌ສຳເລັດແລ້ວ" });
+    if (result.ok) {
+      pushToast({ title: "ບັນທຶກຂໍ້ມູນໂປຣໄຟລ໌ສຳເລັດແລ້ວ" });
+    } else {
+      setFormError(result.error ?? "ບັນທຶກບໍ່ສຳເລັດ");
+      pushToast({ title: result.error ?? "ບັນທຶກບໍ່ສຳເລັດ" });
+    }
+    setSaving(false);
   }
 
   async function handleUpdatePassword() {
@@ -278,7 +255,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ເບີໂລມົບປື໋ (ທ້ອນພົນ)</label>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ເບີໂທລະສັບ</label>
                   <input
                     type="tel"
                     value={phone}
@@ -292,7 +269,7 @@ export default function SettingsPage() {
                   <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຕຳແໜ່ງ</label>
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${roleBadgeClass}`}>
-                      {roleLabel}
+                      {roleLabel(role)}
                     </span>
                     <span className="text-xs text-gray-400">(ບໍ່ສາມາດແກ້ໄຂໄດ້)</span>
                   </div>
@@ -316,14 +293,21 @@ export default function SettingsPage() {
                   </div>
                 )}
 
+                {formError && (
+                  <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
+                    {formError}
+                  </div>
+                )}
+
                 <div className="flex justify-end pt-1">
                   <button
                     type="button"
                     onClick={handleSaveProfile}
-                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Check className="h-4 w-4" />
-                    ບັນທຶກການປ່ຽນແປງ
+                    {saving ? "ກຳລັງບັນທຶກ..." : "ບັນທຶກການປ່ຽນແປງ"}
                   </button>
                 </div>
               </div>

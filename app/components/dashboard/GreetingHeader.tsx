@@ -3,25 +3,21 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { CalendarDays, Moon, Plus, Sun, Sunrise } from 'lucide-react';
-import { getStoredUser } from '@/types/user';
+import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext';
 import { formatFullDateLao, shiftOfHour } from './dashboard-utils';
 
 export function GreetingHeader() {
-  const [userName, setUserName] = useState('');
+  const { user: currentUser } = useCurrentUser();
   const [now, setNow] = useState<Date>(() => new Date());
 
   useEffect(() => {
-    const sync = () => setUserName(getStoredUser()?.name?.trim() || '');
-    sync();
-    window.addEventListener('storage', sync);
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
     return () => {
-      window.removeEventListener('storage', sync);
       window.clearInterval(timer);
     };
   }, []);
 
-  const displayName = userName || 'ຜູ້ໃຊ້ງານ';
+  const displayName = currentUser?.name?.trim() || 'ຜູ້ໃຊ້ງານ';
   const shift = shiftOfHour(now.getHours());
   const ShiftIcon = now.getHours() < 12 ? Sunrise : now.getHours() < 17 ? Sun : Moon;
 

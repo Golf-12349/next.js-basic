@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans, Noto_Sans_Lao } from "next/font/google";
 import "./globals.css";
 import { DMSProvider } from './(main)/_dms-context'
+import { CurrentUserProvider } from './(main)/context/CurrentUserContext'
 import ToastContainer from './components/ui/Toast'
 import { Toaster } from 'react-hot-toast';
 
@@ -31,8 +32,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <Toaster />
         <DMSProvider>
-          {children}
-          <ToastContainer />
+          <CurrentUserProvider>
+            {children}
+            <ToastContainer />
+          </CurrentUserProvider>
         </DMSProvider>
       </body>
     </html>

@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import apiClient from "@/config/axiosClient";
+import * as authService from "@/lib/dms/authService";
+import { useCurrentUser } from "@/app/(main)/context/CurrentUserContext";
+import { BrandLogo } from "../brand-logo";
 import { isAxiosError } from "axios";
 import toast from "react-hot-toast";
 import {
@@ -10,7 +12,6 @@ import {
   Eye,
   EyeOff,
   FileText,
-  FolderOpen,
   Loader2,
   Lock,
   Mail,
@@ -41,20 +42,6 @@ type PasswordStrengthChecks = {
 };
 
 type SubmitStatus = "success" | "error" | null;
-
-type APIResponse = {
-  accessToken: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    phone?: string | null;
-    department?: string | null;
-    division?: string | null;
-    avatarUrl?: string | null;
-  };
-};
 
 type APIErrorResponse = {
   message?: string | string[];
@@ -131,6 +118,7 @@ function GlassBubble({
 }
 
 export default function LoginForm() {
+  const { setCurrentUser } = useCurrentUser();
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
   const [errors, setErrors] = useState<LoginErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -215,23 +203,14 @@ export default function LoginForm() {
 
     setIsSubmitting(true);
     try {
-      const response = await apiClient.post<APIResponse>("/auth/login", form);
-
-      if (![200, 201].includes(response.status)) {
-        throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
-      }
-
-      const { accessToken, user } = response.data;
-
-      if (!accessToken || !user) {
-        throw new Error("ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ");
-      }
+      const { accessToken, user } = await authService.login(form);
 
       toast.dismiss();
       toast.success("ເຂົ້າສູ່ລະບົບສຳເລັດ");
       // Save session in sessionStorage so closing the tab auto-logs out
       sessionStorage.setItem("token", accessToken);
-      sessionStorage.setItem("data", JSON.stringify(user));
+      // ຂໍ້ມູນຜູ້ໃຊ້ງານ ຈະຖືກບັນທຶກໂດຍ CurrentUserContext (Single Source of Truth) — ສົ່ງ "data" ລົງ storage ອັດຕະໂນມັດ
+      setCurrentUser(user);
 
       setSubmitStatus("success");
       window.location.replace('/dashboard');
@@ -275,17 +254,7 @@ export default function LoginForm() {
         {/* ── ຝັ່ງຊ້າຍ: Brand identity + floating glass bubbles ── */}
         <div className="relative hidden min-h-screen flex-col justify-between p-10 lg:flex lg:p-16 xl:p-20">
           {/* Top-left logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30">
-              <FolderOpen size={22} />
-            </div>
-            <div>
-              <div className="text-sm font-bold tracking-tight text-slate-900">DMS</div>
-              <div className="text-[11px] font-medium tracking-wide text-slate-500">
-                Document Management System
-              </div>
-            </div>
-          </div>
+          <BrandLogo subtitle="Document Management System" />
 
           {/* Center title + floating bubbles */}
           <div className="relative my-auto max-w-lg pb-28">

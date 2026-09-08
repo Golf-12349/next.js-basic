@@ -1,9 +1,11 @@
 "use client"
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useUsers } from '../context/UsersContext'
+import { useCurrentUser } from '../context/CurrentUserContext'
+import { normalizeCurrentUser } from '@/types/user'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { User, UserRole, UserStatus } from '@/types/user'
 import {
@@ -22,25 +24,12 @@ import { Search, Users as UsersIcon, ShieldCheck, UserCheck, Eye, Pencil, Lock, 
 
 const ALL = 'ທັງໝົດ'
 
-function getInitialUserRole(): UserRole {
-  if (typeof window === 'undefined') return 'SuperAdmin';
-  try {
-    const stored = sessionStorage.getItem('data');
-    if (stored) {
-      const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { role?: UserRole };
-      if (parsed?.role) return parsed.role;
-    }
-  } catch {
-    // fallback
-  }
-  return 'SuperAdmin';
-}
-
 export default function UsersPage() {
   const { users, addUser, updateUser, removeUser, toggleUserStatus } = useUsers()
+  const { user: currentUser, setCurrentUser } = useCurrentUser()
   const router = useRouter()
 
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole>(getInitialUserRole)
+  const currentUserRole = currentUser?.role ?? 'User'
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebounce(query, 250)
   const [filterRole, setFilterRole] = useState<'ທັງໝົດ' | UserRole>(ALL)
@@ -52,14 +41,6 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [temporaryPasswordUser, setTemporaryPasswordUser] = useState<{ name: string; email: string; password: string } | null>(null)
-
-  useEffect(() => {
-    function syncRole() {
-      setCurrentUserRole(getInitialUserRole())
-    }
-    window.addEventListener('storage', syncRole)
-    return () => window.removeEventListener('storage', syncRole)
-  }, [])
 
   const departments = useMemo(() => {
     const set = new Set(users.map((u) => u.department).filter(Boolean))
@@ -132,6 +113,12 @@ export default function UsersPage() {
           return
         }
         await updateUser(editingUser.id, { ...values })
+        // User ID check: sync global auth state ONLY when the edited record is the logged-in user
+        if (currentUser && editingUser.id === currentUser.id) {
+          const { password: _ignoredPassword, ...profileValues } = values
+          void _ignoredPassword
+          setCurrentUser(normalizeCurrentUser({ ...currentUser, ...profileValues }))
+        }
         pushToast({ title: 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານສຳເລັດ' })
       } else {
         if (currentUserRole === 'Admin' && values.role === 'SuperAdmin') {

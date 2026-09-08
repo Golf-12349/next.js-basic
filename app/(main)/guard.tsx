@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { UserRole } from '@/types/user'
+import { useCurrentUser } from './context/CurrentUserContext'
 
 type Props = {
   children: React.ReactNode
@@ -12,6 +13,7 @@ type Props = {
 export default function Guard({ children }: Props) {
   const pathname = usePathname()
   const router = useRouter()
+  const { user: currentUser } = useCurrentUser()
   const [authorized, setAuthorized] = useState(false)
 
   useEffect(() => {
@@ -23,10 +25,6 @@ export default function Guard({ children }: Props) {
           typeof window !== 'undefined'
             ? sessionStorage.getItem('token') || localStorage.getItem('token')
             : null
-        const stored =
-          typeof window !== 'undefined'
-            ? sessionStorage.getItem('data') || localStorage.getItem('data')
-            : null
 
         if (!token) {
           setAuthorized(false)
@@ -34,11 +32,7 @@ export default function Guard({ children }: Props) {
           return
         }
 
-        let role: UserRole | undefined
-        if (stored) {
-          const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { role?: UserRole }
-          role = parsed?.role
-        }
+        const role: UserRole | undefined = currentUser?.role
 
         // Check access to /users route
         if (pathname === '/users' || pathname.startsWith('/users/')) {
@@ -59,7 +53,7 @@ export default function Guard({ children }: Props) {
     }
 
     void validateAccess()
-  }, [pathname, router])
+  }, [pathname, router, currentUser?.role])
 
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {

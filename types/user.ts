@@ -17,26 +17,121 @@ export type User = {
   password?: string; // ລະຫັດຜ່ານ (ໃຊ້ຕອນສ້າງຜູ້ໃຊ້ໃໝ່)
 };
 
+/**
+ * ຂໍ້ມູນຜູ້ໃຊ້ງານທີ່ເຂົ້າລະບົບ (authenticated user) — Single Source of Truth.
+ * Sidebar, Header, Settings Page, User Management ທັງໝົດ ໃຊ້ຂໍ້ມູນນີ້.
+ */
 export type CurrentUser = {
-  id?: string;
-  name?: string;
-  email?: string;
-  role?: UserRole;
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
   department?: string;
+  division?: string;
+  position?: string;
+  status: UserStatus;
+  avatarUrl?: string;
 };
+
+/**
+ * ຮູບແບບຂໍ້ມູນທີ່ backend ສົ່ງມາ (login / /auth/me / /users/me) —
+ * field ສາມາດແຕກຕ່າງກັນ: phone/phoneNumber, avatar/avatarUrl,
+ * role/department ເປັນ string ຫຼື object ກໍໄດ້.
+ */
+export type RawUser = Record<string, unknown>;
+
+function pickText(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'string') {
+    const text = value.trim();
+    return text.length > 0 ? text : undefined;
+  }
+  if (typeof value === 'object') {
+    const name = (value as Record<string, unknown>).name;
+    if (typeof name === 'string') {
+      const text = name.trim();
+      return text.length > 0 ? text : undefined;
+    }
+  }
+  return undefined;
+}
+
+function pickRole(value: unknown): UserRole {
+  const raw = pickText(value);
+  const normalized = raw?.toLowerCase().replace(/[-\s_]/g, '');
+  if (normalized === 'superadmin') return 'SuperAdmin';
+  if (normalized === 'admin') return 'Admin';
+  if (normalized === 'staff') return 'Staff';
+  return 'User';
+}
+
+function pickStatus(value: unknown): UserStatus {
+  const raw = pickText(value);
+  return raw && raw.toLowerCase().trim() === 'inactive' ? 'inactive' : 'active';
+}
+
+/** ປ່ຽນຂໍ້ມູນທີ່ backend ສົ່ງມາ (login / /auth/me / /users/me) ເປັນ CurrentUser ຄື. */
+export function normalizeAuthUser(raw: unknown): CurrentUser | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const id = pickText(r.id) ?? pickText(r.userId) ?? pickText(r._id);
+  if (!id) return null;
+  return {
+    id,
+    name: pickText(r.name) ?? pickText(r.username) ?? '',
+    email: pickText(r.email) ?? '',
+    phone: pickText(r.phone) ?? pickText(r.phoneNumber) ?? pickText(r.phone_number),
+    role: pickRole(r.role),
+    department: pickText(r.department) ?? pickText(r.departmentName),
+    division: pickText(r.division) ?? pickText(r.divisionName),
+    position: pickText(r.position) ?? pickText(r.positionName),
+    status: pickStatus(r.status),
+    avatarUrl: pickText(r.avatarUrl) ?? pickText(r.avatar) ?? pickText(r.avatar_url) ?? pickText(r.photoUrl),
+  };
+}
+
+/** ປ່ຽນຂໍ້ມູນຈາກ storage / ການ merge ເປັນ CurrentUser ຄື (guarantee fields ຄົບຖ້ວນ). */
+export function normalizeCurrentUser(value: unknown): CurrentUser | null {
+  const normalized = normalizeAuthUser(value);
+  if (normalized) return normalized;
+  if (!value || typeof value !== 'object') return null;
+  const v = value as Partial<CurrentUser>;
+  if (!v.id) return null;
+  return {
+    id: v.id,
+    name: v.name ?? '',
+    email: v.email ?? '',
+    phone: v.phone,
+    role: v.role ?? 'User',
+    department: v.department,
+    division: v.division,
+    position: v.position,
+    status: v.status ?? 'active',
+    avatarUrl: v.avatarUrl,
+  };
+}
+
+export function roleLabel(role: UserRole): string {
+  switch (role) {
+    case 'SuperAdmin':
+      return 'ຜູ້ດູແລລະບົບສູງສຸດ';
+    case 'Admin':
+      return 'ຜູ້ດູແລລະບົບ';
+    case 'Staff':
+      return 'ພະນັກງານ';
+    default:
+      return 'ຜູ້ໃຊ້ງານ';
+  }
+}
 
 export function getStoredUser(): CurrentUser | null {
   if (typeof window === 'undefined') return null;
   try {
     const stored = sessionStorage.getItem('data') || localStorage.getItem('data');
     if (!stored) return null;
-    if (typeof stored === 'string') {
-      return JSON.parse(stored);
-    }
-    if (typeof stored === 'object') {
-      return stored as CurrentUser;
-    }
-    return null;
+    const parsed = typeof stored === 'string' ? JSON.parse(stored) : stored;
+    return normalizeCurrentUser(parsed);
   } catch {
     return null;
   }

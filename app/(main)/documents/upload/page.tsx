@@ -7,7 +7,8 @@ import { useArchive } from '../../context/ArchiveContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentFileType, DocumentStatus } from '@/types/document'
 import { FileText, Loader2, RefreshCw, Trash2, Upload } from 'lucide-react'
-import { edlStructure, getStoredUser } from '@/types/user'
+import { edlStructure } from '@/types/user'
+import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
 
 const edlDivisions = Object.keys(edlStructure)
 
@@ -53,6 +54,7 @@ function formatFileSize(bytes: number): string {
 
 export default function UploadDocumentPage() {
   const router = useRouter()
+  const { user: currentUser } = useCurrentUser()
   const { addDocument, uploadFile, categories } = useDocuments()
   const { cabinets, folders } = useArchive()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -183,7 +185,7 @@ export default function UploadDocumentPage() {
         fileType: resolveFileType(selectedFile.name),
         fileSize: uploaded.fileSize,
         uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
-        uploadedBy: getStoredUser()?.name || 'ຜູ້ໃຊ້ງານ',
+        uploadedBy: currentUser?.name || 'ຜູ້ໃຊ້ງານ',
         fileUrl: uploaded.fileUrl,
         fileName: uploaded.fileName,
         // 3-Level archive: save cabinet + folder
