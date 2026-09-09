@@ -89,6 +89,7 @@ export function toFrontendDocument(doc: ApiDocument): Document {
     title: doc.title,
     docNumber: doc.docNumber,
     category: doc.category?.name ?? '',
+    categoryId: doc.categoryId ?? undefined,
     status: doc.status,
     fileType: doc.fileType,
     fileSize: doc.fileSize ?? '-',

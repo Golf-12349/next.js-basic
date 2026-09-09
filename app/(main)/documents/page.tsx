@@ -12,6 +12,7 @@ import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
 import { Settings } from 'lucide-react'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
+import CategoryBadge from '@/app/components/documents/CategoryBadge'
 
 const statusStyles: Record<DocumentStatus, string> = {
   draft: 'bg-slate-100 text-slate-700',
@@ -101,21 +102,31 @@ export default function DocumentsPage() {
     return categoryCounts.get(category) ?? 0
   }
 
-  function handleAddCategory(name: string) {
-    addCategory(name)
-    pushToast({ title: 'ເພີ່ມໝວດໝູ່ສຳເລັດ' })
+  async function handleAddCategory(name: string): Promise<boolean> {
+    const ok = await addCategory(name)
+    pushToast(
+      ok
+        ? { title: 'ເພີ່ມໝວດໝູ່ສຳເລັດ' }
+        : { title: 'ບໍ່ສາມາດເພີ່ມໝວດໝູ່ໄດ້', description: 'ອາດມີຊື່ນີ້ຢູ່ແລ້ວ ຫຼື ການເຊື່ອມຕໍ່ກັບ server ມີປັນຫາ' },
+    )
+    return ok
   }
 
-  function handleRemoveCategory(c: string) {
+  async function handleRemoveCategory(c: string): Promise<boolean> {
     const count = countDocsInCategory(c)
     if (count > 0) {
       pushToast({ title: `ບໍ່ສາມາດລຶບໄດ້ ຍັງມີ ${count} ເອກະສານໃຊ້ໝວດໝູ່ນີ້ຢູ່` })
-      return
+      return false
     }
-    removeCategory(c)
-    if (filterCategory === c) {
-      setFilterCategory('ທັງໝົດ')
+    const ok = await removeCategory(c)
+    if (ok) {
+      if (filterCategory === c) {
+        setFilterCategory('ທັງໝົດ')
+      }
+    } else {
+      pushToast({ title: 'ບໍ່ສາມາດລຶບໝວດໝູ່ໄດ້', description: 'ການລຶບຝັ່ງ server ບໍ່ສຳເລັດ ກະລຸນາລອງໃໝ່' })
     }
+    return ok
   }
 
   return (
@@ -217,7 +228,7 @@ export default function DocumentsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{doc.category}</td>
+                    <td className="px-4 py-3"><CategoryBadge category={doc.category} /></td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.docNumber}</td>
                     <td className="px-4 py-3 text-sm text-gray-700 uppercase">{doc.fileType}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.fileSize}</td>

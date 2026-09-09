@@ -5,6 +5,7 @@ import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
 import { useDebounce } from '@/hooks/useDebounce'
+import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
 import { useEffect, useMemo, useState } from 'react'
 import type { Document, DocumentFileType } from '@/types/document'
 import {
@@ -23,8 +24,8 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 
-// ── Fixed category options (per requirements) ──────────────────────────────
-const CATEGORY_OPTIONS = ['ທັງໝົດ', 'ຂາເຂົ້າ', 'ຂາອອກ', 'ຄຳສັ່ງ', 'ແຈ້ງການ', 'ສັນຍາ', 'ລາຍງານ'] as const
+// ── Category options: ຮວມ DEFAULT_CATEGORIES ຈາກ lib/dms/constants ກັບຕົວເລືອກ "ທັງໝົດ" ──
+const CATEGORY_OPTIONS = ['ທັງໝົດ', ...DEFAULT_CATEGORIES]
 
 // ── File type icon helper ───────────────────────────────────────────────────
 function fileTypeInfo(fileType: DocumentFileType) {

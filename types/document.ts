@@ -25,6 +25,7 @@ export type Document = {
   docNumber: string;
   // ໝວດໝູ່ຕອນນີ້ດຶງມາຈາກຕາຕະລາງ categories ໃນຖານຂໍ້ມູນ (dynamic), ບໍ່ແມ່ນຄ່າຄົງທີ່ອີກຕໍ່ໄປ
   category: string;
+  categoryId?: string; // id ຂອງໝວດໝູ່ໃນ backend — ວ່າງເມື່ອເອກະສານບໍ່ມີໝວດໝູ່
   status: DocumentStatus;
   fileType: DocumentFileType;
   fileSize: string;

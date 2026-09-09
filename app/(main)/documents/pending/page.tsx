@@ -8,7 +8,7 @@ import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import type { Document } from '@/types/document'
 import type { UserRole } from '@/types/user'
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-react'
+import CategoryBadge from '@/app/components/documents/CategoryBadge'
 
 function getSessionRole(): UserRole | null {
   if (typeof window === 'undefined') return null
@@ -20,30 +20,6 @@ function getSessionRole(): UserRole | null {
   } catch {
     return null
   }
-}
-
-const categoryBadgeStyles: Record<string, string> = {
-  'ຂາເຂົ້າ': 'bg-blue-100 text-blue-800',
-  'ຂາອອກ': 'bg-violet-100 text-violet-800',
-}
-
-const categoryBadgeIcons: Record<string, typeof ArrowDownLeft> = {
-  'ຂາເຂົ້າ': ArrowDownLeft,
-  'ຂາອອກ': ArrowUpRight,
-}
-
-function CategoryBadge({ category }: { category: string }) {
-  const Icon = categoryBadgeIcons[category]
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-        categoryBadgeStyles[category] ?? 'bg-slate-100 text-slate-700'
-      }`}
-    >
-      {Icon ? <Icon className="h-3 w-3" /> : null}
-      {category}
-    </span>
-  )
 }
 
 export default function PendingDocumentsPage() {

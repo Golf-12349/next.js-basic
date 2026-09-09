@@ -8,6 +8,7 @@ import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentFileType, DocumentStatus } from '@/types/document'
 import { FileText, Loader2, RefreshCw, Trash2, Upload } from 'lucide-react'
 import { edlStructure } from '@/types/user'
+import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
 
 const edlDivisions = Object.keys(edlStructure)
@@ -19,17 +20,6 @@ const documentTypeOptions = [
   'ບົດລາຍງານ',
   'ຄຳສັ່ງ / ມະຕິ',
   'ອື່ນໆ',
-]
-
-// ໝວດໝູ່ມານົອກ DMS — ເຫົ່ດືຶມປົວໝົດ ເມື່ອ categories ຈາກ useDMS ຍັງວາງເປົ້ອຍ (e.g. ເວົເປືອຍ ກ່ອນການລົ້ດ from backend)
-const DEFAULT_CATEGORIES = [
-  'ຂາເຂົ້າ',
-  'ຂາອອກ',
-  'ຄຳສັ່ງ',
-  'ແຈ້ງການ',
-  'ສັນຍາ',
-  'ລາຍງານ',
-  'ທົ່ວໄປ',
 ]
 
 // ສ້າງເລກທີເອກະສານອັດຕະໂນມັດ ເຊັ່ນ DOC-2026-001
@@ -55,7 +45,7 @@ function formatFileSize(bytes: number): string {
 export default function UploadDocumentPage() {
   const router = useRouter()
   const { user: currentUser } = useCurrentUser()
-  const { addDocument, uploadFile, categories, reload } = useDocuments()
+  const { addDocument, uploadFile, categories, loading, reload } = useDocuments()
   const { cabinets, folders } = useArchive()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -450,7 +440,7 @@ export default function UploadDocumentPage() {
                 <button
                   type="button"
                   onClick={() => handleSubmit('pending')}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || loading}
                   className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
                 >
                   {isSubmitting ? 'ກຳລັງອັບໂຫຼດ...' : 'ອັບໂຫຼດເອກະສານ'}
@@ -458,7 +448,7 @@ export default function UploadDocumentPage() {
                 <button
                   type="button"
                   onClick={() => handleSubmit('draft')}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || loading}
                   className="flex-1 rounded-lg bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-400"
                 >
                   {isSubmitting ? 'ກຳລັງອັບໂຫຼດ...' : 'ບັນທຶກເປັນສະບັບຮ່າງ'}
