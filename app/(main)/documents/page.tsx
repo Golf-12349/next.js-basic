@@ -13,6 +13,8 @@ import { pushToast } from '@/app/components/ui/Toast'
 import { Settings } from 'lucide-react'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
+import DirectionBadge, { resolveDirection } from '@/app/components/documents/DirectionBadge'
+import { edlStructure } from '@/types/user'
 
 const statusStyles: Record<DocumentStatus, string> = {
   draft: 'bg-slate-100 text-slate-700',
@@ -48,6 +50,9 @@ export default function DocumentsPage() {
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
+  const [filterDirection, setFilterDirection] = useState('ທັງໝົດ')
+  const [filterDivision, setFilterDivision] = useState('ທັງໝົດ')
+  const [filterDepartment, setFilterDepartment] = useState('ທັງໝົດ')
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
   const [manageCategoryOpen, setManageCategoryOpen] = useState(false)
@@ -66,9 +71,12 @@ export default function DocumentsPage() {
         if (filterStatus === 'ອະນຸມັດ' && d.status !== 'approved') return false
         if (filterStatus === 'ເກັບເຂົ້າຄັງ' && d.status !== 'archived') return false
       }
+      if (filterDirection !== 'ທັງໝົດ' && resolveDirection(d) !== filterDirection) return false
+      if (filterDivision !== 'ທັງໝົດ' && d.division !== filterDivision) return false
+      if (filterDepartment !== 'ທັງໝົດ' && d.department !== filterDepartment) return false
       return true
     })
-  }, [documents, debouncedQuery, filterCategory, filterCabinet, filterStatus])
+  }, [documents, debouncedQuery, filterCategory, filterCabinet, filterStatus, filterDirection, filterDivision, filterDepartment])
 
   function handleDelete(doc: Document) {
     setConfirmDelete(doc)
@@ -197,6 +205,44 @@ export default function DocumentsPage() {
                 <option>ເກັບເຂົ້າຄັງ</option>
               </select>
             </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ທິດທາງ</label>
+              <select value={filterDirection} onChange={(e) => setFilterDirection(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
+                <option>ທັງໝົດ</option>
+                <option value="inbound">📥 ຂາເຂົ້າ</option>
+                <option value="outbound">📤 ຂາອອກ</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ຝ່າຍ</label>
+              <select
+                value={filterDivision}
+                onChange={(e) => { setFilterDivision(e.target.value); setFilterDepartment('ທັງໝົດ') }}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400"
+              >
+                <option>ທັງໝົດ</option>
+                {Object.keys(edlStructure).map((div) => (
+                  <option key={div}>{div}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ພະແນກ / ສູນ</label>
+              <select
+                value={filterDepartment}
+                onChange={(e) => setFilterDepartment(e.target.value)}
+                disabled={filterDivision === 'ທັງໝົດ'}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                <option>ທັງໝົດ</option>
+                {(filterDivision !== 'ທັງໝົດ' ? (edlStructure[filterDivision] ?? []) : []).map((dep) => (
+                  <option key={dep}>{dep}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -207,6 +253,7 @@ export default function DocumentsPage() {
                 <tr>
                   <th className="px-4 py-3">ເອກະສານ</th>
                   <th className="px-4 py-3">ໝວດໝູ່</th>
+                  <th className="px-4 py-3">ທິດທາງ</th>
                   <th className="px-4 py-3">ເລກທີ</th>
                   <th className="px-4 py-3">ຮູບແບບ</th>
                   <th className="px-4 py-3">ຂະໜາດ</th>
@@ -222,6 +269,11 @@ export default function DocumentsPage() {
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-900">{doc.title}</div>
                       <div className="text-xs text-gray-500">ID: {doc.id}</div>
+                      {(doc.division || doc.department) && (
+                        <div className="text-xs text-gray-500">
+                          🏢 {[doc.division, doc.department].filter(Boolean).join(' • ')}
+                        </div>
+                      )}
                       {(doc.cabinetName || doc.folderName) && (
                         <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
                           🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
@@ -229,6 +281,7 @@ export default function DocumentsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3"><CategoryBadge category={doc.category} /></td>
+                    <td className="px-4 py-3"><DirectionBadge direction={doc.direction} category={doc.category} /></td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.docNumber}</td>
                     <td className="px-4 py-3 text-sm text-gray-700 uppercase">{doc.fileType}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.fileSize}</td>
@@ -284,6 +337,10 @@ export default function DocumentsPage() {
                 <div>
                   <div className="text-sm text-gray-500">ໝວດໝູ່</div>
                   <div className="font-semibold">{previewDoc.category}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ທິດທາງ</div>
+                  <DirectionBadge direction={previewDoc.direction} category={previewDoc.category} />
                 </div>
               </div>
               {/* PDF/image viewer fills the remaining space and scrolls independently inside the modal body */}

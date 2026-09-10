@@ -42,6 +42,9 @@ export type ApiDocument = {
   docNumber: string
   categoryId: string | null
   category: ApiCategory | null
+  direction?: Document['direction']
+  division?: string | null
+  department?: string | null
   status: Document['status']
   fileType: Document['fileType']
   fileSize: string | null
@@ -90,6 +93,9 @@ export function toFrontendDocument(doc: ApiDocument): Document {
     docNumber: doc.docNumber,
     category: doc.category?.name ?? '',
     categoryId: doc.categoryId ?? undefined,
+    direction: doc.direction,
+    division: doc.division ?? undefined,
+    department: doc.department ?? undefined,
     status: doc.status,
     fileType: doc.fileType,
     fileSize: doc.fileSize ?? '-',

@@ -5,22 +5,13 @@ import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../../context/DocumentsContext'
 import { useArchive } from '../../context/ArchiveContext'
 import { pushToast } from '@/app/components/ui/Toast'
-import type { DocumentFileType, DocumentStatus } from '@/types/document'
+import type { DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
 import { FileText, Loader2, RefreshCw, Trash2, Upload } from 'lucide-react'
 import { edlStructure } from '@/types/user'
-import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
+import { DEFAULT_CATEGORIES, DOCUMENT_DIRECTIONS } from '@/lib/dms/constants'
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
 
 const edlDivisions = Object.keys(edlStructure)
-
-const documentTypeOptions = [
-  'ເອກະສານການເງິນ',
-  'ແຈ້ງການ / ປະກາດ',
-  'ສັນຍາ & ຂໍ້ຕົກລົງ',
-  'ບົດລາຍງານ',
-  'ຄຳສັ່ງ / ມະຕິ',
-  'ອື່ນໆ',
-]
 
 // ສ້າງເລກທີເອກະສານອັດຕະໂນມັດ ເຊັ່ນ DOC-2026-001
 function generateDocNumber(): string {
@@ -54,13 +45,16 @@ export default function UploadDocumentPage() {
   const [docNumber, setDocNumber] = useState(generateDocNumber)
   // ໝວດໝູ່ ເລືອກໄດ້ຄຳອນຕົ້ມັດົດ ກັບຕົວເລືອກທຳອິດ — ສະນັ້ງ dropdown ບໍ່ວາງເປົ້ອຍ
   const categoryOptions = useMemo(
-    () => Array.from(new Set([...DEFAULT_CATEGORIES, ...categories])),
+    () => Array.from(new Set([...DEFAULT_CATEGORIES, ...categories])).filter(
+      // ຕັດທິດທາງເກົ່າອອກ ກ່ອນລິດ ເພື່ອບໍ່ໃຫ້ ຂາເຂົ້າ/ຂາອອກ ປົນຢູ່ລິດ ປະເພດເອກະສານ
+      (c) => c !== 'ຂາເຂົ້າ' && c !== 'ຂາອອກ',
+    ),
     [categories]
   )
+  const [direction, setDirection] = useState<DocumentDirection>('inbound')
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0])
   const [division, setDivision] = useState('')
   const [department, setDepartment] = useState('')
-  const [documentType, setDocumentType] = useState('')
   const [uploadDate, setUploadDate] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
@@ -133,10 +127,6 @@ export default function UploadDocumentPage() {
       setError('ກະລຸນາເລືອກພະແນກ / ສູນ')
       return false
     }
-    if (!documentType) {
-      setError('ກະລຸນາເລືອກຕຳບົບເອກະສານ')
-      return false
-    }
     if (!selectedFile) {
       setError('ກະລຸນາເລືອກໄຟລ໌')
       return false
@@ -168,9 +158,9 @@ export default function UploadDocumentPage() {
         title: title.trim(),
         docNumber: docNumber.trim(),
         category,
+        direction,
         division,
         department,
-        documentType,
         status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບສົ່ງອະນຸມັດ
         fileType: resolveFileType(selectedFile.name),
         fileSize: uploaded.fileSize,
@@ -398,22 +388,26 @@ export default function UploadDocumentPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  ປະເພດເອກະສານ <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={documentType}
-                  onChange={(e) => setDocumentType(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
-                >
-                  <option value="">ເລືອກປະເພດເອກະສານ</option>
-                  {documentTypeOptions.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                <label className="mb-1 block text-sm font-medium text-gray-700">ທິດທາງ</label>
+                <div className="flex gap-2">
+                  {DOCUMENT_DIRECTIONS.map((dir) => (
+                    <button
+                      key={dir.value}
+                      type="button"
+                      onClick={() => setDirection(dir.value)}
+                      className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+                        direction === dir.value
+                          ? 'border-indigo-600 bg-indigo-600 text-white'
+                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {dir.emoji} {dir.label}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">ໝວດໝູ່</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">ປະເພດເອກະສານ</label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}

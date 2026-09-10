@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
+import { resolveDirection } from '@/app/components/documents/DirectionBadge';
 import { addDays, clamp, LAO_MONTHS, parseDateKey, toDateKey } from './dashboard-utils';
 
 type Period = 7 | 30 | 90;
@@ -72,7 +73,9 @@ export function TrafficChart() {
       const key = doc.uploadDate.slice(0, 10);
       const bucket = buckets.get(key);
       if (!bucket) continue;
-      if (doc.category === 'ຂາເຂົ້າ') bucket.inbound += 1;
+      // ນັບຕາມ field ທິດທາງໃໝ່ (direction) — ເອກະສານທີ່ບໍ່ລະບຸທິດທາງຈະນັບເປັນ ຂາອອກ ຄືເກົ່າ
+      const dir = resolveDirection(doc);
+      if (dir === 'inbound') bucket.inbound += 1;
       else bucket.outbound += 1;
     }
     return [...buckets.entries()].map(([key, v]) => ({

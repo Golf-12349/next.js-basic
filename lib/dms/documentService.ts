@@ -1,5 +1,5 @@
 import apiClient from '@/config/axiosClient'
-import type { DocumentFileType, DocumentStatus } from '@/types/document'
+import type { DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
 import type { ApiDocument } from './types'
 
 export interface UploadFileResult {
@@ -12,6 +12,9 @@ export interface CreateDocumentPayload {
   title: string
   docNumber: string
   categoryId?: string
+  direction?: DocumentDirection
+  division?: string
+  department?: string
   fileType: DocumentFileType
   status: DocumentStatus
   fileSize?: string

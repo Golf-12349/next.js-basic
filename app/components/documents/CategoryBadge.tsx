@@ -4,6 +4,14 @@ import { UNCATEGORIZED_LABEL } from '@/lib/dms/constants'
 
 /** ສີ badge ຕາມໝວດໝູ່ — ໝວດໝູ່ໃດທີ່ບໍ່ຢູ່ໃນ map ຈະໃຊ້ສີ fallback */
 const categoryBadgeStyles: Record<string, string> = {
+  // ປະເພດເອກະສານ (ໃໝ່ — ລວມ documentType ເຂົ້າໝວດໝູ່)
+  'ເອກະສານການເງິນ': 'bg-emerald-100 text-emerald-800',
+  'ແຈ້ງການ / ປະກາດ': 'bg-sky-100 text-sky-800',
+  'ສັນຍາ & ຂໍ້ຕົກລົງ': 'bg-violet-100 text-violet-800',
+  'ບົດລາຍງານ': 'bg-rose-100 text-rose-800',
+  'ຄຳສັ່ງ / ມະຕິ': 'bg-amber-100 text-amber-800',
+  'ອື່ນໆ': 'bg-gray-100 text-gray-700',
+  // ເກົ່າ (legacy — ເອກະສານເກົ່າຍັງມີຊື່ກ່ອນຢູ່)
   'ຂາເຂົ້າ': 'bg-blue-100 text-blue-800',
   'ຂາອອກ': 'bg-violet-100 text-violet-800',
   'ຄຳສັ່ງ': 'bg-amber-100 text-amber-800',

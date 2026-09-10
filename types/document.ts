@@ -1,5 +1,7 @@
 export type DocumentStatus = 'draft' | 'pending' | 'approved' | 'archived';
 export type DocumentFileType = 'pdf' | 'doc' | 'image';
+/** ທິດທາງເອກະສານ — ແຍກຈາກໝວດໝູ່ ເພື່ອຮອງຮັບເອກະສານທີ່ເປັນທັງຂາເຂົ້າ ແລະ ເປັນສັນຍາພ້ອມກັນ */
+export type DocumentDirection = 'inbound' | 'outbound';
 
 // ── 3-Level Archive types ────────────────────────────────────────────────
 export type Cabinet = {
@@ -35,9 +37,9 @@ export type Document = {
   fileName?: string;
   pdfUrl?: string;
   deleted?: boolean;
+  direction?: DocumentDirection; // ຂາເຂົ້າ / ຂາອອກ (ໃໝ່ — ແຍກຈາກໝວດໝູ່)
   division?: string; // ຝ່າຍ / ຫ້ອງການ / ສະຖາບັນ
   department?: string; // ພະແນກ / ສູນ
-  documentType?: string;
   // 3-Level archive fields
   cabinetId?: string;
   cabinetName?: string;
