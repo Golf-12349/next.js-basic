@@ -78,6 +78,9 @@ export default function ArchivePage() {
           showCreateButton={showCreateInHeader}
           createButtonLabel={headerCreateLabel}
           onCreate={handleHeaderCreate}
+          showSecondaryButton={canManage && archive.view.level !== 'warehouses'}
+          secondaryButtonLabel="+ ສ້າງຄັງເອກະສານໃໝ່"
+          onSecondaryCreate={() => archive.setWarehouseModalOpen(true)}
         />
 
         <div className="mb-6">

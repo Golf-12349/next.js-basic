@@ -36,9 +36,19 @@ interface PageHeaderProps {
   showCreateButton?: boolean;
   createButtonLabel?: string;
   onCreate?: () => void;
+  showSecondaryButton?: boolean;
+  secondaryButtonLabel?: string;
+  onSecondaryCreate?: () => void;
 }
 
-export function PageHeader({ showCreateButton, createButtonLabel = '+ ສ້າງຕູ້ເອກະສານໃໝ່', onCreate }: PageHeaderProps) {
+export function PageHeader({
+  showCreateButton,
+  createButtonLabel = '+ ສ້າງຕູ້ເອກະສານໃໝ່',
+  onCreate,
+  showSecondaryButton,
+  secondaryButtonLabel = '+ ສ້າງຄັງເອກະສານໃໝ່',
+  onSecondaryCreate,
+}: PageHeaderProps) {
   return (
     <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div>
@@ -48,15 +58,26 @@ export function PageHeader({ showCreateButton, createButtonLabel = '+ ສ້າ�
         </p>
       </div>
 
-      {showCreateButton && (
-        <button
-          onClick={onCreate}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
-        >
-          <Plus size={16} />
-          {createButtonLabel}
-        </button>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {showSecondaryButton && (
+          <button
+            onClick={onSecondaryCreate}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-white px-3.5 py-2 text-sm font-medium text-indigo-700 shadow-sm transition hover:bg-indigo-50"
+          >
+            <Plus size={16} />
+            {secondaryButtonLabel}
+          </button>
+        )}
+        {showCreateButton && (
+          <button
+            onClick={onCreate}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
+          >
+            <Plus size={16} />
+            {createButtonLabel}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

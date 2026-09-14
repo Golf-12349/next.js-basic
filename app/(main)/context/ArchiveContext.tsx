@@ -29,6 +29,16 @@ const WAREHOUSES_STORAGE_KEY = 'dms_warehouses'
 const CABINETS_STORAGE_KEY = 'dms_cabinets'
 const FOLDERS_STORAGE_KEY = 'dms_folders'
 
+export const DEFAULT_WAREHOUSES: Warehouse[] = [
+  {
+    id: 'default-warehouse',
+    name: 'ຄັງເອກະສານສູນກາງ',
+    description: 'ຄັງເອກະສານລວມສຳລັບຕູ້ເອກະສານທົ່ວໄປ',
+    color: 'from-indigo-600 to-purple-600',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+]
+
 function saveToStorage<T>(key: string, data: T) {
   if (typeof window === 'undefined') return
   try {
@@ -37,18 +47,21 @@ function saveToStorage<T>(key: string, data: T) {
   } catch {}
 }
 
-function loadFromStorage<T>(key: string): T[] {
-  if (typeof window === 'undefined') return []
+function loadFromStorage<T>(key: string, fallback: T[] = []): T[] {
+  if (typeof window === 'undefined') return fallback
   try {
     const raw = localStorage.getItem(key) || sessionStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
   } catch {}
-  return []
+  return fallback
 }
 
 export function ArchiveProvider({ children }: { children: React.ReactNode }) {
   const { setDocuments, updateDocument } = useDocuments()
-  const [warehouses, setWarehouses] = useState<Warehouse[]>(() => loadFromStorage<Warehouse>(WAREHOUSES_STORAGE_KEY))
+  const [warehouses, setWarehouses] = useState<Warehouse[]>(() => loadFromStorage<Warehouse>(WAREHOUSES_STORAGE_KEY, DEFAULT_WAREHOUSES))
   const [cabinets, setCabinets] = useState<Cabinet[]>(() => loadFromStorage<Cabinet>(CABINETS_STORAGE_KEY))
   const [folders, setFolders] = useState<Folder[]>(() => loadFromStorage<Folder>(FOLDERS_STORAGE_KEY))
 
