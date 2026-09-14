@@ -20,13 +20,27 @@ export type ApiUser = {
   temporaryPassword?: string
 }
 
-export type ApiCabinet = {
+export type ApiWarehouse = {
   id: string
   name: string
+  division?: string | null
+  description?: string | null
+  color?: string | null
+  createdAt: string
+  updatedAt?: string
+  cabinets?: ApiCabinet[]
+}
+
+export type ApiCabinet = {
+  id: string
+  warehouseId?: string | null
+  name: string
   color: string
+  division?: string | null
   department: string
   description: string
   createdAt: string
+  folders?: ApiFolder[]
 }
 
 export type ApiFolder = {
@@ -55,6 +69,8 @@ export type ApiDocument = {
   uploadedBy: { id: string; name: string } | null
   uploadDate: string
   deleted: boolean
+  warehouseId?: string | null
+  warehouse?: ApiWarehouse | null
   cabinetId: string | null
   cabinet: ApiCabinet | null
   folderId: string | null
@@ -106,6 +122,8 @@ export function toFrontendDocument(doc: ApiDocument): Document {
     fileUrl: doc.fileUrl ?? '#',
     fileName: doc.fileName ?? undefined,
     deleted: doc.deleted,
+    warehouseId: doc.warehouseId ?? undefined,
+    warehouseName: doc.warehouse?.name,
     cabinetId: doc.cabinetId ?? undefined,
     cabinetName: doc.cabinet?.name,
     folderId: doc.folderId ?? undefined,

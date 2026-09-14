@@ -37,8 +37,11 @@ export default function UploadDocumentPage() {
   const router = useRouter()
   const { user: currentUser } = useCurrentUser()
   const { addDocument, uploadFile, categories, loading, reload } = useDocuments()
-  const { cabinets, folders } = useArchive()
+  const { warehouses, cabinets, folders } = useArchive()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const isDivisionAdmin = currentUser?.role === 'DivisionAdmin'
+  const isDepartmentAdmin = currentUser?.role === 'DepartmentAdmin'
 
   const [title, setTitle] = useState('')
   // ອັດຕະໂນມັດຕື່ມເລກທີ reacts ເມື່ອເຂົ້າມາໜ້ານີ້ (ຜູ້ໃຊ້ສາມາດແກ້ໄຂໄດ້)
@@ -61,24 +64,61 @@ export default function UploadDocumentPage() {
   const [pdfLoading, setPdfLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // ລຶບ object URL ເມື່ອປ່ຽນໄຟລ໌ ຫຼື ອອກໜ້າການ ເພື່ອປ້ອງກັນການຮົ່ວໄຫຼ
-  useEffect(() => {
-    return () => {
-      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
-    }
-  }, [filePreviewUrl])
-
-  // 3-Level archive: cabinet + folder selection
+  // 4-Level archive: warehouse + cabinet + shelf selection
+  const [warehouseId, setWarehouseId] = useState('')
   const [cabinetId, setCabinetId] = useState('')
   const [folderId, setFolderId] = useState('')
 
-  // ການກັນສະເພາະແຟ້ມຂອງຕູ້ທີ່ເລືອກ
+  // Pre-fill division & department according to user role
+  useEffect(() => {
+    if (currentUser?.division) {
+      setDivision(currentUser.division)
+    }
+    if (currentUser?.role === 'DepartmentAdmin' && currentUser?.department) {
+      setDepartment(currentUser.department)
+    }
+  }, [currentUser])
+
+  // Visible warehouses & cabinets
+  const visibleWarehouses = useMemo(() => {
+    if (isDivisionAdmin && currentUser?.division) {
+      return warehouses.filter((w) => !w.division || w.division === currentUser.division)
+    }
+    return warehouses
+  }, [warehouses, isDivisionAdmin, currentUser?.division])
+
+  const visibleCabinets = useMemo(() => {
+    let list = cabinets
+    if (warehouseId) {
+      list = list.filter((c) => c.warehouseId === warehouseId)
+    }
+    if (isDivisionAdmin && currentUser?.division) {
+      list = list.filter((c) => !c.division || c.division === currentUser.division)
+    }
+    if (isDepartmentAdmin && currentUser?.department) {
+      list = list.filter((c) => !c.department || c.department === currentUser.department)
+    }
+    return list
+  }, [cabinets, warehouseId, isDivisionAdmin, isDepartmentAdmin, currentUser])
+
+  // ການກັນສະເພາະຊັ້ນວາງຂອງຕູ້ທີ່ເລືອກ
   const visibleFolders = cabinetId ? folders.filter((f) => f.cabinetId === cabinetId) : []
+
+  function handleWarehouseChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value
+    setWarehouseId(value)
+    setCabinetId('')
+    setFolderId('')
+  }
 
   function handleCabinetChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value
     setCabinetId(value)
-    setFolderId('') // ຣີເຊັດແຟ້ມເມື່ອປ່ຽນຕູ້
+    setFolderId('') // ຣີເຊັດຊັ້ນວາງເມື່ອປ່ຽນຕູ້
+    const cab = cabinets.find((c) => c.id === value)
+    if (cab?.warehouseId && !warehouseId) {
+      setWarehouseId(cab.warehouseId)
+    }
   }
 
   // ສະແດງພະແນກ/ສູນ ພາຍໃຕ້ຝ່າຍທີ່ເລືອກ ແລະ ຣີເຊັດພະແນກ ເມື່ອປ່ຽນຝ່າຍ
@@ -107,7 +147,6 @@ export default function UploadDocumentPage() {
     setSelectedFile(null)
     setFilePreviewUrl('')
     setError(null)
-
   }
 
   function validateForm(): boolean {
@@ -116,7 +155,7 @@ export default function UploadDocumentPage() {
       return false
     }
     if (!docNumber.trim()) {
-      setError('ກະລຸນາປ້ອນຍັງທີ')
+      setError('ກະລຸນາປ້ອນເລກທີ')
       return false
     }
     if (!division) {
@@ -136,7 +175,7 @@ export default function UploadDocumentPage() {
       return false
     }
     if (!folderId) {
-      setError('ກະລຸນາເລືອກແຟ້ມ')
+      setError('ກະລຸນາເລືອກຊັ້ນວາງເອກະສານ')
       return false
     }
     setError(null)
@@ -148,6 +187,8 @@ export default function UploadDocumentPage() {
 
     const selectedCabinet = cabinets.find((c) => c.id === cabinetId)
     const selectedFolder = folders.find((f) => f.id === folderId)
+    const activeWarehouseId = warehouseId || selectedCabinet?.warehouseId
+    const selectedWarehouse = warehouses.find((w) => w.id === activeWarehouseId)
 
     setIsSubmitting(true)
     try {
@@ -168,7 +209,9 @@ export default function UploadDocumentPage() {
         uploadedBy: currentUser?.name || 'ຜູ້ໃຊ້ງານ',
         fileUrl: uploaded.fileUrl,
         fileName: uploaded.fileName,
-        // 3-Level archive: save cabinet + folder
+        // 4-Level archive: save warehouse + cabinet + shelf
+        warehouseId: activeWarehouseId || undefined,
+        warehouseName: selectedWarehouse?.name,
         cabinetId,
         cabinetName: selectedCabinet?.name,
         folderId,
@@ -319,18 +362,34 @@ export default function UploadDocumentPage() {
                 />
               </div>
 
-              {/* 3-Level archive: Cabinet + Folder dropdowns */}
+              {/* 4-Level archive: Warehouse + Cabinet + Shelf dropdowns */}
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                  ຕູ້ເອກະສານ <span className="text-red-500">*</span>
+                  🏛️ ຄັງເອກະສານ
+                </label>
+                <select
+                  value={warehouseId}
+                  onChange={handleWarehouseChange}
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                >
+                  <option value="">— ເລືອກຄັງເອກະສານ (ຫຼື ເລືອກຕູ້ໂດຍກົງ) —</option>
+                  {visibleWarehouses.map((w) => (
+                    <option key={w.id} value={w.id}>🏛️ {w.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  🗄️ ຕູ້ເອກະສານ <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={cabinetId}
                   onChange={handleCabinetChange}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
                 >
-                  <option value=""> ເລືອກຕູ້ເອກະສານ </option>
-                  {cabinets.map((c) => (
+                  <option value="">— ເລືອກຕູ້ເອກະສານ —</option>
+                  {visibleCabinets.map((c) => (
                     <option key={c.id} value={c.id}>🗄️ {c.name}</option>
                   ))}
                 </select>
@@ -338,7 +397,7 @@ export default function UploadDocumentPage() {
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                  ແຟ້ມ <span className="text-red-500">*</span>
+                  📁 ຊັ້ນວາງເອກະສານ <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={folderId}
@@ -346,13 +405,13 @@ export default function UploadDocumentPage() {
                   disabled={!cabinetId}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                 >
-                  <option value="">{cabinetId ? '— ເລືອກແຟ້ມ —' : '— ກະລຸນາເລືອກຕູ້ກ່ອນ —'}</option>
+                  <option value="">{cabinetId ? '— ເລືອກຊັ້ນວາງ —' : '— ກະລຸນາເລືອກຕູ້ກ່ອນ —'}</option>
                   {visibleFolders.map((f) => (
                     <option key={f.id} value={f.id}>📁 {f.name}</option>
                   ))}
                 </select>
                 {cabinetId && visibleFolders.length === 0 && (
-                  <p className="mt-1 text-xs text-amber-600">ຕູ້ນີ້ຍັງບໍ່ມີແຟ້ມ — ກະລຸນາສ້າງແຟ້ມກ່ອນທີ່ໜ້າ ຄັງເກັບເອກະສານ</p>
+                  <p className="mt-1 text-xs text-amber-600">ຕູ້ນີ້ຍັງບໍ່ມີຊັ້ນວາງ — ກະລຸນາສ້າງຊັ້ນວາງກ່ອນທີ່ໜ້າ ຄັງເກັບເອກະສານ</p>
                 )}
               </div>
 
@@ -362,8 +421,9 @@ export default function UploadDocumentPage() {
                 </label>
                 <select
                   value={division}
+                  disabled={isDivisionAdmin || isDepartmentAdmin}
                   onChange={handleDivisionChange}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400 disabled:opacity-60"
                 >
                   <option value=""> ເລືອກຝ່າຍ / ຫ້ອງການ </option>
                   {edlDivisions.map((d) => (
@@ -374,11 +434,14 @@ export default function UploadDocumentPage() {
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   ພະແນກ / ສູນ <span className="text-red-500">*</span>
+                  {isDivisionAdmin && (
+                    <span className="ml-1 text-xs font-normal text-indigo-600">(ເລືອກພະແນກທີ່ຈະສົ່ງເອກະສານໃຫ້)</span>
+                  )}
                 </label>
                 <select
                   value={department}
+                  disabled={isDepartmentAdmin || !division}
                   onChange={(e) => setDepartment(e.target.value)}
-                  disabled={!division}
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                 >
                   <option value="">{division ? '— ເລືອກພະແນກ / ສູນ —' : '— ເລືອກຝ່າຍກ່ອນ —'}</option>

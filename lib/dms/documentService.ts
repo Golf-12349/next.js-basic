@@ -21,6 +21,7 @@ export interface CreateDocumentPayload {
   fileUrl?: string
   fileName?: string
   uploadDate: string
+  warehouseId?: string
   cabinetId?: string
   folderId?: string
 }
