@@ -11,13 +11,13 @@ export type ViewState =
   | { level: 'documents'; warehouseId?: string; cabinetId: string; folderId: string };
 
 interface ArchiveActions {
-  createWarehouse?: (data: { name: string; division?: string; description?: string; color?: string }) => void;
-  createCabinet: (data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) => void;
-  createFolder: (data: { cabinetId: string; name: string; description: string }) => void;
-  deleteWarehouse?: (id: string) => void;
-  deleteCabinet: (id: string) => void;
-  deleteFolder: (id: string) => void;
-  deleteDocument: (id: string) => void;
+  createWarehouse?: (data: { name: string; division?: string; description?: string; color?: string }) => Promise<unknown> | void;
+  createCabinet: (data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) => Promise<unknown> | void;
+  createFolder: (data: { cabinetId: string; name: string; description: string }) => Promise<unknown> | void;
+  deleteWarehouse?: (id: string) => Promise<unknown> | void;
+  deleteCabinet: (id: string) => Promise<unknown> | void;
+  deleteFolder: (id: string) => Promise<unknown> | void;
+  deleteDocument: (id: string) => Promise<unknown> | void;
 }
 
 export function useArchive(
@@ -65,27 +65,42 @@ export function useArchive(
       ? documents.filter((d) => d.folderId === view.folderId && !d.deleted)
       : [];
 
-  function handleCreateWarehouse(data: { name: string; division?: string; description?: string; color?: string }) {
-    actions.createWarehouse?.(data);
-    setWarehouseModalOpen(false);
-    pushToast({ title: 'ສ້າງຄັງເອກະສານສຳເລັດ' });
+  async function handleCreateWarehouse(data: { name: string; division?: string; description?: string; color?: string }) {
+    try {
+      await actions.createWarehouse?.(data);
+      setWarehouseModalOpen(false);
+      pushToast({ title: 'ສ້າງຄັງເອກະສານສຳເລັດ' });
+    } catch (err) {
+      console.error('Failed to create warehouse:', err);
+      pushToast({ title: 'ເກີດຂໍ້ຜິດພາດໃນການສ້າງຄັງເອກະສານ' });
+    }
   }
 
-  function handleCreateCabinet(data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) {
-    actions.createCabinet({
-      ...data,
-      warehouseId: data.warehouseId || activeWarehouse?.id || undefined,
-      division: data.division || activeWarehouse?.division || undefined,
-    });
-    setCabinetModalOpen(false);
-    pushToast({ title: 'ສ້າງຕູ້ເອກະສານສຳເລັດ' });
+  async function handleCreateCabinet(data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) {
+    try {
+      await actions.createCabinet({
+        ...data,
+        warehouseId: data.warehouseId || activeWarehouse?.id || undefined,
+        division: data.division || activeWarehouse?.division || undefined,
+      });
+      setCabinetModalOpen(false);
+      pushToast({ title: 'ສ້າງຕູ້ເອກະສານສຳເລັດ' });
+    } catch (err) {
+      console.error('Failed to create cabinet:', err);
+      pushToast({ title: 'ເກີດຂໍ້ຜິດພາດໃນການສ້າງຕູ້ເອກະສານ' });
+    }
   }
 
-  function handleCreateFolder(data: { name: string; description: string }) {
+  async function handleCreateFolder(data: { name: string; description: string }) {
     if (!activeCabinet) return;
-    actions.createFolder({ cabinetId: activeCabinet.id, ...data });
-    setFolderModalOpen(false);
-    pushToast({ title: 'ສ້າງຊັ້ນວາງເອກະສານສຳເລັດ' });
+    try {
+      await actions.createFolder({ cabinetId: activeCabinet.id, ...data });
+      setFolderModalOpen(false);
+      pushToast({ title: 'ສ້າງຊັ້ນວາງເອກະສານສຳເລັດ' });
+    } catch (err) {
+      console.error('Failed to create folder:', err);
+      pushToast({ title: 'ເກີດຂໍ້ຜິດພາດໃນການສ້າງຊັ້ນວາງເອກະສານ' });
+    }
   }
 
   function handleDelete(type: 'warehouse' | 'cabinet' | 'folder' | 'document', id: string, name: string) {
