@@ -181,8 +181,8 @@ function DocumentList({ documents = [], onPreview, onDownload, onDelete }: Docum
 
 // ── Document View ────────────────────────────────────────────
 interface DocumentViewProps {
-  cabinet: Cabinet;
-  folder: Folder;
+  cabinet?: Cabinet;
+  folder?: Folder;
   documents: Document[];
   onPreview: (doc: Document) => void;
   onDownload: (doc: Document) => void;
@@ -195,12 +195,14 @@ export default function DocumentView({ cabinet, folder, documents = [], onPrevie
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-xl">
-            📁
+            {folder ? '📁' : '📑'}
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{folder.name}</h2>
+            <h2 className="text-lg font-bold text-gray-900">{folder ? folder.name : 'ແຟ້ມເອກະສານທັງໝົດ'}</h2>
             <p className="text-xs text-gray-500">
-              ຢູ່ໃນ 🗄️ {cabinet.name} · ສ້າງເມື່ອ {formatDate(folder.createdAt)}
+              {folder
+                ? `ຢູ່ໃນ 🗄️ ${cabinet?.name || 'ຕູ້ເອກະສານ'} · ສ້າງເມື່ອ ${formatDate(folder.createdAt)}`
+                : `ລວມເອກະສານທີ່ຈັດເກັບແລ້ວທັງໝົດ ${documents.length} ສະບັບ`}
             </p>
           </div>
         </div>

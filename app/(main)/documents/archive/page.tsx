@@ -1,4 +1,6 @@
 "use client"
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '../../context/DocumentsContext';
 import { useArchive as useDMSArchive } from '../../context/ArchiveContext';
@@ -18,6 +20,8 @@ import DocumentView, { Breadcrumbs, BackButton } from '@/app/components/archive/
 import { useArchive } from '@/app/components/archive/useArchive';
 
 export default function ArchivePage() {
+  const searchParams = useSearchParams();
+  const queryLevel = searchParams.get('level');
   const { user } = useCurrentUser();
   const { documents, deleteDocument } = useDocuments();
   const {
@@ -47,6 +51,18 @@ export default function ArchivePage() {
     deleteFolder,
     deleteDocument,
   });
+
+  useEffect(() => {
+    if (queryLevel === 'warehouses') {
+      archive.setView({ level: 'warehouses' });
+    } else if (queryLevel === 'cabinets') {
+      archive.setView({ level: 'cabinets' });
+    } else if (queryLevel === 'folders') {
+      archive.setView({ level: 'folders' });
+    } else if (queryLevel === 'documents') {
+      archive.setView({ level: 'documents' });
+    }
+  }, [queryLevel]);
 
   const showCreateInHeader =
     canManage &&
@@ -125,30 +141,32 @@ export default function ArchivePage() {
           />
         )}
 
-        {archive.view.level === 'folders' && archive.activeCabinet && (
+        {archive.view.level === 'folders' && (
           <FolderView
             cabinet={archive.activeCabinet}
-            folders={archive.cabinetFolders}
+            cabinets={cabinets}
+            folders={archive.activeCabinet ? archive.cabinetFolders : folders}
             documents={documents}
             canManage={canManage}
             onCreate={() => archive.setFolderModalOpen(true)}
-            onOpen={(folderId) =>
+            onOpen={(folderId) => {
+              const fol = folders.find((f) => f.id === folderId);
               archive.setView({
                 level: 'documents',
                 warehouseId: archive.activeWarehouse?.id,
-                cabinetId: archive.activeCabinet!.id,
+                cabinetId: fol?.cabinetId || archive.activeCabinet?.id || '',
                 folderId,
-              })
-            }
+              });
+            }}
             onDelete={(folder) => archive.handleDelete('folder', folder.id, folder.name)}
           />
         )}
 
-        {archive.view.level === 'documents' && archive.activeCabinet && archive.activeFolder && (
+        {archive.view.level === 'documents' && (
           <DocumentView
             cabinet={archive.activeCabinet}
             folder={archive.activeFolder}
-            documents={archive.folderDocuments}
+            documents={archive.activeFolder ? archive.folderDocuments : documents.filter((d) => !d.deleted && (d.folderId || d.cabinetId || d.status === 'archived'))}
             onPreview={archive.setPreviewDoc}
             onDownload={archive.handleDownload}
             onDelete={(doc) => archive.handleDelete('document', doc.id, doc.title)}

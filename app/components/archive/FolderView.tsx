@@ -5,6 +5,7 @@ import type { Cabinet, Document, Folder } from '@/types/document'
 // ── Folder Card (ຊັ້ນວາງເອກະສານ) ──────────────────────────────
 interface FolderCardProps {
   folder: Folder;
+  cabinetName?: string;
   docCount: number;
   canManage?: boolean;
   onOpen: () => void;
@@ -18,7 +19,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function FolderCard({ folder, docCount, canManage = true, onOpen, onDelete }: FolderCardProps) {
+function FolderCard({ folder, cabinetName, docCount, canManage = true, onOpen, onDelete }: FolderCardProps) {
   return (
     <div
       onClick={onOpen}
@@ -28,18 +29,25 @@ function FolderCard({ folder, docCount, canManage = true, onOpen, onDelete }: Fo
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-2xl transition group-hover:scale-105">
           📁
         </div>
-        {canManage && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
-            title="ລຶບຊັ້ນວາງ"
-          >
-            <Trash2 size={16} />
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {cabinetName && (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+              🗄️ {cabinetName}
+            </span>
+          )}
+          {canManage && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
+              title="ລຶບຊັ້ນວາງ"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        </div>
       </div>
       <h3 className="mt-4 text-lg font-bold text-gray-900">{folder.name}</h3>
       <p className="mt-1 text-sm text-gray-500 line-clamp-2">
@@ -67,15 +75,15 @@ interface EmptyStateProps {
 }
 
 function EmptyState({ icon, message, subMessage, actionLabel, onAction, href }: EmptyStateProps) {
-  const actionButton = actionLabel && (
-    onAction ? (
-      <button
-        onClick={onAction}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-      >
-        <Plus size={16} /> {actionLabel}
-      </button>
-    ) : href ? (
+  const actionButton = onAction ? (
+    <button
+      onClick={onAction}
+      className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+    >
+      <Plus size={16} /> {actionLabel}
+    </button>
+  ) : (
+    href ? (
       <a
         href={href}
         className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
@@ -99,7 +107,8 @@ function EmptyState({ icon, message, subMessage, actionLabel, onAction, href }: 
 
 // ── Folder View (ຊັ້ນວາງເອກະສານ) ──────────────────────────────
 interface FolderViewProps {
-  cabinet: Cabinet;
+  cabinet?: Cabinet;
+  cabinets?: Cabinet[];
   folders: Folder[];
   documents: Document[];
   canManage?: boolean;
@@ -108,17 +117,17 @@ interface FolderViewProps {
   onDelete: (folder: Folder) => void;
 }
 
-export default function FolderView({ cabinet, folders = [], documents = [], canManage = true, onCreate, onOpen, onDelete }: FolderViewProps) {
+export default function FolderView({ cabinet, cabinets = [], folders = [], documents = [], canManage = true, onCreate, onOpen, onDelete }: FolderViewProps) {
   return (
     <>
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${cabinet.color} text-xl`}>
-            🗄️
+          <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${cabinet ? `bg-gradient-to-br ${cabinet.color}` : 'bg-amber-500'} text-xl text-white`}>
+            {cabinet ? '🗄️' : '📁'}
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{cabinet.name}</h2>
-            <p className="text-xs text-gray-500">{cabinet.department}</p>
+            <h2 className="text-lg font-bold text-gray-900">{cabinet ? cabinet.name : 'ຊັ້ນວາງເອກະສານທັງໝົດ'}</h2>
+            <p className="text-xs text-gray-500">{cabinet ? cabinet.department : `ລວມທັງໝົດ ${folders.length} ຊັ້ນວາງ`}</p>
           </div>
         </div>
         {canManage && (
@@ -135,22 +144,26 @@ export default function FolderView({ cabinet, folders = [], documents = [], canM
       {!folders || folders.length === 0 ? (
         <EmptyState
           icon="📁"
-          message="ຍັງບໍ່ມີຊັ້ນວາງໃນຕູ້ນີ້"
+          message={cabinet ? "ຍັງບໍ່ມີຊັ້ນວາງໃນຕູ້ນີ້" : "ຍັງບໍ່ມີຊັ້ນວາງເອກະສານ"}
           actionLabel={canManage ? "ສ້າງຊັ້ນວາງໃໝ່" : undefined}
           onAction={canManage ? onCreate : undefined}
         />
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {folders.map((folder) => (
-            <FolderCard
-              key={folder.id}
-              folder={folder}
-              canManage={canManage}
-              docCount={documents.filter((d) => d.folderId === folder.id && !d.deleted).length}
-              onOpen={() => onOpen(folder.id)}
-              onDelete={() => onDelete(folder)}
-            />
-          ))}
+          {folders.map((folder) => {
+            const cab = cabinets.find((c) => c.id === folder.cabinetId);
+            return (
+              <FolderCard
+                key={folder.id}
+                folder={folder}
+                cabinetName={!cabinet && cab ? cab.name : undefined}
+                canManage={canManage}
+                docCount={documents.filter((d) => d.folderId === folder.id && !d.deleted).length}
+                onOpen={() => onOpen(folder.id)}
+                onDelete={() => onDelete(folder)}
+              />
+            );
+          })}
         </div>
       )}
     </>

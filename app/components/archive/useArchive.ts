@@ -7,8 +7,8 @@ import type { DeleteTarget } from './ArchiveModals'
 export type ViewState =
   | { level: 'warehouses' }
   | { level: 'cabinets'; warehouseId?: string }
-  | { level: 'folders'; warehouseId?: string; cabinetId: string }
-  | { level: 'documents'; warehouseId?: string; cabinetId: string; folderId: string };
+  | { level: 'folders'; warehouseId?: string; cabinetId?: string }
+  | { level: 'documents'; warehouseId?: string; cabinetId?: string; folderId?: string };
 
 interface ArchiveActions {
   createWarehouse?: (data: { name: string; division?: string; description?: string; color?: string }) => Promise<unknown> | void;
@@ -39,17 +39,21 @@ export function useArchive(
       ? undefined
       : view.warehouseId
       ? warehouses.find((w) => w.id === view.warehouseId)
-      : 'cabinetId' in view
+      : 'cabinetId' in view && view.cabinetId
       ? warehouses.find((w) => w.id === cabinets.find((c) => c.id === view.cabinetId)?.warehouseId)
       : undefined;
 
   const activeCabinet: Cabinet | undefined =
     view.level === 'warehouses' || view.level === 'cabinets'
       ? undefined
-      : cabinets.find((c) => c.id === view.cabinetId);
+      : 'cabinetId' in view && view.cabinetId
+      ? cabinets.find((c) => c.id === view.cabinetId)
+      : undefined;
 
   const activeFolder: Folder | undefined =
-    view.level === 'documents' ? folders.find((f) => f.id === view.folderId) : undefined;
+    view.level === 'documents' && 'folderId' in view && view.folderId
+      ? folders.find((f) => f.id === view.folderId)
+      : undefined;
 
   const warehouseCabinets =
     view.level === 'cabinets' && view.warehouseId
@@ -58,12 +62,14 @@ export function useArchive(
 
   const cabinetFolders = activeCabinet
     ? folders.filter((f) => f.cabinetId === activeCabinet.id)
-    : [];
+    : folders;
 
   const folderDocuments =
-    view.level === 'documents'
-      ? documents.filter((d) => d.folderId === view.folderId && !d.deleted)
-      : [];
+    activeFolder
+      ? documents.filter((d) => d.folderId === activeFolder.id && !d.deleted)
+      : activeCabinet
+      ? documents.filter((d) => d.cabinetId === activeCabinet.id && !d.deleted)
+      : documents.filter((d) => !d.deleted && (d.folderId || d.cabinetId || d.status === 'archived'));
 
   async function handleCreateWarehouse(data: { name: string; division?: string; description?: string; color?: string }) {
     try {
@@ -145,9 +151,17 @@ export function useArchive(
 
   function handleBack() {
     if (view.level === 'documents') {
-      setView({ level: 'folders', warehouseId: view.warehouseId, cabinetId: activeCabinet!.id });
+      if (activeCabinet) {
+        setView({ level: 'folders', warehouseId: view.warehouseId, cabinetId: activeCabinet.id });
+      } else {
+        setView({ level: 'folders' });
+      }
     } else if (view.level === 'folders') {
-      setView({ level: 'cabinets', warehouseId: view.warehouseId });
+      if (view.warehouseId) {
+        setView({ level: 'cabinets', warehouseId: view.warehouseId });
+      } else {
+        setView({ level: 'cabinets' });
+      }
     } else if (view.level === 'cabinets') {
       setView({ level: 'warehouses' });
     }
