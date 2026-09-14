@@ -158,7 +158,14 @@ export default function FolderView({ cabinet, cabinets = [], folders = [], docum
                 folder={folder}
                 cabinetName={!cabinet && cab ? cab.name : undefined}
                 canManage={canManage}
-                docCount={documents.filter((d) => d.folderId === folder.id && !d.deleted).length}
+                docCount={
+                  documents.filter(
+                    (d) =>
+                      !d.deleted &&
+                      (d.folderId === folder.id ||
+                        (Boolean(folder.name) && Boolean(d.folderName) && d.folderName === folder.name))
+                  ).length
+                }
                 onOpen={() => onOpen(folder.id)}
                 onDelete={() => onDelete(folder)}
               />

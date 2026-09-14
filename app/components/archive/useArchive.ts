@@ -27,7 +27,20 @@ export function useArchive(
   documents: Document[] = [],
   actions: ArchiveActions
 ) {
-  const [view, setView] = useState<ViewState>({ level: 'warehouses' });
+  const [view, setView] = useState<ViewState>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const lvl = params.get('level');
+      const wId = params.get('warehouseId') || undefined;
+      const cId = params.get('cabinetId') || undefined;
+      const fId = params.get('folderId') || undefined;
+      if (lvl === 'documents') return { level: 'documents', warehouseId: wId, cabinetId: cId, folderId: fId };
+      if (lvl === 'folders') return { level: 'folders', warehouseId: wId, cabinetId: cId };
+      if (lvl === 'cabinets') return { level: 'cabinets', warehouseId: wId };
+      if (lvl === 'warehouses') return { level: 'warehouses' };
+    }
+    return { level: 'warehouses' };
+  });
   const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
   const [cabinetModalOpen, setCabinetModalOpen] = useState(false);
   const [folderModalOpen, setFolderModalOpen] = useState(false);
@@ -66,13 +79,9 @@ export function useArchive(
     }
   }, [view]);
 
-  const activeWarehouse: Warehouse | undefined =
-    view.level === 'warehouses'
-      ? undefined
-      : view.warehouseId
-      ? warehouses.find((w) => w.id === view.warehouseId)
-      : 'cabinetId' in view && view.cabinetId
-      ? warehouses.find((w) => w.id === cabinets.find((c) => c.id === view.cabinetId)?.warehouseId)
+  const activeFolder: Folder | undefined =
+    view.level === 'documents' && 'folderId' in view && view.folderId
+      ? folders.find((f) => f.id === view.folderId)
       : undefined;
 
   const activeCabinet: Cabinet | undefined =
@@ -80,11 +89,17 @@ export function useArchive(
       ? undefined
       : 'cabinetId' in view && view.cabinetId
       ? cabinets.find((c) => c.id === view.cabinetId)
+      : activeFolder
+      ? cabinets.find((c) => c.id === activeFolder.cabinetId)
       : undefined;
 
-  const activeFolder: Folder | undefined =
-    view.level === 'documents' && 'folderId' in view && view.folderId
-      ? folders.find((f) => f.id === view.folderId)
+  const activeWarehouse: Warehouse | undefined =
+    view.level === 'warehouses'
+      ? undefined
+      : view.warehouseId
+      ? warehouses.find((w) => w.id === view.warehouseId)
+      : activeCabinet?.warehouseId
+      ? warehouses.find((w) => w.id === activeCabinet.warehouseId)
       : undefined;
 
   const warehouseCabinets =
@@ -96,12 +111,16 @@ export function useArchive(
     ? folders.filter((f) => f.cabinetId === activeCabinet.id)
     : folders;
 
+  // ເອກະສານຂອງຊັ້ນວາງໃຜຊັ້ນວາງມັນ strictly — ບໍ່ດຶງເອກະສານຂອງຊັ້ນວາງອື່ນມາປົນເດັດຂາດ
   const folderDocuments =
     activeFolder
-      ? documents.filter((d) => d.folderId === activeFolder.id && !d.deleted)
-      : activeCabinet
-      ? documents.filter((d) => d.cabinetId === activeCabinet.id && !d.deleted)
-      : documents.filter((d) => !d.deleted && (d.folderId || d.cabinetId || d.status === 'archived'));
+      ? documents.filter(
+          (d) =>
+            !d.deleted &&
+            (d.folderId === activeFolder.id ||
+              (Boolean(activeFolder.name) && Boolean(d.folderName) && d.folderName === activeFolder.name))
+        )
+      : [];
 
   async function handleCreateWarehouse(data: { name: string; division?: string; description?: string; color?: string }) {
     try {

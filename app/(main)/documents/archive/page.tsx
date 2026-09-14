@@ -21,9 +21,12 @@ import { useArchive } from '@/app/components/archive/useArchive';
 
 export default function ArchivePage() {
   const searchParams = useSearchParams();
-  const queryLevel = searchParams.get('level');
+  const queryLevel = searchParams.get('level') as 'warehouses' | 'cabinets' | 'folders' | 'documents' | null;
+  const queryWarehouseId = searchParams.get('warehouseId') || undefined;
+  const queryCabinetId = searchParams.get('cabinetId') || undefined;
+  const queryFolderId = searchParams.get('folderId') || undefined;
   const { user } = useCurrentUser();
-  const { documents, deleteDocument } = useDocuments();
+  const { documents, deleteDocument, reload } = useDocuments();
   const {
     warehouses,
     cabinets,
@@ -34,6 +37,7 @@ export default function ArchivePage() {
     deleteWarehouse,
     deleteCabinet,
     deleteFolder,
+    assignDocument,
   } = useDMSArchive();
 
   // Role permissions: SuperAdmin and DivisionAdmin can manage warehouses/cabinets/shelves
@@ -53,23 +57,48 @@ export default function ArchivePage() {
   });
 
   useEffect(() => {
+    if (!queryLevel) return;
+
+    const currentLevel = archive.view.level;
+    const currentWhId = 'warehouseId' in archive.view ? archive.view.warehouseId : undefined;
+    const currentCabId = 'cabinetId' in archive.view ? archive.view.cabinetId : undefined;
+    const currentFolId = 'folderId' in archive.view ? archive.view.folderId : undefined;
+
+    // Check if view already matches to avoid wiping folderId
+    if (
+      currentLevel === queryLevel &&
+      currentWhId === queryWarehouseId &&
+      currentCabId === queryCabinetId &&
+      currentFolId === queryFolderId
+    ) {
+      return;
+    }
+
     if (queryLevel === 'warehouses') {
       archive.setView({ level: 'warehouses' });
     } else if (queryLevel === 'cabinets') {
-      archive.setView({ level: 'cabinets' });
+      archive.setView({ level: 'cabinets', warehouseId: queryWarehouseId });
     } else if (queryLevel === 'folders') {
-      archive.setView({ level: 'folders' });
+      archive.setView({ level: 'folders', warehouseId: queryWarehouseId, cabinetId: queryCabinetId });
     } else if (queryLevel === 'documents') {
-      archive.setView({ level: 'documents' });
+      archive.setView({
+        level: 'documents',
+        warehouseId: queryWarehouseId,
+        cabinetId: queryCabinetId,
+        folderId: queryFolderId,
+      });
     }
-  }, [queryLevel]);
+  }, [queryLevel, queryWarehouseId, queryCabinetId, queryFolderId, archive.view]);
 
   useEffect(() => {
     const handleSetLevel = (e: Event) => {
-      const custom = e as CustomEvent<{ level: string }>;
+      const custom = e as CustomEvent<{ level: string; warehouseId?: string; cabinetId?: string; folderId?: string }>;
       const lvl = custom.detail?.level as 'warehouses' | 'cabinets' | 'folders' | 'documents';
       if (lvl) {
-        archive.setView({ level: lvl });
+        if (lvl === 'warehouses') archive.setView({ level: 'warehouses' });
+        else if (lvl === 'cabinets') archive.setView({ level: 'cabinets', warehouseId: custom.detail?.warehouseId });
+        else if (lvl === 'folders') archive.setView({ level: 'folders', warehouseId: custom.detail?.warehouseId, cabinetId: custom.detail?.cabinetId });
+        else if (lvl === 'documents') archive.setView({ level: 'documents', warehouseId: custom.detail?.warehouseId, cabinetId: custom.detail?.cabinetId, folderId: custom.detail?.folderId });
       }
     };
     window.addEventListener('dms:set-archive-level', handleSetLevel);
@@ -178,7 +207,27 @@ export default function ArchivePage() {
           <DocumentView
             cabinet={archive.activeCabinet}
             folder={archive.activeFolder}
-            documents={archive.activeFolder ? archive.folderDocuments : documents.filter((d) => !d.deleted && (d.folderId || d.cabinetId || d.status === 'archived'))}
+            warehouses={warehouses}
+            cabinets={cabinets}
+            folders={folders}
+            documents={
+              archive.activeFolder
+                ? archive.folderDocuments
+                : documents.filter((d) => !d.deleted && (d.folderId || d.cabinetId || d.status === 'archived'))
+            }
+            onSelectFolder={(folderId) => {
+              const fol = folders.find((f) => f.id === folderId);
+              archive.setView({
+                level: 'documents',
+                warehouseId: archive.activeWarehouse?.id,
+                cabinetId: fol?.cabinetId || archive.activeCabinet?.id || '',
+                folderId,
+              });
+            }}
+            onAssignDocument={async (docId, cabId, folId, whId) => {
+              await assignDocument(docId, cabId, folId, whId);
+              await reload();
+            }}
             onPreview={archive.setPreviewDoc}
             onDownload={archive.handleDownload}
             onDelete={(doc) => archive.handleDelete('document', doc.id, doc.title)}

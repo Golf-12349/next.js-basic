@@ -137,7 +137,14 @@ export default function CabinetView({ cabinets = [], folders = [], documents = [
           key={cabinet.id}
           cabinet={cabinet}
           folderCount={folders.filter((f) => f.cabinetId === cabinet.id).length}
-          docCount={documents.filter((d) => d.cabinetId === cabinet.id && !d.deleted).length}
+          docCount={
+            documents.filter(
+              (d) =>
+                !d.deleted &&
+                (d.cabinetId === cabinet.id ||
+                  folders.some((f) => f.cabinetId === cabinet.id && (f.id === d.folderId || (f.name && d.folderName === f.name))))
+            ).length
+          }
           canManage={canManage}
           onOpen={() => onOpen(cabinet.id)}
           onDelete={() => onDelete(cabinet)}
