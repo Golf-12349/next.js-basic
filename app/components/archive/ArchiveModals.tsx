@@ -4,10 +4,11 @@ import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { Download, Plus } from 'lucide-react'
 import type { Document } from '@/types/document'
+import { edlStructure } from '@/types/user'
 
 // ── Shared types ─────────────────────────────────────────────
 export type DeleteTarget = {
-  type: 'cabinet' | 'folder' | 'document';
+  type: 'warehouse' | 'cabinet' | 'folder' | 'document';
   id: string;
   name: string;
 };
@@ -33,16 +34,17 @@ export const departmentOptions = [
 // ── Page Header ──────────────────────────────────────────────
 interface PageHeaderProps {
   showCreateButton?: boolean;
+  createButtonLabel?: string;
   onCreate?: () => void;
 }
 
-export function PageHeader({ showCreateButton, onCreate }: PageHeaderProps) {
+export function PageHeader({ showCreateButton, createButtonLabel = '+ ສ້າງຕູ້ເອກະສານໃໝ່', onCreate }: PageHeaderProps) {
   return (
     <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">ຄັງເກັບເອກກະສານ</h1>
         <p className="mt-1 text-sm text-gray-500">
-          ຈັດລະບຽບເອກະສານແບບ 3 ລະດັບ: ຕູ້ເອກະສານ ➡️ ແຟ້ມ ➡️ ເອກະສານ
+          ຈັດລະບຽບເອກະສານແບບ 4 ລະດັບ: ຄັງເອກະສານ ➡️ ຕູ້ເອກະສານ ➡️ ຊັ້ນວາງເອກະສານ ➡️ ເອກະສານ
         </p>
       </div>
 
@@ -52,10 +54,119 @@ export function PageHeader({ showCreateButton, onCreate }: PageHeaderProps) {
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
         >
           <Plus size={16} />
-          + ສ້າງຕູ້ເອກະສານໄໝ່
+          {createButtonLabel}
         </button>
       )}
     </div>
+  );
+}
+
+// ── Create Warehouse Modal ───────────────────────────────────
+interface CreateWarehouseModalProps {
+  open: boolean;
+  onClose: () => void;
+  userDivision?: string;
+  onCreate: (data: { name: string; division?: string; description?: string; color?: string }) => void;
+}
+
+export function CreateWarehouseModal({ open, onClose, userDivision, onCreate }: CreateWarehouseModalProps) {
+  const [name, setName] = useState('');
+  const [division, setDivision] = useState(userDivision || '');
+  const [color, setColor] = useState('from-indigo-600 to-purple-600');
+  const [description, setDescription] = useState('');
+
+  const divisionList = Object.keys(edlStructure);
+
+  function handleSubmit() {
+    if (!name.trim()) return;
+    onCreate({
+      name: name.trim(),
+      division: division || userDivision || undefined,
+      description: description.trim() || 'ບໍ່ມີລາຍລະອຽດ',
+      color,
+    });
+    setName('');
+    setDescription('');
+    if (!userDivision) setDivision('');
+    setColor('from-indigo-600 to-purple-600');
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="ສ້າງຄັງເອກະສານໃໝ່">
+      <div className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            ຊື່ຄັງເອກະສານ <span className="text-red-500">*</span>
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="ເຊັ່ນ: ຄັງເອກະສານສູນກາງ, ຄັງຝ່າຍເຕັກໂນໂລຊີ..."
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">ຝ່າຍ / ຫ້ອງການ</label>
+          <select
+            value={division}
+            disabled={!!userDivision}
+            onChange={(e) => setDivision(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400 disabled:opacity-60"
+          >
+            <option value="">— ສູນກາງ (ໃຊ້ຮ່ວມກັນທັງໝົດ) —</option>
+            {divisionList.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">ສີຄັງເອກະສານ</label>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {colorOptions.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setColor(c.value)}
+                className={`h-12 rounded-xl bg-gradient-to-br ${c.value} transition ${
+                  color === c.value
+                    ? 'ring-2 ring-gray-900 ring-offset-2'
+                    : 'opacity-70 hover:opacity-100'
+                }`}
+                title={c.label}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">ລາຍລະອຽດ</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="ອະທິບາຍຄັງເອກະສານ..."
+            className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          >
+            ຍົກເລີກ
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            ສ້າງຄັງເອກະສານ
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -63,14 +174,23 @@ export function PageHeader({ showCreateButton, onCreate }: PageHeaderProps) {
 interface CreateCabinetModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: { name: string; color: string; department: string; description: string }) => void;
+  warehouses?: { id: string; name: string; division?: string | null }[];
+  defaultWarehouseId?: string;
+  userDivision?: string;
+  onCreate: (data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) => void;
 }
 
-export function CreateCabinetModal({ open, onClose, onCreate }: CreateCabinetModalProps) {
+export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWarehouseId, userDivision, onCreate }: CreateCabinetModalProps) {
   const [name, setName] = useState('');
+  const [warehouseId, setWarehouseId] = useState(defaultWarehouseId || '');
   const [color, setColor] = useState(colorOptions[0].value);
+  const [division, setDivision] = useState(userDivision || '');
   const [department, setDepartment] = useState('');
   const [description, setDescription] = useState('');
+
+  const selectedWh = warehouses.find((w) => w.id === (warehouseId || defaultWarehouseId));
+  const activeDivision = division || userDivision || selectedWh?.division || '';
+  const availableDepts = activeDivision && edlStructure[activeDivision] ? edlStructure[activeDivision] : departmentOptions;
 
   function handleSubmit() {
     if (!name.trim()) return;
@@ -79,6 +199,8 @@ export function CreateCabinetModal({ open, onClose, onCreate }: CreateCabinetMod
       color,
       department: department || '—',
       description: description.trim() || 'ບໍ່ມີລາຍລະອຽດ',
+      warehouseId: warehouseId || defaultWarehouseId || undefined,
+      division: activeDivision || undefined,
     });
     setName('');
     setDescription('');
@@ -89,6 +211,24 @@ export function CreateCabinetModal({ open, onClose, onCreate }: CreateCabinetMod
   return (
     <Modal open={open} onClose={onClose} title="ສ້າງຕູ້ເອກະສານໃໝ່">
       <div className="space-y-4">
+        {warehouses.length > 0 && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              ຄັງເອກະສານ <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={warehouseId || defaultWarehouseId || ''}
+              onChange={(e) => setWarehouseId(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+            >
+              <option value="">— ເລືອກຄັງເອກະສານ —</option>
+              {warehouses.map((w) => (
+                <option key={w.id} value={w.id}>🏛️ {w.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
             ຊື່ຕູ້ເອກະສານ <span className="text-red-500">*</span>
@@ -109,7 +249,7 @@ export function CreateCabinetModal({ open, onClose, onCreate }: CreateCabinetMod
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           >
             <option value="">— ເລືອກພະແນກ —</option>
-            {departmentOptions.map((d) => (
+            {availableDepts.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
           </select>
@@ -165,7 +305,7 @@ export function CreateCabinetModal({ open, onClose, onCreate }: CreateCabinetMod
   );
 }
 
-// ── Create Folder Modal ──────────────────────────────────────
+// ── Create Folder Modal (ຊັ້ນວາງເອກະສານ) ──────────────────────────────
 interface CreateFolderModalProps {
   open: boolean;
   onClose: () => void;
@@ -188,16 +328,16 @@ export function CreateFolderModal({ open, onClose, cabinetName, onCreate }: Crea
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={`ສ້າງແຟ້ມໄໝ່ໃນ 🗄️ ${cabinetName ?? ''}`}>
+    <Modal open={open} onClose={onClose} title={`ສ້າງຊັ້ນວາງເອກະສານໃໝ່ໃນ 🗄️ ${cabinetName ?? ''}`}>
       <div className="space-y-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
-            ຊື່ແຟ້ມ <span className="text-red-500">*</span>
+            ຊື່ຊັ້ນວາງເອກະສານ <span className="text-red-500">*</span>
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="ເຊັ່ນ: ໄບສັ່ງຊື້, ໄບຮັບເງິນ..."
+            placeholder="ເຊັ່ນ: ຊັ້ນ 1 - ໄບສັ່ງຊື້, ຊັ້ນ 2 - ໄບຮັບເງິນ..."
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           />
         </div>
@@ -207,7 +347,7 @@ export function CreateFolderModal({ open, onClose, cabinetName, onCreate }: Crea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder="ອະທິບາຍເອກະສານທີ່ຈະເກັບໃນແຟ້ມນີ້..."
+            placeholder="ອະທິບາຍເອກະສານທີ່ຈະເກັບໃນຊັ້ນວາງນີ້..."
             className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           />
         </div>
@@ -222,7 +362,7 @@ export function CreateFolderModal({ open, onClose, cabinetName, onCreate }: Crea
             onClick={handleSubmit}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
           >
-            ສ້າງແຟ້ມ
+            ສ້າງຊັ້ນວາງ
           </button>
         </div>
       </div>
@@ -245,14 +385,18 @@ export function ConfirmDeleteModal({ target, onClose, onConfirm }: ConfirmDelete
           <p className="mb-4 text-sm text-gray-600">
             ທ່ານຕ້ອງການລົບ{' '}
             <span className="font-semibold text-gray-900">
-              {target.type === 'cabinet'
+              {target.type === 'warehouse'
+                ? `ຄັງ "${target.name}"`
+                : target.type === 'cabinet'
                 ? `ຕູ້ "${target.name}"`
                 : target.type === 'folder'
-                  ? `ແຟ້ມ "${target.name}"`
-                  : `ເອກະສານ "${target.name}"`}
+                ? `ຊັ້ນວາງ "${target.name}"`
+                : `ເອກະສານ "${target.name}"`}
             </span>{' '}
             ແທ້ບໍ?
+            {target.type === 'warehouse' && ' ຕູ້ ແລະ ເອກະສານທັງໝົດໃນຄັງນີ້ຈະຖືກຍ້າຍອອກຈາກການຈັດລະບຽບ.'}
             {target.type === 'cabinet' && ' ເອກະສານທັງໝົດໃນຕູ້ຈະຖືກຍ້າຍອອກຈາກການຈັດລະບຽບ.'}
+            {target.type === 'folder' && ' ເອກະສານທັງໝົດໃນຊັ້ນວາງນີ້ຈະຖືກຍ້າຍອອກ.'}
             {target.type === 'document' && ' ເອກະສານຈະເຂົ້າໄປຢູ່ Trash.'}
           </p>
           <div className="flex justify-end gap-2">
@@ -324,7 +468,7 @@ export function DocumentPreviewModal({ doc, onClose, onDownload }: DocumentPrevi
             <div>
               <div className="text-xs text-gray-500">ທີ່ຕັ້ງ</div>
               <div className="text-sm font-semibold">
-                🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+                {doc.warehouseName ? `🏛️ ${doc.warehouseName} > ` : ''}🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
               </div>
             </div>
           </div>

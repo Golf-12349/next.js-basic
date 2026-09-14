@@ -7,6 +7,7 @@ interface CabinetCardProps {
   cabinet: Cabinet;
   folderCount: number;
   docCount: number;
+  canManage?: boolean;
   onOpen: () => void;
   onDelete: () => void;
 }
@@ -18,7 +19,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function CabinetCard({ cabinet, folderCount, docCount, onOpen, onDelete }: CabinetCardProps) {
+function CabinetCard({ cabinet, folderCount, docCount, canManage = true, onOpen, onDelete }: CabinetCardProps) {
   return (
     <div
       onClick={onOpen}
@@ -30,7 +31,7 @@ function CabinetCard({ cabinet, folderCount, docCount, onOpen, onDelete }: Cabin
             🗄️
           </div>
           <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-            {folderCount} ແຟ້ມ
+            {folderCount} ຊັ້ນວາງ
           </span>
         </div>
         <h2 className="mt-4 text-xl font-bold text-white">{cabinet.name}</h2>
@@ -46,16 +47,18 @@ function CabinetCard({ cabinet, folderCount, docCount, onOpen, onDelete }: Cabin
             <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
               {docCount} ເອກະສານ
             </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
-              title="ລຶບຕູ້"
-            >
-              <Trash2 size={16} />
-            </button>
+            {canManage && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
+                title="ລຶບຕູ້"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -109,19 +112,20 @@ interface CabinetViewProps {
   cabinets: Cabinet[];
   folders: Folder[];
   documents: Document[];
+  canManage?: boolean;
   onCreate: () => void;
   onOpen: (cabinetId: string) => void;
   onDelete: (cabinet: Cabinet) => void;
 }
 
-export default function CabinetView({ cabinets = [], folders = [], documents = [], onCreate, onOpen, onDelete }: CabinetViewProps) {
+export default function CabinetView({ cabinets = [], folders = [], documents = [], canManage = true, onCreate, onOpen, onDelete }: CabinetViewProps) {
   if (!cabinets || cabinets.length === 0) {
     return (
       <EmptyState
         icon="🗄️"
         message="ຍັງບໍ່ມີຕູ້ເອກະສານ"
-        actionLabel="ສ້າງຕູ້ເອກະສານໄໝ່"
-        onAction={onCreate}
+        actionLabel={canManage ? "ສ້າງຕູ້ເອກະສານໄໝ່" : undefined}
+        onAction={canManage ? onCreate : undefined}
       />
     );
   }
@@ -134,6 +138,7 @@ export default function CabinetView({ cabinets = [], folders = [], documents = [
           cabinet={cabinet}
           folderCount={folders.filter((f) => f.cabinetId === cabinet.id).length}
           docCount={documents.filter((d) => d.cabinetId === cabinet.id && !d.deleted).length}
+          canManage={canManage}
           onOpen={() => onOpen(cabinet.id)}
           onDelete={() => onDelete(cabinet)}
         />

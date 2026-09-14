@@ -1,39 +1,60 @@
 "use client"
 import { useState } from 'react'
 import { pushToast } from '@/app/components/ui/Toast'
-import type { Cabinet, Document, Folder } from '@/types/document'
+import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
 import type { DeleteTarget } from './ArchiveModals'
 
 export type ViewState =
-  | { level: 'cabinets' }
-  | { level: 'folders'; cabinetId: string }
-  | { level: 'documents'; cabinetId: string; folderId: string };
+  | { level: 'warehouses' }
+  | { level: 'cabinets'; warehouseId?: string }
+  | { level: 'folders'; warehouseId?: string; cabinetId: string }
+  | { level: 'documents'; warehouseId?: string; cabinetId: string; folderId: string };
 
 interface ArchiveActions {
-  createCabinet: (data: { name: string; color: string; department: string; description: string }) => void;
+  createWarehouse?: (data: { name: string; division?: string; description?: string; color?: string }) => void;
+  createCabinet: (data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) => void;
   createFolder: (data: { cabinetId: string; name: string; description: string }) => void;
+  deleteWarehouse?: (id: string) => void;
   deleteCabinet: (id: string) => void;
   deleteFolder: (id: string) => void;
   deleteDocument: (id: string) => void;
 }
 
 export function useArchive(
+  warehouses: Warehouse[] = [],
   cabinets: Cabinet[] = [],
   folders: Folder[] = [],
   documents: Document[] = [],
   actions: ArchiveActions
 ) {
-  const [view, setView] = useState<ViewState>({ level: 'cabinets' });
+  const [view, setView] = useState<ViewState>({ level: 'warehouses' });
+  const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
   const [cabinetModalOpen, setCabinetModalOpen] = useState(false);
   const [folderModalOpen, setFolderModalOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
 
+  const activeWarehouse: Warehouse | undefined =
+    view.level === 'warehouses'
+      ? undefined
+      : view.warehouseId
+      ? warehouses.find((w) => w.id === view.warehouseId)
+      : 'cabinetId' in view
+      ? warehouses.find((w) => w.id === cabinets.find((c) => c.id === view.cabinetId)?.warehouseId)
+      : undefined;
+
   const activeCabinet: Cabinet | undefined =
-    view.level === 'cabinets' ? undefined : cabinets.find((c) => c.id === view.cabinetId);
+    view.level === 'warehouses' || view.level === 'cabinets'
+      ? undefined
+      : cabinets.find((c) => c.id === view.cabinetId);
 
   const activeFolder: Folder | undefined =
     view.level === 'documents' ? folders.find((f) => f.id === view.folderId) : undefined;
+
+  const warehouseCabinets =
+    view.level === 'cabinets' && view.warehouseId
+      ? cabinets.filter((c) => c.warehouseId === view.warehouseId)
+      : cabinets;
 
   const cabinetFolders = activeCabinet
     ? folders.filter((f) => f.cabinetId === activeCabinet.id)
@@ -44,8 +65,18 @@ export function useArchive(
       ? documents.filter((d) => d.folderId === view.folderId && !d.deleted)
       : [];
 
-  function handleCreateCabinet(data: { name: string; color: string; department: string; description: string }) {
-    actions.createCabinet(data);
+  function handleCreateWarehouse(data: { name: string; division?: string; description?: string; color?: string }) {
+    actions.createWarehouse?.(data);
+    setWarehouseModalOpen(false);
+    pushToast({ title: 'ສ້າງຄັງເອກະສານສຳເລັດ' });
+  }
+
+  function handleCreateCabinet(data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) {
+    actions.createCabinet({
+      ...data,
+      warehouseId: data.warehouseId || activeWarehouse?.id || undefined,
+      division: data.division || activeWarehouse?.division || undefined,
+    });
     setCabinetModalOpen(false);
     pushToast({ title: 'ສ້າງຕູ້ເອກະສານສຳເລັດ' });
   }
@@ -54,10 +85,10 @@ export function useArchive(
     if (!activeCabinet) return;
     actions.createFolder({ cabinetId: activeCabinet.id, ...data });
     setFolderModalOpen(false);
-    pushToast({ title: 'ສ້າງແຟ້ມສຳເລັດ' });
+    pushToast({ title: 'ສ້າງຊັ້ນວາງເອກະສານສຳເລັດ' });
   }
 
-  function handleDelete(type: 'cabinet' | 'folder' | 'document', id: string, name: string) {
+  function handleDelete(type: 'warehouse' | 'cabinet' | 'folder' | 'document', id: string, name: string) {
     setConfirmDelete({ type, id, name });
   }
 
@@ -65,16 +96,21 @@ export function useArchive(
     if (!confirmDelete) return;
     const { type, id, name } = confirmDelete;
 
-    if (type === 'cabinet') {
+    if (type === 'warehouse') {
+      actions.deleteWarehouse?.(id);
+      setView({ level: 'warehouses' });
+      pushToast({ title: `ລຶບຄັງ "${name}" ສຳເລັດ` });
+    } else if (type === 'cabinet') {
       actions.deleteCabinet(id);
-      setView({ level: 'cabinets' });
+      const whId = 'warehouseId' in view ? view.warehouseId : undefined;
+      setView({ level: 'cabinets', warehouseId: whId });
       pushToast({ title: `ລຶບຕູ້ "${name}" ສຳເລັດ` });
     } else if (type === 'folder') {
       actions.deleteFolder(id);
       if (view.level === 'folders') {
-        setView({ level: 'folders', cabinetId: view.cabinetId });
+        setView({ level: 'folders', warehouseId: view.warehouseId, cabinetId: view.cabinetId });
       }
-      pushToast({ title: `ລຶບແຟ້ມ "${name}" ສຳເລັດ` });
+      pushToast({ title: `ລຶບຊັ້ນວາງ "${name}" ສຳເລັດ` });
     } else if (type === 'document') {
       actions.deleteDocument(id);
       pushToast({ title: `ຍ້າຍ "${name}" ໄປ Trash` });
@@ -94,15 +130,19 @@ export function useArchive(
 
   function handleBack() {
     if (view.level === 'documents') {
-      setView({ level: 'folders', cabinetId: activeCabinet!.id });
-    } else {
-      setView({ level: 'cabinets' });
+      setView({ level: 'folders', warehouseId: view.warehouseId, cabinetId: activeCabinet!.id });
+    } else if (view.level === 'folders') {
+      setView({ level: 'cabinets', warehouseId: view.warehouseId });
+    } else if (view.level === 'cabinets') {
+      setView({ level: 'warehouses' });
     }
   }
 
   return {
     view,
     setView,
+    warehouseModalOpen,
+    setWarehouseModalOpen,
     cabinetModalOpen,
     setCabinetModalOpen,
     folderModalOpen,
@@ -111,10 +151,13 @@ export function useArchive(
     setPreviewDoc,
     confirmDelete,
     setConfirmDelete,
+    activeWarehouse,
     activeCabinet,
     activeFolder,
+    warehouseCabinets,
     cabinetFolders,
     folderDocuments,
+    handleCreateWarehouse,
     handleCreateCabinet,
     handleCreateFolder,
     handleDelete,

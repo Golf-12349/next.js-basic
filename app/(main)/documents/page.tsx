@@ -37,7 +37,7 @@ export default function DocumentsPage() {
   useEffect(() => {
     void reload()
   }, [reload])
-  const { cabinets } = useArchive()
+  const { warehouses, cabinets } = useArchive()
   const searchParam = searchParams.get('search') || ''
   const [prevParam, setPrevParam] = useState(searchParam)
   const [query, setQuery] = useState(searchParam)
@@ -47,6 +47,7 @@ export default function DocumentsPage() {
     setQuery(searchParam)
   }
 
+  const [filterWarehouse, setFilterWarehouse] = useState('ທັງໝົດ')
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
@@ -64,6 +65,7 @@ export default function DocumentsPage() {
       if (q) {
         if (!(d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q))) return false
       }
+      if (filterWarehouse !== 'ທັງໝົດ' && d.warehouseId !== filterWarehouse) return false
       if (filterCategory !== 'ທັງໝົດ' && d.category !== filterCategory) return false
       if (filterCabinet !== 'ທັງໝົດ' && d.cabinetId !== filterCabinet) return false
       if (filterStatus !== 'ທັງໝົດ') {
@@ -76,7 +78,7 @@ export default function DocumentsPage() {
       if (filterDepartment !== 'ທັງໝົດ' && d.department !== filterDepartment) return false
       return true
     })
-  }, [documents, debouncedQuery, filterCategory, filterCabinet, filterStatus, filterDirection, filterDivision, filterDepartment])
+  }, [documents, debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDirection, filterDivision, filterDepartment])
 
   function handleDelete(doc: Document) {
     setConfirmDelete(doc)
@@ -187,6 +189,16 @@ export default function DocumentsPage() {
             </div>
 
             <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ຄັງເອກະສານ</label>
+              <select value={filterWarehouse} onChange={(e) => setFilterWarehouse(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
+                <option>ທັງໝົດ</option>
+                {warehouses.map((w) => (
+                  <option key={w.id} value={w.id}>🏛️ {w.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">ຕູ້ເອກະສານ</label>
               <select value={filterCabinet} onChange={(e) => setFilterCabinet(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
                 <option>ທັງໝົດ</option>
@@ -274,9 +286,9 @@ export default function DocumentsPage() {
                           🏢 {[doc.division, doc.department].filter(Boolean).join(' • ')}
                         </div>
                       )}
-                      {(doc.cabinetName || doc.folderName) && (
+                      {(doc.warehouseName || doc.cabinetName || doc.folderName) && (
                         <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-                          🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+                          {doc.warehouseName ? `🏛️ ${doc.warehouseName} > ` : ''}🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
                         </span>
                       )}
                     </td>

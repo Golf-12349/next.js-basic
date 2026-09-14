@@ -1,37 +1,54 @@
 "use client"
 import Link from 'next/link'
 import { ChevronRight, Download, Eye, FileText, Home, Plus, Trash2 } from 'lucide-react'
-import type { Cabinet, Document, Folder } from '@/types/document'
+import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
 import type { ViewState } from './useArchive'
 
 // ── Breadcrumbs ──────────────────────────────────────────────
 interface BreadcrumbsProps {
   view: ViewState;
+  activeWarehouse?: Warehouse;
   activeCabinet?: Cabinet;
   activeFolder?: Folder;
   onNavigate: (view: ViewState) => void;
 }
 
-function Breadcrumbs({ view, activeCabinet, activeFolder, onNavigate }: BreadcrumbsProps) {
+function Breadcrumbs({ view, activeWarehouse, activeCabinet, activeFolder, onNavigate }: BreadcrumbsProps) {
   return (
     <nav className="flex flex-wrap items-center gap-1.5 text-sm">
       <button
-        onClick={() => onNavigate({ level: 'cabinets' })}
+        onClick={() => onNavigate({ level: 'warehouses' })}
         className={`inline-flex items-center gap-1 font-medium transition ${
-          view.level === 'cabinets'
+          view.level === 'warehouses'
             ? 'text-indigo-700'
             : 'text-gray-500 hover:text-indigo-700'
         }`}
       >
         <Home size={14} />
-        ຕູ້ເອກະສານທັງໝົດ
+        ຄັງເອກະສານທັງໝົດ
       </button>
+
+      {activeWarehouse && (
+        <>
+          <ChevronRight size={14} className="text-gray-400" />
+          <button
+            onClick={() => onNavigate({ level: 'cabinets', warehouseId: activeWarehouse.id })}
+            className={`inline-flex items-center gap-1 font-medium transition ${
+              view.level === 'cabinets'
+                ? 'text-indigo-700'
+                : 'text-gray-500 hover:text-indigo-700'
+            }`}
+          >
+            🏛️ {activeWarehouse.name}
+          </button>
+        </>
+      )}
 
       {activeCabinet && (
         <>
           <ChevronRight size={14} className="text-gray-400" />
           <button
-            onClick={() => onNavigate({ level: 'folders', cabinetId: activeCabinet.id })}
+            onClick={() => onNavigate({ level: 'folders', warehouseId: activeWarehouse?.id, cabinetId: activeCabinet.id })}
             className={`inline-flex items-center gap-1 font-medium transition ${
               view.level === 'folders'
                 ? 'text-indigo-700'
@@ -92,7 +109,7 @@ function DocumentList({ documents = [], onPreview, onDownload, onDelete }: Docum
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-2xl">
           📄
         </div>
-        <p className="text-gray-500">ຍັງບໍ່ມີເອກະສານໃນແຟ້ມນີ້</p>
+        <p className="text-gray-500">ຍັງບໍ່ມີເອກະສານໃນຊັ້ນວາງນີ້</p>
         <p className="mt-1 text-xs text-gray-400">ສາມາດອັບໂຫຼດເອກະສານເຂົ້າມາກ່ອນໄດ້</p>
         <Link
           href="/documents/upload"
