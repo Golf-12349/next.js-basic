@@ -64,6 +64,18 @@ export default function ArchivePage() {
     }
   }, [queryLevel]);
 
+  useEffect(() => {
+    const handleSetLevel = (e: Event) => {
+      const custom = e as CustomEvent<{ level: string }>;
+      const lvl = custom.detail?.level as 'warehouses' | 'cabinets' | 'folders' | 'documents';
+      if (lvl) {
+        archive.setView({ level: lvl });
+      }
+    };
+    window.addEventListener('dms:set-archive-level', handleSetLevel);
+    return () => window.removeEventListener('dms:set-archive-level', handleSetLevel);
+  }, []);
+
   const showCreateInHeader =
     canManage &&
     (archive.view.level === 'warehouses' ||

@@ -1,5 +1,5 @@
 "use client"
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
 import type { DeleteTarget } from './ArchiveModals'
@@ -33,6 +33,38 @@ export function useArchive(
   const [folderModalOpen, setFolderModalOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.set('level', view.level);
+      if ('warehouseId' in view && view.warehouseId) {
+        params.set('warehouseId', view.warehouseId);
+      } else {
+        params.delete('warehouseId');
+      }
+      if ('cabinetId' in view && view.cabinetId) {
+        params.set('cabinetId', view.cabinetId);
+      } else {
+        params.delete('cabinetId');
+      }
+      if ('folderId' in view && view.folderId) {
+        params.set('folderId', view.folderId);
+      } else {
+        params.delete('folderId');
+      }
+
+      const query = params.toString();
+      const newUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+
+      window.dispatchEvent(
+        new CustomEvent('dms:archive-level-changed', {
+          detail: { level: view.level },
+        })
+      );
+    }
+  }, [view]);
 
   const activeWarehouse: Warehouse | undefined =
     view.level === 'warehouses'

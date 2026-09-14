@@ -133,6 +133,7 @@ const menuSections: MenuSection[] = [
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user: currentUser, clearUser } = useCurrentUser();
   const { documents } = useDocuments();
   const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
 
@@ -150,6 +151,31 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     '/documents/archive': true,
   });
   const [currentQuery, setCurrentQuery] = useState('');
+  const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
+
+  useEffect(() => {
+    const handleLevelChanged = (e: Event) => {
+      const custom = e as CustomEvent<{ level: string }>;
+      if (custom.detail?.level) {
+        setActiveArchiveLevel(custom.detail.level);
+      }
+    };
+
+    window.addEventListener('dms:archive-level-changed', handleLevelChanged);
+    return () => window.removeEventListener('dms:archive-level-changed', handleLevelChanged);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const lvl = params.get('level');
+      if (lvl) {
+        setActiveArchiveLevel(lvl);
+      } else if (pathname === '/documents/archive') {
+        setActiveArchiveLevel(currentUser?.role === 'DepartmentAdmin' ? 'cabinets' : 'warehouses');
+      }
+    }
+  }, [pathname, currentUser]);
 
   useEffect(() => {
     const updateQuery = () => {
@@ -188,8 +214,6 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
       })),
     [apiNotifications],
   );
-
-  const { user: currentUser, clearUser } = useCurrentUser();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -362,17 +386,18 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                                 {allowedChildren.map((child) => {
                                   const ChildIcon = child.icon;
                                   const childLevel = child.href.includes('level=') ? child.href.split('level=')[1] : '';
-                                  const activeLevel = currentQuery.includes('level=') ? currentQuery.split('level=')[1]?.split('&')[0] : '';
                                   const isChildActive =
                                     pathname === '/documents/archive' &&
-                                    (activeLevel ? activeLevel === childLevel : childLevel === (userRole === 'DepartmentAdmin' ? 'cabinets' : 'warehouses'));
+                                    activeArchiveLevel === childLevel;
 
                                   return (
                                     <Link
                                       key={child.name}
                                       href={child.href}
                                       onClick={() => {
-                                        setCurrentQuery(child.href.includes('?') ? child.href.slice(child.href.indexOf('?')) : '');
+                                        setActiveArchiveLevel(childLevel);
+                                        window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
+                                        window.dispatchEvent(new CustomEvent('dms:archive-level-changed', { detail: { level: childLevel } }));
                                       }}
                                       className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
                                         isChildActive

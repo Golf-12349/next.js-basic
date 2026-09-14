@@ -20,13 +20,20 @@ function Breadcrumbs({ view, activeWarehouse, activeCabinet, activeFolder, onNav
         onClick={() => onNavigate({ level: 'warehouses' })}
         className={`inline-flex items-center gap-1 font-medium transition ${
           view.level === 'warehouses'
-            ? 'text-indigo-700'
+            ? 'text-indigo-700 font-bold'
             : 'text-gray-500 hover:text-indigo-700'
         }`}
       >
         <Home size={14} />
         ຄັງເອກະສານທັງໝົດ
       </button>
+
+      {view.level === 'cabinets' && !activeWarehouse && (
+        <>
+          <ChevronRight size={14} className="text-gray-400" />
+          <span className="font-semibold text-indigo-700">🗄️ ຕູ້ເອກະສານທັງໝົດ</span>
+        </>
+      )}
 
       {activeWarehouse && (
         <>
@@ -35,12 +42,19 @@ function Breadcrumbs({ view, activeWarehouse, activeCabinet, activeFolder, onNav
             onClick={() => onNavigate({ level: 'cabinets', warehouseId: activeWarehouse.id })}
             className={`inline-flex items-center gap-1 font-medium transition ${
               view.level === 'cabinets'
-                ? 'text-indigo-700'
+                ? 'text-indigo-700 font-bold'
                 : 'text-gray-500 hover:text-indigo-700'
             }`}
           >
             🏛️ {activeWarehouse.name}
           </button>
+        </>
+      )}
+
+      {view.level === 'folders' && !activeCabinet && (
+        <>
+          <ChevronRight size={14} className="text-gray-400" />
+          <span className="font-semibold text-indigo-700">📁 ຊັ້ນວາງເອກະສານທັງໝົດ</span>
         </>
       )}
 
@@ -51,7 +65,7 @@ function Breadcrumbs({ view, activeWarehouse, activeCabinet, activeFolder, onNav
             onClick={() => onNavigate({ level: 'folders', warehouseId: activeWarehouse?.id, cabinetId: activeCabinet.id })}
             className={`inline-flex items-center gap-1 font-medium transition ${
               view.level === 'folders'
-                ? 'text-indigo-700'
+                ? 'text-indigo-700 font-bold'
                 : 'text-gray-500 hover:text-indigo-700'
             }`}
           >
@@ -60,10 +74,17 @@ function Breadcrumbs({ view, activeWarehouse, activeCabinet, activeFolder, onNav
         </>
       )}
 
+      {view.level === 'documents' && !activeFolder && (
+        <>
+          <ChevronRight size={14} className="text-gray-400" />
+          <span className="font-semibold text-indigo-700">📑 ແຟ້ມເອກະສານທັງໝົດ</span>
+        </>
+      )}
+
       {activeFolder && (
         <>
           <ChevronRight size={14} className="text-gray-400" />
-          <span className="font-medium text-gray-800">📁 {activeFolder.name}</span>
+          <span className="font-bold text-gray-800">📁 {activeFolder.name}</span>
         </>
       )}
     </nav>
