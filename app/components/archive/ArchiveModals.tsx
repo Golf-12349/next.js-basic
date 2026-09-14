@@ -1,5 +1,5 @@
 "use client"
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { Download, Plus } from 'lucide-react'
@@ -66,28 +66,38 @@ interface CreateWarehouseModalProps {
   open: boolean;
   onClose: () => void;
   userDivision?: string;
+  isSuperAdmin?: boolean;
   onCreate: (data: { name: string; division?: string; description?: string; color?: string }) => void;
 }
 
-export function CreateWarehouseModal({ open, onClose, userDivision, onCreate }: CreateWarehouseModalProps) {
+export function CreateWarehouseModal({ open, onClose, userDivision, isSuperAdmin, onCreate }: CreateWarehouseModalProps) {
   const [name, setName] = useState('');
-  const [division, setDivision] = useState(userDivision || '');
+  const [division, setDivision] = useState(isSuperAdmin ? '' : (userDivision || ''));
   const [color, setColor] = useState('from-indigo-600 to-purple-600');
   const [description, setDescription] = useState('');
 
   const divisionList = Object.keys(edlStructure);
 
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setDescription('');
+      setDivision(isSuperAdmin ? '' : (userDivision || ''));
+      setColor('from-indigo-600 to-purple-600');
+    }
+  }, [open, isSuperAdmin, userDivision]);
+
   function handleSubmit() {
     if (!name.trim()) return;
     onCreate({
       name: name.trim(),
-      division: division || userDivision || undefined,
+      division: division || (!isSuperAdmin ? userDivision : undefined),
       description: description.trim() || 'ບໍ່ມີລາຍລະອຽດ',
       color,
     });
     setName('');
     setDescription('');
-    if (!userDivision) setDivision('');
+    setDivision(isSuperAdmin ? '' : (userDivision || ''));
     setColor('from-indigo-600 to-purple-600');
   }
 
@@ -110,7 +120,7 @@ export function CreateWarehouseModal({ open, onClose, userDivision, onCreate }: 
           <label className="mb-1 block text-sm font-medium text-gray-700">ຝ່າຍ / ຫ້ອງການ</label>
           <select
             value={division}
-            disabled={!!userDivision}
+            disabled={!isSuperAdmin && !!userDivision}
             onChange={(e) => setDivision(e.target.value)}
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400 disabled:opacity-60"
           >
@@ -177,20 +187,32 @@ interface CreateCabinetModalProps {
   warehouses?: { id: string; name: string; division?: string | null }[];
   defaultWarehouseId?: string;
   userDivision?: string;
+  isSuperAdmin?: boolean;
   onCreate: (data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) => void;
 }
 
-export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWarehouseId, userDivision, onCreate }: CreateCabinetModalProps) {
+export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWarehouseId, userDivision, isSuperAdmin, onCreate }: CreateCabinetModalProps) {
   const [name, setName] = useState('');
   const [warehouseId, setWarehouseId] = useState(defaultWarehouseId || '');
   const [color, setColor] = useState(colorOptions[0].value);
-  const [division, setDivision] = useState(userDivision || '');
+  const [division, setDivision] = useState(isSuperAdmin ? '' : (userDivision || ''));
   const [department, setDepartment] = useState('');
   const [description, setDescription] = useState('');
 
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setDescription('');
+      setWarehouseId(defaultWarehouseId || '');
+      setDivision(isSuperAdmin ? '' : (userDivision || ''));
+      setDepartment('');
+      setColor(colorOptions[0].value);
+    }
+  }, [open, defaultWarehouseId, isSuperAdmin, userDivision]);
+
   const selectedWh = warehouses.find((w) => w.id === (warehouseId || defaultWarehouseId));
-  const activeDivision = division || userDivision || selectedWh?.division || '';
-  const availableDepts = activeDivision && edlStructure[activeDivision] ? edlStructure[activeDivision] : departmentOptions;
+  const activeDivision = isSuperAdmin ? division : (division || userDivision || selectedWh?.division || '');
+  const availableDepts = activeDivision && edlStructure[activeDivision] ? edlStructure[activeDivision] : (isSuperAdmin ? Object.values(edlStructure).flat() : departmentOptions);
 
   function handleSubmit() {
     if (!name.trim()) return;
@@ -218,7 +240,12 @@ export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWare
             </label>
             <select
               value={warehouseId || defaultWarehouseId || ''}
-              onChange={(e) => setWarehouseId(e.target.value)}
+              onChange={(e) => {
+                const wid = e.target.value;
+                setWarehouseId(wid);
+                const wh = warehouses.find((w) => w.id === wid);
+                if (wh?.division && !division) setDivision(wh.division);
+              }}
               className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
             >
               <option value="">— ເລືອກຄັງເອກະສານ —</option>
@@ -240,6 +267,25 @@ export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWare
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           />
         </div>
+
+        {isSuperAdmin && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">ຝ່າຍ / ຫ້ອງການ</label>
+            <select
+              value={division}
+              onChange={(e) => {
+                setDivision(e.target.value);
+                setDepartment('');
+              }}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+            >
+              <option value="">— ເລືອກຝ່າຍ (ຫຼື ສູນກາງ) —</option>
+              {Object.keys(edlStructure).map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">ພະແນກ</label>

@@ -34,6 +34,7 @@ export default function ArchivePage() {
 
   // Role permissions: SuperAdmin and DivisionAdmin can manage warehouses/cabinets/shelves
   // DepartmentAdmin can view cabinets and shelves (read-only for archive structure)
+  const isSuperAdmin = user?.role === 'SuperAdmin';
   const isDepartmentAdmin = user?.role === 'DepartmentAdmin';
   const canManage = !isDepartmentAdmin;
 
@@ -156,7 +157,8 @@ export default function ArchivePage() {
         <CreateWarehouseModal
           open={archive.warehouseModalOpen}
           onClose={() => archive.setWarehouseModalOpen(false)}
-          userDivision={user?.division}
+          userDivision={isSuperAdmin ? undefined : user?.division}
+          isSuperAdmin={isSuperAdmin}
           onCreate={archive.handleCreateWarehouse}
         />
 
@@ -165,7 +167,8 @@ export default function ArchivePage() {
           onClose={() => archive.setCabinetModalOpen(false)}
           warehouses={warehouses}
           defaultWarehouseId={archive.activeWarehouse?.id}
-          userDivision={user?.division}
+          userDivision={isSuperAdmin ? undefined : user?.division}
+          isSuperAdmin={isSuperAdmin}
           onCreate={archive.handleCreateCabinet}
         />
 

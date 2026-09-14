@@ -27,3 +27,4 @@ export async function updateWarehouse(
 export async function deleteWarehouse(id: string): Promise<void> {
   await apiClient.delete(`/warehouses/${id}`);
 }
+
