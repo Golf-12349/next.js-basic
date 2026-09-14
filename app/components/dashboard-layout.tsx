@@ -27,6 +27,7 @@ import {
   X,
 } from 'lucide-react';
 import { useDocuments } from '../(main)/context/DocumentsContext';
+import { useUploadModal } from '../(main)/context/UploadModalContext';
 import { useNotifications } from '../(main)/context/NotificationsContext';
 import apiClient from '@/config/axiosClient';
 import { useCurrentUser } from '../(main)/context/CurrentUserContext';
@@ -44,6 +45,8 @@ type MenuItem = {
   href: string;
   icon: typeof LayoutDashboard;
   badge?: string;
+  /** ການະທີ ເປີດ modal (ບໍ່ປ່ຽນ route) — ກັບສຽມ fire `openUpload()` */
+  action?: 'open-upload';
 };
 
 type MenuSection = {
@@ -76,7 +79,7 @@ const menuSections: MenuSection[] = [
     items: [
       { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
       { name: 'ລໍຖ້າອະນຸມັດ', href: '/documents/pending', icon: Clock3 },
-      { name: 'ອັບໂຫຼດເອກກະສານ', href: '/documents/upload', icon: Upload },
+      { name: 'ອັບໂຫຼດເອກກະສານ', href: '', action: 'open-upload', icon: Upload },
       { name: 'ຄັງເກັບເອກກະສານ', href: '/documents/archive', icon: Archive },
     ],
   },
@@ -92,6 +95,7 @@ const menuSections: MenuSection[] = [
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { openUpload, uploadOpen } = useUploadModal();
   const { documents } = useDocuments();
   const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
 
@@ -237,8 +241,42 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                   <div className="space-y-1">
                     {section.items.map((item) => {
                       const Icon = item.icon;
-                      const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
+                      const isUploadItem = item.action === 'open-upload';
+                      const isActive = isUploadItem
+                        ? uploadOpen
+                        : pathname === item.href || (item.href === '/dashboard' && pathname === '/');
                       const itemBadge = item.href === '/documents/pending' && pendingCount > 0 ? String(pendingCount) : item.badge;
+
+                      const inner = (
+                        <>
+                          <span className="flex items-center gap-3">
+                            <Icon className="h-4 w-4" />
+                            {item.name}
+                          </span>
+                          {itemBadge ? (
+                            <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
+                              {itemBadge}
+                            </span>
+                          ) : null}
+                        </>
+                      );
+
+                      if (isUploadItem) {
+                        return (
+                          <button
+                            key={item.name}
+                            type="button"
+                            onClick={openUpload}
+                            className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                              isActive
+                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-700/30'
+                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                            }`}
+                          >
+                            {inner}
+                          </button>
+                        );
+                      }
 
                       return (
                         <Link
@@ -250,15 +288,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                               : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                           }`}
                         >
-                          <span className="flex items-center gap-3">
-                            <Icon className="h-4 w-4" />
-                            {item.name}
-                          </span>
-                          {itemBadge ? (
-                            <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
-                              {itemBadge}
-                            </span>
-                          ) : null}
+                          {inner}
                         </Link>
                       );
                     })}

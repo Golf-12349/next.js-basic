@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { AlertCircle, CalendarDays, CheckCircle2, FileCheck2, FileText, Phone, Plus, Video } from 'lucide-react';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
+import { useUploadModal } from '@/app/(main)/context/UploadModalContext';
 import { addDays, formatFullDateLao, LAO_DAYS_SHORT, parseDateKey, toDateKey } from './dashboard-utils';
 
 type TaskType = 'approval' | 'review' | 'contract' | 'meeting' | 'call';
@@ -64,6 +65,7 @@ const TASK_META: Record<TaskType, { icon: typeof FileText; iconBox: string }> = 
 
 export function SchedulePanel() {
   const { documents } = useDocuments();
+  const { openUpload } = useUploadModal();
   const [selectedKey, setSelectedKey] = useState(() => toDateKey(new Date()));
 
   const days = useMemo(() => {
@@ -115,13 +117,14 @@ export function SchedulePanel() {
             </span>
           )}
         </div>
-        <Link
-          href="/documents/upload"
+        <button
+          type="button"
+          onClick={openUpload}
           className="inline-flex w-fit items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-200/60 transition-all hover:bg-indigo-500"
         >
           <Plus className="h-3.5 w-3.5" />
           ອັບໂຫຼດເອກະສານ
-        </Link>
+        </button>
       </div>
 
       {/* Horizontal date picker strip */}

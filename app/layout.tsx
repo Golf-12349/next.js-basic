@@ -3,6 +3,7 @@ import { Noto_Sans, Noto_Sans_Lao } from "next/font/google";
 import "./globals.css";
 import { DMSProvider } from './(main)/_dms-context'
 import { CurrentUserProvider } from './(main)/context/CurrentUserContext'
+import { UploadModalProvider } from './(main)/context/UploadModalContext'
 import ToastContainer from './components/ui/Toast'
 import { Toaster } from 'react-hot-toast';
 
@@ -33,7 +34,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Toaster />
         <DMSProvider>
           <CurrentUserProvider>
-            {children}
+            <UploadModalProvider>
+              {children}
+            </UploadModalProvider>
             <ToastContainer />
           </CurrentUserProvider>
         </DMSProvider>

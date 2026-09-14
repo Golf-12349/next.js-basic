@@ -1,11 +1,11 @@
 'use client'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import type { Document, DocumentStatus } from '@/types/document'
 import { useEffect, useMemo, useState } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useDocuments } from '../context/DocumentsContext'
+import { useUploadModal } from '../context/UploadModalContext'
 import { useArchive } from '../context/ArchiveContext'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
@@ -31,12 +31,24 @@ const statusLabels: Record<DocumentStatus, string> = {
 }
 
 export default function DocumentsPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
+  const { openUpload } = useUploadModal()
   const { documents, categories, addCategory, removeCategory, deleteDocument, reload } = useDocuments()
 
   useEffect(() => {
     void reload()
   }, [reload])
+
+  // ການປ່ຽນສົ່ງຈາກໜ້າ upload ເກົ່າ: `/documents?upload=open` ເປີດ modal ອັດຕະໂນມັດ ແລະ ເຂືອງ URL
+  useEffect(() => {
+    if (searchParams.get('upload') !== 'open') return
+    openUpload()
+    const clean = new URLSearchParams(window.location.search)
+    clean.delete('upload')
+    const qs = clean.toString()
+    router.replace(qs ? `/documents?${qs}` : '/documents')
+  }, [searchParams, openUpload, router])
   const { cabinets } = useArchive()
   const searchParam = searchParams.get('search') || ''
   const [prevParam, setPrevParam] = useState(searchParam)
@@ -146,12 +158,13 @@ export default function DocumentsPage() {
             <p className="text-sm text-gray-500 mt-1">ການຕິດຕາມແລະຈັດການເອກະສານໃນລະບົບ DMS</p>
           </div>
 
-          <Link
-            href="/documents/upload"
+          <button
+            type="button"
+            onClick={openUpload}
             className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
           >
             + ອັບໂຫຼດເອກກະສານ
-          </Link>
+          </button>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">

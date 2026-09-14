@@ -1,8 +1,8 @@
 "use client"
-import Link from 'next/link'
 import { ChevronRight, Download, Eye, FileText, Home, Plus, Trash2 } from 'lucide-react'
 import type { Cabinet, Document, Folder } from '@/types/document'
 import type { ViewState } from './useArchive'
+import { useUploadModal } from '@/app/(main)/context/UploadModalContext'
 
 // ── Breadcrumbs ──────────────────────────────────────────────
 interface BreadcrumbsProps {
@@ -86,6 +86,7 @@ function formatDate(dateStr: string): string {
 }
 
 function DocumentList({ documents = [], onPreview, onDownload, onDelete }: DocumentListProps) {
+  const { openUpload } = useUploadModal();
   if (!documents || documents.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center">
@@ -94,12 +95,13 @@ function DocumentList({ documents = [], onPreview, onDownload, onDelete }: Docum
         </div>
         <p className="text-gray-500">ຍັງບໍ່ມີເອກະສານໃນແຟ້ມນີ້</p>
         <p className="mt-1 text-xs text-gray-400">ສາມາດອັບໂຫຼດເອກະສານເຂົ້າມາກ່ອນໄດ້</p>
-        <Link
-          href="/documents/upload"
+        <button
+          type="button"
+          onClick={openUpload}
           className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
           <Plus size={16} /> ອັບໂຫຼດເອກະສານ
-        </Link>
+        </button>
       </div>
     );
   }
