@@ -22,20 +22,19 @@ import {
 } from 'lucide-react'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
 const EMAIL_FORMAT_ERROR = 'ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ (ຕົວຢ່າງ: name@gmail.com)'
 
 export const roleStyles: Record<UserRole, string> = {
   SuperAdmin: 'bg-violet-100 text-violet-700',
-  Admin: 'bg-indigo-100 text-indigo-700',
-  User: 'bg-slate-100 text-slate-700',
-  Staff: 'bg-slate-100 text-slate-700',
+  DivisionAdmin: 'bg-blue-100 text-blue-700',
+  DepartmentAdmin: 'bg-emerald-100 text-emerald-700',
 }
 
 export const roleLabels: Record<UserRole, string> = {
   SuperAdmin: 'ຜູ້ດູແລລະບົບສູງສຸດ',
-  Admin: 'ຜູ້ດູແລລະບົບ',
-  User: 'ຜູ້ໃຊ້ງານ',
-  Staff: 'ພະນັກງານ',
+  DivisionAdmin: 'Admin ຝ່າຍ',
+  DepartmentAdmin: 'Admin ພະແນກ',
 }
 
 export const statusStyles: Record<UserStatus, string> = {
@@ -237,7 +236,7 @@ const emptyForm: UserFormValues = {
   name: '',
   email: '',
   phone: '',
-  role: 'User',
+  role: 'DepartmentAdmin',
   division: '',
   department: '',
   status: 'active',
@@ -279,7 +278,7 @@ export function UserFormModal({
               avatarUrl: user.avatarUrl || '',
               password: '',
             }
-          : { ...emptyForm, role: 'User' }
+          : { ...emptyForm, role: 'DepartmentAdmin' }
       )
       setShowPassword(false)
       setError(null)
@@ -312,11 +311,16 @@ export function UserFormModal({
 
   // Determine available roles based on who is performing the action
   const availableRoles: UserRole[] =
-    currentUserRole === 'Admin' ? ['Admin', 'User'] : ['SuperAdmin', 'Admin', 'User']
+    currentUserRole === 'DivisionAdmin'
+      ? ['DepartmentAdmin']
+      : ['SuperAdmin', 'DivisionAdmin', 'DepartmentAdmin']
 
-  // If editing a SuperAdmin and viewing user is not SuperAdmin, disallow role demotion / changes
+  // If editing a SuperAdmin or DivisionAdmin and viewing user is not SuperAdmin, disallow role changes
   const isEditingSuperAdmin = user?.role === 'SuperAdmin'
-  const isRoleDisabled = isEditingSuperAdmin && currentUserRole !== 'SuperAdmin'
+  const isEditingDivisionAdmin = user?.role === 'DivisionAdmin'
+  const isRoleDisabled =
+    (isEditingSuperAdmin && currentUserRole !== 'SuperAdmin') ||
+    (isEditingDivisionAdmin && currentUserRole !== 'SuperAdmin')
 
   function handleSubmit() {
     if (!form.name.trim() || !form.email.trim() || !form.division.trim() || !form.department.trim()) {
@@ -334,8 +338,8 @@ export function UserFormModal({
       return
     }
 
-    if (currentUserRole === 'Admin' && form.role === 'SuperAdmin') {
-      setError('Admin ບໍ່ມີສິດກຳນົດສິດເປັນ SuperAdmin')
+    if (currentUserRole === 'DivisionAdmin' && (form.role === 'SuperAdmin' || form.role === 'DivisionAdmin')) {
+      setError('Admin ຝ່າຍ ສາມາດກຳນົດສິດໄດ້ສະເພາະ Admin ພະແນກ ເທົ່ານັ້ນ')
       return
     }
 
@@ -505,16 +509,16 @@ export function UserFormModal({
               {(availableRoles.includes('SuperAdmin') || isRoleDisabled) && (
                 <option value="SuperAdmin">ຜູ້ດູແລລະບົບສູງສຸດ (SuperAdmin)</option>
               )}
-              {availableRoles.includes('Admin') && (
-                <option value="Admin">ຜູ້ດູແລລະບົບ (Admin)</option>
+              {availableRoles.includes('DivisionAdmin') && (
+                <option value="DivisionAdmin">Admin ຝ່າຍ (DivisionAdmin)</option>
               )}
-              {availableRoles.includes('User') && (
-                <option value="User">ຜູ້ໃຊ້ງານ (User)</option>
+              {availableRoles.includes('DepartmentAdmin') && (
+                <option value="DepartmentAdmin">Admin ພະແນກ (DepartmentAdmin)</option>
               )}
             </select>
             {isRoleDisabled && (
               <p className="mt-1 text-xs text-amber-600">
-                ບໍ່ສາມາດປ່ຽນສິດຂອງ SuperAdmin ໄດ້ (ສະເພາະ SuperAdmin ເທົ່ານັ້ນ)
+                ບໍ່ສາມາດປ່ຽນສິດຂອງ SuperAdmin / Admin ຝ່າຍ ໄດ້ (ສະເພາະ SuperAdmin ເທົ່ານັ້ນ)
               </p>
             )}
           </div>

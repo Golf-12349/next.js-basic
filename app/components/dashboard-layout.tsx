@@ -220,7 +220,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
               .map((section) => ({
                 ...section,
                 items: section.items.filter((item) => {
-                  const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'SuperAdmin';
+                  const isAdmin = currentUser?.role === 'DivisionAdmin' || currentUser?.role === 'SuperAdmin';
                   if (item.href === '/users' && !isAdmin) {
                     return false;
                   }
@@ -278,7 +278,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
             />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold text-white">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</div>
-              <div className="text-xs text-slate-400">{roleLabel(currentUser?.role ?? 'User')}</div>
+              <div className="text-xs text-slate-400">{roleLabel(currentUser?.role ?? 'DepartmentAdmin')}</div>
             </div>
           </div>
 
@@ -459,7 +459,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                 />
                 <div className="hidden text-left sm:block">
                   <p className="text-sm font-semibold leading-none text-gray-900">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</p>
-                  <p className="mt-1 text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'User')}</p>
+                  <p className="mt-1 text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'DepartmentAdmin')}</p>
                 </div>
                 <ChevronDown
                   className={`h-4 w-4 text-gray-400 transition-transform duration-300 ${
@@ -486,7 +486,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                     />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-900">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</p>
-                      <p className="text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'User')}</p>
+                      <p className="text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'DepartmentAdmin')}</p>
                     </div>
                   </div>
                 </div>
@@ -504,7 +504,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                     <UserCog className="h-4 w-4 text-gray-400" />
                     ແກ້ໄຂໂປຣໄຟລ໌
                   </button>
-                  {(currentUser?.role === 'SuperAdmin' || currentUser?.role === 'Admin') && (
+                  {(currentUser?.role === 'SuperAdmin' || currentUser?.role === 'DivisionAdmin') && (
                     <button
                       type="button"
                       onClick={() => {
