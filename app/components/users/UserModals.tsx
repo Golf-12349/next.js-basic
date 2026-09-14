@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import type { User, UserRole, UserStatus } from '@/types/user'
-import { edlStructure } from '@/types/user'
+import { edlStructure, USER_POSITIONS } from '@/types/user'
 import {
   Mail,
   Phone,
@@ -19,6 +19,7 @@ import {
   Palette,
   Check,
   Trash2,
+  Briefcase,
 } from 'lucide-react'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
@@ -184,6 +185,13 @@ export function UserDetailModal({
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
+              <Briefcase size={16} className="mt-0.5 text-gray-400" />
+              <div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">ຕຳແໜ່ງ</div>
+                <div className="mt-1 text-sm font-medium text-gray-900">{user.position || '-'}</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-xl bg-gray-50 p-4">
               <ShieldCheck size={16} className="mt-0.5 text-gray-400" />
               <div>
                 <div className="text-xs uppercase tracking-wide text-gray-500">ສິດນຳໃຊ້</div>
@@ -227,6 +235,7 @@ export type UserFormValues = {
   role: UserRole
   division: string
   department: string
+  position: string
   status: UserStatus
   avatarUrl: string
   password: string
@@ -239,6 +248,7 @@ const emptyForm: UserFormValues = {
   role: 'DepartmentAdmin',
   division: '',
   department: '',
+  position: '',
   status: 'active',
   avatarUrl: '',
   password: '',
@@ -274,6 +284,7 @@ export function UserFormModal({
               role: user.role,
               division: user.division || findDivisionForDepartment(user.department) || '',
               department: user.department,
+              position: user.position || '',
               status: user.status,
               avatarUrl: user.avatarUrl || '',
               password: '',
@@ -462,6 +473,21 @@ export function UserFormModal({
               placeholder="020 xxxx xxxx"
               className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400"
             />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">ຕຳແໜ່ງ</label>
+            <select
+              value={form.position}
+              onChange={(e) => handleChange('position', e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400"
+            >
+              <option value="">— ເລືອກຕຳແໜ່ງ —</option>
+              {USER_POSITIONS.map((pos) => (
+                <option key={pos} value={pos}>
+                  {pos}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="sm:col-span-2">
             <label className="mb-1 block text-sm font-medium text-gray-700">ຝ່າຍ / ຫ້ອງການ / ສະຖາບັນ</label>

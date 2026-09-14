@@ -60,7 +60,15 @@ export default function UsersPage() {
   const visible = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
     return users.filter((u) => {
-      if (q && !(u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))) return false
+      if (
+        q &&
+        !(
+          u.name.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          (u.position && u.position.toLowerCase().includes(q))
+        )
+      )
+        return false
       if (filterRole !== ALL && u.role !== filterRole) return false
       if (filterDepartment !== ALL && u.department !== filterDepartment) return false
       if (filterStatus !== ALL && u.status !== filterStatus) return false
@@ -320,7 +328,14 @@ export default function UsersPage() {
                                 textClassName="text-xs"
                               />
                               <div>
-                                <div className="font-semibold text-gray-900">{u.name}</div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold text-gray-900">{u.name}</span>
+                                  {u.position && (
+                                    <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                                      {u.position}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="text-xs text-gray-500">{u.email}</div>
                               </div>
                             </div>

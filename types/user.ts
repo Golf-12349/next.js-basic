@@ -2,6 +2,9 @@ export type UserRole = 'SuperAdmin' | 'DivisionAdmin' | 'DepartmentAdmin';
 
 export type UserStatus = 'active' | 'inactive';
 
+export const USER_POSITIONS = ['ຫົວໜ້າ', 'ຮອງຫົວໜ້າ', 'ວິຊາການ'] as const;
+export type UserPosition = (typeof USER_POSITIONS)[number];
+
 export type User = {
   id: string;
   name: string;
@@ -10,6 +13,7 @@ export type User = {
   role: UserRole;
   division?: string; // ຝ່າຍ / ຫ້ອງການ / ສະຖາບັນ
   department: string; // ພະແນກ / ສູນ
+  position?: string; // ຕຳແໜ່ງ (ຫົວໜ້າ, ຮອງຫົວໜ້າ, ວິຊາການ)
   status: UserStatus;
   joinDate: string;
   lastActive?: string;

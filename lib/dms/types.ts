@@ -12,6 +12,7 @@ export type ApiUser = {
   department: string | null
   status: User['status']
   division?: string | null
+  position?: string | null
   avatarUrl?: string | null
   createdAt: string
   updatedAt: string
@@ -79,6 +80,7 @@ export function toFrontendUser(user: ApiUser): User {
     role: user.role,
     division: user.division ?? undefined,
     department: user.department ?? '',
+    position: user.position ?? undefined,
     status: user.status,
     avatarUrl: user.avatarUrl ?? undefined,
     joinDate: user.createdAt.slice(0, 10),

@@ -79,6 +79,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         status: user.status,
       }
       if (user.division) payload.division = user.division
+      if (user.position) payload.position = user.position
       if (user.avatarUrl) payload.avatarUrl = user.avatarUrl
       if (user.password) payload.password = user.password
 
@@ -90,6 +91,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         createdUser = {
           ...newUser,
           division: user.division || newUser.division,
+          position: user.position || newUser.position,
           avatarUrl: user.avatarUrl || newUser.avatarUrl,
           temporaryPassword: created.temporaryPassword,
         }
@@ -107,6 +109,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
           department: user.department,
           status: user.status,
           division: user.division,
+          position: user.position,
           avatarUrl: user.avatarUrl,
           joinDate: now.slice(0, 10),
           lastActive: now.slice(0, 10),
@@ -122,13 +125,14 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
 
   const updateUser = useCallback(async (id: string, patch: Partial<User>): Promise<void> => {
     // ສົ່ງໄປ backend ສະເພາະ field ທີ່ PATCH /users/:id ຮັບຈິງ — email ບໍ່ມີ column ຢູ່ backend
-    // ຈຶ່ງບໍ່ສົ່ງ (ສົ່ງໄປຈະໂດນ 400) ຄົງໄວ້ local ຢ່າງດຽວ, ສ່ວນ name/role/phone/department/division/avatarUrl/status ສົ່ງໄດ້ປົກກະຕິ
+    // ຈຶ່ງບໍ່ສົ່ງ (ສົ່ງໄປຈະໂດນ 400) ຄົງໄວ້ local ຢ່າງດຽວ, ສ່ວນ name/role/phone/department/division/position/avatarUrl/status ສົ່ງໄດ້ປົກກະຕິ
     const backendPatch: Record<string, unknown> = {}
     if (patch.name !== undefined) backendPatch.name = patch.name
     if (patch.role !== undefined) backendPatch.role = patch.role
     if (patch.phone !== undefined) backendPatch.phone = patch.phone
     if (patch.department !== undefined) backendPatch.department = patch.department
     if (patch.division !== undefined) backendPatch.division = patch.division
+    if (patch.position !== undefined) backendPatch.position = patch.position
     if (patch.avatarUrl !== undefined) backendPatch.avatarUrl = patch.avatarUrl
     if (patch.status !== undefined) backendPatch.status = patch.status
 
