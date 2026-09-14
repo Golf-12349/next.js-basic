@@ -212,7 +212,12 @@ export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWare
 
   const selectedWh = warehouses.find((w) => w.id === (warehouseId || defaultWarehouseId));
   const activeDivision = isSuperAdmin ? division : (division || userDivision || selectedWh?.division || '');
-  const availableDepts = activeDivision && edlStructure[activeDivision] ? edlStructure[activeDivision] : (isSuperAdmin ? Object.values(edlStructure).flat() : departmentOptions);
+  const rawDepts = activeDivision && edlStructure[activeDivision]
+    ? edlStructure[activeDivision]
+    : (userDivision && edlStructure[userDivision]
+        ? edlStructure[userDivision]
+        : (isSuperAdmin ? Object.values(edlStructure).flat() : departmentOptions));
+  const availableDepts = Array.from(new Set(rawDepts));
 
   function handleSubmit() {
     if (!name.trim()) return;
@@ -295,8 +300,8 @@ export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWare
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           >
             <option value="">— ເລືອກພະແນກ —</option>
-            {availableDepts.map((d) => (
-              <option key={d} value={d}>{d}</option>
+            {availableDepts.map((d, idx) => (
+              <option key={`${d}-${idx}`} value={d}>{d}</option>
             ))}
           </select>
         </div>
