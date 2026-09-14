@@ -1,4 +1,4 @@
-export type UserRole = 'SuperAdmin' | 'Admin' | 'User' | 'Staff';
+export type UserRole = 'SuperAdmin' | 'DivisionAdmin' | 'DepartmentAdmin';
 
 export type UserStatus = 'active' | 'inactive';
 
@@ -62,9 +62,9 @@ function pickRole(value: unknown): UserRole {
   const raw = pickText(value);
   const normalized = raw?.toLowerCase().replace(/[-\s_]/g, '');
   if (normalized === 'superadmin') return 'SuperAdmin';
-  if (normalized === 'admin') return 'Admin';
-  if (normalized === 'staff') return 'Staff';
-  return 'User';
+  if (normalized === 'divisionadmin' || normalized === 'admin') return 'DivisionAdmin';
+  if (normalized === 'departmentadmin' || normalized === 'user' || normalized === 'staff') return 'DepartmentAdmin';
+  return 'DepartmentAdmin';
 }
 
 function pickStatus(value: unknown): UserStatus {
@@ -105,7 +105,7 @@ export function normalizeCurrentUser(value: unknown): CurrentUser | null {
     name: v.name ?? '',
     email: v.email ?? '',
     phone: v.phone,
-    role: v.role ?? 'User',
+    role: v.role ?? 'DepartmentAdmin',
     department: v.department,
     division: v.division,
     position: v.position,
@@ -119,12 +119,11 @@ export function roleLabel(role: UserRole): string {
   switch (role) {
     case 'SuperAdmin':
       return 'ຜູ້ດູແລລະບົບສູງສຸດ';
-    case 'Admin':
-      return 'ຜູ້ດູແລລະບົບ';
-    case 'Staff':
-      return 'ພະນັກງານ';
+    case 'DivisionAdmin':
+      return 'Admin ຝ່າຍ';
+    case 'DepartmentAdmin':
     default:
-      return 'ຜູ້ໃຊ້ງານ';
+      return 'Admin ພະແນກ';
   }
 }
 

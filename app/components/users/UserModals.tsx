@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
 const EMAIL_FORMAT_ERROR = 'ຮູບແບບອີເມວບໍ່ຖືກຕ້ອງ (ຕົວຢ່າງ: name@gmail.com)'
 
 export const roleStyles: Record<UserRole, string> = {

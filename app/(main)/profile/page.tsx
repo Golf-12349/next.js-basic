@@ -60,7 +60,7 @@ export default function PersonalProfilePage() {
     setAvatarUrl(currentUser?.avatarUrl ?? "");
   }, [currentUser]);
 
-  const role = currentUser?.role ?? "User";
+  const role = currentUser?.role ?? "DepartmentAdmin";
   const division = currentUser?.division || findDivisionForDepartment(currentUser?.department || "");
   const department = currentUser?.department || "";
   const currentUserId = currentUser?.id;
@@ -102,8 +102,8 @@ export default function PersonalProfilePage() {
   const roleBadgeClass =
     role === "SuperAdmin"
       ? "bg-purple-100 text-purple-700 border-purple-200"
-      : role === "Admin"
-      ? "bg-indigo-100 text-indigo-700 border-indigo-200"
+      : role === "DivisionAdmin"
+      ? "bg-blue-100 text-blue-700 border-blue-200"
       : "bg-emerald-100 text-emerald-700 border-emerald-200";
 
   // ---- Handlers ----

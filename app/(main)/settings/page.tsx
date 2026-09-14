@@ -28,9 +28,9 @@ export default function SystemSettingsPage() {
   const { user: currentUser } = useCurrentUser();
   const { isConnected } = useRealtime();
 
-  // If normal user, redirect to their personal profile
+  // If not SuperAdmin or DivisionAdmin, redirect to their personal profile
   useEffect(() => {
-    if (currentUser && currentUser.role !== "SuperAdmin" && currentUser.role !== "Admin") {
+    if (currentUser && currentUser.role !== "SuperAdmin" && currentUser.role !== "DivisionAdmin") {
       router.replace("/profile");
     }
   }, [currentUser, router]);

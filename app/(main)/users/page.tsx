@@ -29,7 +29,7 @@ export default function UsersPage() {
   const { user: currentUser, setCurrentUser } = useCurrentUser()
   const router = useRouter()
 
-  const currentUserRole = currentUser?.role ?? 'User'
+  const currentUserRole = currentUser?.role ?? 'DepartmentAdmin'
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebounce(query, 250)
   const [filterRole, setFilterRole] = useState<'ທັງໝົດ' | UserRole>(ALL)
@@ -51,7 +51,8 @@ export default function UsersPage() {
     return {
       total: users.length,
       superAdmin: users.filter((u) => u.role === 'SuperAdmin').length,
-      admin: users.filter((u) => u.role === 'Admin').length,
+      divisionAdmin: users.filter((u) => u.role === 'DivisionAdmin').length,
+      departmentAdmin: users.filter((u) => u.role === 'DepartmentAdmin').length,
       active: users.filter((u) => u.status === 'active').length,
     }
   }, [users])
@@ -67,8 +68,8 @@ export default function UsersPage() {
     })
   }, [users, debouncedQuery, filterRole, filterDepartment, filterStatus])
 
-  // ── RBAC: only Admin / SuperAdmin may manage users ─────────────────────
-  if (currentUserRole === 'User') {
+  // ── RBAC: only SuperAdmin / DivisionAdmin may manage users ─────────────────────
+  if (currentUserRole === 'DepartmentAdmin') {
     return (
       <DashboardLayout title="ຈັດການຜູ້ໃຊ້ງານ">
         <main className="flex flex-col items-center justify-center p-10">
@@ -77,7 +78,7 @@ export default function UsersPage() {
           </div>
           <h1 className="mt-5 text-2xl font-bold text-gray-900">ບໍ່ມີສິດເຂົ້າເຖິງ</h1>
           <p className="mt-2 max-w-md text-center text-sm text-gray-500">
-            ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້. ພຽງ ຜູ້ດູແລລະບົບ ຫຼື ຜູ້ດູແລລະບົບສູງສຸດ ສາມາດຈັດການຜູ້ໃຊ້ງານ.
+            ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້. ພຽງ ຜູ້ດູແລລະບົບສູງສຸດ ຫຼື Admin ຝ່າຍ ສາມາດຈັດການຜູ້ໃຊ້ງານ.
           </p>
           <button
             type="button"
@@ -97,8 +98,8 @@ export default function UsersPage() {
   }
 
   function openEditForm(user: User) {
-    if (currentUserRole === 'Admin' && user.role === 'SuperAdmin') {
-      pushToast({ title: 'ບໍ່ສາມາດແກ້ໄຂຂໍ້ມູນ SuperAdmin ໄດ້' })
+    if (currentUserRole !== 'SuperAdmin' && (user.role === 'SuperAdmin' || user.role === 'DivisionAdmin')) {
+      pushToast({ title: 'ບໍ່ສາມາດແກ້ໄຂຂໍ້ມູນ SuperAdmin ຫຼື Admin ຝ່າຍ ໄດ້' })
       return
     }
     setEditingUser(user)
@@ -108,8 +109,8 @@ export default function UsersPage() {
   async function handleFormSubmit(values: UserFormValues) {
     try {
       if (editingUser) {
-        if (currentUserRole === 'Admin' && editingUser.role === 'SuperAdmin') {
-          pushToast({ title: 'ບໍ່ມີສິດແກ້ໄຂ SuperAdmin' })
+        if (currentUserRole !== 'SuperAdmin' && (editingUser.role === 'SuperAdmin' || editingUser.role === 'DivisionAdmin')) {
+          pushToast({ title: 'ບໍ່ມີສິດແກ້ໄຂ SuperAdmin ຫຼື Admin ຝ່າຍ' })
           return
         }
         await updateUser(editingUser.id, { ...values })
@@ -121,8 +122,8 @@ export default function UsersPage() {
         }
         pushToast({ title: 'ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ງານສຳເລັດ' })
       } else {
-        if (currentUserRole === 'Admin' && values.role === 'SuperAdmin') {
-          pushToast({ title: 'Admin ບໍ່ສາມາດສ້າງ SuperAdmin ໄດ້' })
+        if (currentUserRole !== 'SuperAdmin' && (values.role === 'SuperAdmin' || values.role === 'DivisionAdmin')) {
+          pushToast({ title: 'ບໍ່ສາມາດສ້າງ SuperAdmin ຫຼື Admin ຝ່າຍ ໄດ້' })
           return
         }
         const created = await addUser(values)
@@ -144,8 +145,8 @@ export default function UsersPage() {
   }
 
   async function handleToggleStatus(user: User) {
-    if (currentUserRole === 'Admin' && user.role === 'SuperAdmin') {
-      pushToast({ title: 'ບໍ່ສາມາດປ່ຽນສະຖານະຂອງ SuperAdmin ໄດ້' })
+    if (currentUserRole !== 'SuperAdmin' && (user.role === 'SuperAdmin' || user.role === 'DivisionAdmin')) {
+      pushToast({ title: 'ບໍ່ສາມາດປ່ຽນສະຖານະຂອງ SuperAdmin ຫຼື Admin ຝ່າຍ ໄດ້' })
       return
     }
     await toggleUserStatus(user.id)
@@ -156,8 +157,8 @@ export default function UsersPage() {
 
   async function handleDeleteConfirm() {
     if (!deleteTarget) return
-    if (currentUserRole === 'Admin' && deleteTarget.role === 'SuperAdmin') {
-      pushToast({ title: 'ບໍ່ສາມາດລຶບ SuperAdmin ໄດ້' })
+    if (currentUserRole !== 'SuperAdmin' && (deleteTarget.role === 'SuperAdmin' || deleteTarget.role === 'DivisionAdmin')) {
+      pushToast({ title: 'ບໍ່ສາມາດລຶບ SuperAdmin ຫຼື Admin ຝ່າຍ ໄດ້' })
       setDeleteTarget(null)
       return
     }
@@ -183,7 +184,7 @@ export default function UsersPage() {
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">ຜູ້ໃຊ້ງານທັງໝົດ</div>
@@ -200,10 +201,17 @@ export default function UsersPage() {
           </div>
           <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-500">Admin</div>
+              <div className="text-sm text-gray-500">Admin ຝ່າຍ</div>
               <ShieldCheck size={18} className="text-blue-500" />
             </div>
-            <div className="mt-3 text-2xl font-bold text-gray-900">{stats.admin}</div>
+            <div className="mt-3 text-2xl font-bold text-gray-900">{stats.divisionAdmin}</div>
+          </div>
+          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500">Admin ພະແນກ</div>
+              <ShieldCheck size={18} className="text-emerald-500" />
+            </div>
+            <div className="mt-3 text-2xl font-bold text-gray-900">{stats.departmentAdmin}</div>
           </div>
           <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
@@ -239,8 +247,8 @@ export default function UsersPage() {
               >
                 <option value={ALL}>ທັງໝົດ</option>
                 <option value="SuperAdmin">SuperAdmin</option>
-                <option value="Admin">Admin</option>
-                <option value="User">User</option>
+                <option value="DivisionAdmin">Admin ຝ່າຍ</option>
+                <option value="DepartmentAdmin">Admin ພະແນກ</option>
               </select>
             </div>
 
@@ -278,15 +286,15 @@ export default function UsersPage() {
         {/* Table */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left">
-              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
                   <th className="px-4 py-3">ຜູ້ໃຊ້ງານ</th>
                   <th className="px-4 py-3">ພະແນກ</th>
                   <th className="px-4 py-3">ສິດນຳໃຊ້</th>
                   <th className="px-4 py-3">ສະຖານະ</th>
-                  <th className="px-4 py-3">ນຳໃຊ້ລ່າສຸດ</th>
-                  <th className="px-4 py-3 text-center">ການກະທຳ</th>
+                  <th className="px-4 py-3">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
+                  <th className="px-4 py-3 text-center">ຈັດການ</th>
                 </tr>
               </thead>
               <tbody>
@@ -298,8 +306,8 @@ export default function UsersPage() {
                   </tr>
                 ) : (
                     visible.map((u) => {
-                      const isSuperAdminRow = u.role === 'SuperAdmin'
-                      const canManageUser = currentUserRole === 'SuperAdmin' || !isSuperAdminRow
+                      const isPrivilegedRow = u.role === 'SuperAdmin' || u.role === 'DivisionAdmin'
+                      const canManageUser = currentUserRole === 'SuperAdmin' || !isPrivilegedRow
 
                       return (
                         <tr key={u.id} className="border-t border-gray-100 align-top">
