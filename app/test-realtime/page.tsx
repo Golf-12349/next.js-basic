@@ -42,7 +42,9 @@ export default function StandaloneRealtimeTestPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off backend self-test on mount
     void runBackendSelfTest()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs once on mount
   }, [])
 
   // Direct EventSource connection

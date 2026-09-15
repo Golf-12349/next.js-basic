@@ -6,18 +6,17 @@ import {
   Download,
   Eye,
   FileText,
-  Folder as FolderIcon,
   FolderInput,
   Home,
   Plus,
   Trash2,
-  ExternalLink,
   Filter,
 } from 'lucide-react'
 import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
 import type { ViewState } from './useArchive'
 import Modal from '@/app/components/ui/Modal'
 import { pushToast } from '@/app/components/ui/Toast'
+import { useUploadModal } from '@/app/(main)/context/UploadModalContext'
 
 // ── Breadcrumbs ──────────────────────────────────────────────
 interface BreadcrumbsProps {
@@ -157,6 +156,7 @@ function DocumentList({
   emptyMessage = 'ຍັງບໍ່ມີເອກະສານໃນຊັ້ນວາງນີ້',
   emptySubMessage = 'ສາມາດອັບໂຫຼດເອກະສານເຂົ້າມາກ່ອນໄດ້',
 }: DocumentListProps) {
+  const { openUpload } = useUploadModal();
   if (!documents || documents.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center">
@@ -165,12 +165,13 @@ function DocumentList({
         </div>
         <p className="text-gray-500 text-sm font-medium">{emptyMessage}</p>
         <p className="mt-1 text-xs text-gray-400">{emptySubMessage}</p>
-        <Link
-          href="/documents/upload"
-          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
+        <button
+          type="button"
+          onClick={openUpload}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
-          <Plus size={14} /> ອັບໂຫຼດເອກະສານ
-        </Link>
+          <Plus size={16} /> ອັບໂຫຼດເອກະສານ
+        </button>
       </div>
     );
   }
@@ -297,7 +298,6 @@ interface MoveToShelfModalProps {
 function MoveToShelfModal({
   open,
   doc,
-  warehouses = [],
   cabinets = [],
   folders = [],
   onClose,

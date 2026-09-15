@@ -71,3 +71,6 @@ export function useDMS(): DMSContextType {
 
 export { useNotifications, useRealtime, RealtimeProvider }
 export type { RealtimeContextValue }
+
+export { UploadModalProvider, useUploadModal } from './UploadModalContext'
+export type { UploadModalContextValue } from './UploadModalContext'
