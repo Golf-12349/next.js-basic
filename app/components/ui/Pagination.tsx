@@ -16,7 +16,6 @@ export default function Pagination({
   currentPage,
   totalPages,
   totalItems,
-  pageSize = 30,
   onPageChange,
 }: PaginationProps) {
   if (totalItems === 0) return null
@@ -24,17 +23,17 @@ export default function Pagination({
   const safeTotalPages = Math.max(totalPages, 1)
 
   return (
-    <div
+    <aside
       aria-label="Pagination Navigation"
-      className="fixed bottom-6 right-6 z-40 flex items-stretch overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg transition-all hover:shadow-xl select-none"
+      className="fixed bottom-6 right-6 z-40 flex h-10 items-stretch overflow-hidden rounded-lg border border-gray-300 bg-white shadow-md select-none"
     >
-      {/* 1. Page Selector with Chevron Down */}
-      <div className="relative flex items-center border-r border-gray-200 transition hover:bg-gray-50">
+      {/* 1. Page Selector (01 ⌵) */}
+      <div className="relative flex h-full items-center transition hover:bg-gray-50">
         <select
           value={currentPage}
           onChange={(e) => onPageChange(Number(e.target.value))}
           aria-label="ເລືອກໜ້າ"
-          className="cursor-pointer appearance-none bg-transparent py-2.5 pl-3.5 pr-7 text-sm font-semibold text-gray-900 outline-none"
+          className="h-full cursor-pointer appearance-none bg-transparent pl-3.5 pr-7 text-sm font-bold text-gray-900 outline-none"
         >
           {Array.from({ length: safeTotalPages }, (_, i) => i + 1).map((p) => (
             <option key={p} value={p}>
@@ -44,14 +43,21 @@ export default function Pagination({
         </select>
         <ChevronDown
           size={14}
-          className="pointer-events-none absolute right-2.5 text-gray-500"
+          strokeWidth={2.5}
+          className="pointer-events-none absolute right-2 text-gray-600"
         />
       </div>
 
+      {/* Divider 1 */}
+      <div className="w-[1px] h-full bg-gray-200 shrink-0" />
+
       {/* 2. "of X pages" Label */}
-      <div className="flex items-center border-r border-gray-200 px-4 py-2.5 text-sm font-normal text-slate-500 whitespace-nowrap">
+      <div className="flex h-full items-center px-4 text-sm font-normal text-[#5c6479] whitespace-nowrap">
         of {safeTotalPages} {safeTotalPages === 1 ? 'page' : 'pages'}
       </div>
+
+      {/* Divider 2 */}
+      <div className="w-[1px] h-full bg-gray-200 shrink-0" />
 
       {/* 3. Previous Button (<) */}
       <button
@@ -60,10 +66,13 @@ export default function Pagination({
         disabled={currentPage <= 1}
         title="Previous page"
         aria-label="Previous page"
-        className="flex h-full w-10 items-center justify-center border-r border-gray-200 text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
+        className="flex h-full w-10 items-center justify-center text-gray-700 transition hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
       >
-        <ChevronLeft size={16} />
+        <ChevronLeft size={16} strokeWidth={2.5} />
       </button>
+
+      {/* Divider 3 - Full height divider between < and > */}
+      <div className="w-[1px] h-full bg-gray-200 shrink-0" />
 
       {/* 4. Next Button (>) */}
       <button
@@ -72,10 +81,10 @@ export default function Pagination({
         disabled={currentPage >= safeTotalPages}
         title="Next page"
         aria-label="Next page"
-        className="flex h-full w-10 items-center justify-center text-gray-700 transition hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:text-gray-300 disabled:hover:bg-transparent"
+        className="flex h-full w-10 items-center justify-center text-gray-700 transition hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
       >
-        <ChevronRight size={16} />
+        <ChevronRight size={16} strokeWidth={2.5} />
       </button>
-    </div>
+    </aside>
   )
 }
