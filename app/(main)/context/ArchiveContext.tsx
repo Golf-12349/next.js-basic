@@ -98,6 +98,7 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional initial data load on mount; updates happen inside the async loader
     void reloadArchive()
   }, [reloadArchive])
 

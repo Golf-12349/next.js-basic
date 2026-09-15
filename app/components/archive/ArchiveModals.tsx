@@ -101,6 +101,7 @@ export function CreateWarehouseModal({ open, onClose, userDivision, isSuperAdmin
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the create-cabinet form each time the modal opens
       setName('');
       setDescription('');
       setDivision(isSuperAdmin ? '' : (userDivision || ''));
@@ -222,6 +223,7 @@ export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWare
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the create-warehouse form each time the modal opens
       setName('');
       setDescription('');
       setWarehouseId(defaultWarehouseId || '');

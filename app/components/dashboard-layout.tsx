@@ -148,7 +148,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     '/documents/archive': true,
   });
-  const [currentQuery, setCurrentQuery] = useState('');
+  const [, setCurrentQuery] = useState('');
   const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
 
   useEffect(() => {
@@ -168,6 +168,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
       const params = new URLSearchParams(window.location.search);
       const lvl = params.get('level');
       if (lvl) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reflect the archive level from the URL query string
         setActiveArchiveLevel(lvl);
       } else if (pathname === '/documents/archive') {
         setActiveArchiveLevel(currentUser?.role === 'DepartmentAdmin' ? 'cabinets' : 'warehouses');
@@ -188,6 +189,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
 
   useEffect(() => {
     if (pathname.startsWith('/documents/archive')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the archive submenu when on an archive route
       setExpandedMenus((prev) => ({ ...prev, '/documents/archive': true }));
     }
   }, [pathname]);

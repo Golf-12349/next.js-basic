@@ -6,12 +6,10 @@ import {
   Download,
   Eye,
   FileText,
-  Folder as FolderIcon,
   FolderInput,
   Home,
   Plus,
   Trash2,
-  ExternalLink,
   Filter,
 } from 'lucide-react'
 import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
@@ -300,7 +298,6 @@ interface MoveToShelfModalProps {
 function MoveToShelfModal({
   open,
   doc,
-  warehouses = [],
   cabinets = [],
   folders = [],
   onClose,

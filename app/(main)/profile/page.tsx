@@ -55,6 +55,7 @@ export default function PersonalProfilePage() {
 
   // Sync form when currentUser changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the editable form with the logged-in user's profile
     setName(currentUser?.name ?? "");
     setEmail(currentUser?.email ?? "");
     setPhone(currentUser?.phone ?? "");

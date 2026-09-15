@@ -88,6 +88,7 @@ export default function ArchivePage() {
         folderId: queryFolderId,
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- depend on archive.view fields only; adding the whole archive object would re-run every render
   }, [queryLevel, queryWarehouseId, queryCabinetId, queryFolderId, archive.view]);
 
   useEffect(() => {
@@ -103,6 +104,7 @@ export default function ArchivePage() {
     };
     window.addEventListener('dms:set-archive-level', handleSetLevel);
     return () => window.removeEventListener('dms:set-archive-level', handleSetLevel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribe once on mount; archive.setView is stable for this listener
   }, []);
 
   const showCreateInHeader =
