@@ -209,16 +209,18 @@ interface CreateCabinetModalProps {
   warehouses?: { id: string; name: string; division?: string | null }[];
   defaultWarehouseId?: string;
   userDivision?: string;
+  userDepartment?: string;
   isSuperAdmin?: boolean;
+  isDepartmentAdmin?: boolean;
   onCreate: (data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) => void;
 }
 
-export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWarehouseId, userDivision, isSuperAdmin, onCreate }: CreateCabinetModalProps) {
+export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWarehouseId, userDivision, userDepartment, isSuperAdmin, isDepartmentAdmin, onCreate }: CreateCabinetModalProps) {
   const [name, setName] = useState('');
   const [warehouseId, setWarehouseId] = useState(defaultWarehouseId || '');
   const [color, setColor] = useState(colorOptions[0].value);
   const [division, setDivision] = useState(isSuperAdmin ? '' : (userDivision || ''));
-  const [department, setDepartment] = useState('');
+  const [department, setDepartment] = useState(isDepartmentAdmin && userDepartment ? userDepartment : '');
   const [description, setDescription] = useState('');
 
   useEffect(() => {
@@ -228,10 +230,10 @@ export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWare
       setDescription('');
       setWarehouseId(defaultWarehouseId || '');
       setDivision(isSuperAdmin ? '' : (userDivision || ''));
-      setDepartment('');
+      setDepartment(isDepartmentAdmin && userDepartment ? userDepartment : '');
       setColor(colorOptions[0].value);
     }
-  }, [open, defaultWarehouseId, isSuperAdmin, userDivision]);
+  }, [open, defaultWarehouseId, isSuperAdmin, userDivision, isDepartmentAdmin, userDepartment]);
 
   const selectedWh = warehouses.find((w) => w.id === (warehouseId || defaultWarehouseId));
   const activeDivision = isSuperAdmin ? division : (division || userDivision || selectedWh?.division || '');
@@ -319,8 +321,9 @@ export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWare
           <label className="mb-1 block text-sm font-medium text-gray-700">ພະແນກ</label>
           <select
             value={department}
+            disabled={isDepartmentAdmin && !!userDepartment}
             onChange={(e) => setDepartment(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400 disabled:opacity-60"
           >
             <option value="">— ເລືອກພະແນກ —</option>
             {availableDepts.map((d, idx) => (

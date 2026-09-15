@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
+import type { CurrentUser } from '@/types/user'
 import type { DeleteTarget } from './ArchiveModals'
 
 export type ViewState =
@@ -26,7 +27,8 @@ export function useArchive(
   cabinets: Cabinet[] = [],
   folders: Folder[] = [],
   documents: Document[] = [],
-  actions: ArchiveActions
+  actions: ArchiveActions,
+  currentUser?: CurrentUser | null
 ) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -95,6 +97,17 @@ export function useArchive(
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
 
+  const visibleCabinets = useMemo(() => {
+    if (currentUser?.role === 'DepartmentAdmin' && currentUser.department) {
+      const userDept = currentUser.department.trim().toLowerCase();
+      return cabinets.filter((c) => c.department?.trim().toLowerCase() === userDept);
+    }
+    if (currentUser?.role === 'DivisionAdmin' && currentUser.division) {
+      return cabinets.filter((c) => !c.division || c.division === currentUser.division);
+    }
+    return cabinets;
+  }, [cabinets, currentUser]);
+
   const activeFolder: Folder | undefined =
     view.level === 'documents' && 'folderId' in view && view.folderId
       ? folders.find((f) => f.id === view.folderId)
@@ -104,9 +117,9 @@ export function useArchive(
     view.level === 'warehouses' || view.level === 'cabinets'
       ? undefined
       : 'cabinetId' in view && view.cabinetId
-      ? cabinets.find((c) => c.id === view.cabinetId)
+      ? visibleCabinets.find((c) => c.id === view.cabinetId)
       : activeFolder
-      ? cabinets.find((c) => c.id === activeFolder.cabinetId)
+      ? visibleCabinets.find((c) => c.id === activeFolder.cabinetId)
       : undefined;
 
   const activeWarehouse: Warehouse | undefined =
@@ -118,10 +131,11 @@ export function useArchive(
       ? warehouses.find((w) => w.id === activeCabinet.warehouseId)
       : undefined;
 
-  const warehouseCabinets =
-    view.level === 'cabinets' && view.warehouseId
-      ? cabinets.filter((c) => c.warehouseId === view.warehouseId)
-      : cabinets;
+  const warehouseCabinets = useMemo(() => {
+    return view.level === 'cabinets' && view.warehouseId
+      ? visibleCabinets.filter((c) => c.warehouseId === view.warehouseId)
+      : visibleCabinets;
+  }, [visibleCabinets, view]);
 
   const cabinetFolders = activeCabinet
     ? folders.filter((f) => f.cabinetId === activeCabinet.id)
@@ -250,6 +264,7 @@ export function useArchive(
     activeWarehouse,
     activeCabinet,
     activeFolder,
+    visibleCabinets,
     warehouseCabinets,
     cabinetFolders,
     folderDocuments,

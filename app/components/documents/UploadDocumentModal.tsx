@@ -67,6 +67,17 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
     [categories],
   )
 
+  const visibleCabinets = useMemo(() => {
+    if (currentUser?.role === 'DepartmentAdmin' && currentUser.department) {
+      const userDept = currentUser.department.trim().toLowerCase();
+      return cabinets.filter((c) => c.department?.trim().toLowerCase() === userDept);
+    }
+    if (currentUser?.role === 'DivisionAdmin' && currentUser.division) {
+      return cabinets.filter((c) => !c.division || c.division === currentUser.division);
+    }
+    return cabinets;
+  }, [cabinets, currentUser]);
+
   // 3-Level archive: folder ຂອງຕູ້ທີເລືອກ
   const visibleFolders = cabinetId ? folders.filter((f) => f.cabinetId === cabinetId) : []
 
@@ -387,7 +398,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400"
                   >
                     <option value=""> ເລືອກຕູ້ເອກະສານ </option>
-                    {cabinets.map((c) => (
+                    {visibleCabinets.map((c) => (
                       <option key={c.id} value={c.id}>🗄️ {c.name}</option>
                     ))}
                   </select>
