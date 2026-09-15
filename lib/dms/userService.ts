@@ -10,6 +10,7 @@ export interface CreateUserPayload {
   department?: string
   status?: UserStatus
   division?: string
+  position?: string
   avatarUrl?: string
   password?: string
 }
@@ -40,6 +41,8 @@ export interface UpdateOwnProfilePayload {
   name?: string
   phone?: string
   department?: string
+  division?: string
+  position?: string
   avatarUrl?: string
 }
 

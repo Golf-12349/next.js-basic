@@ -9,13 +9,17 @@ import {
   BarChart3,
   Bell,
   BellOff,
+  Building2,
   CheckCheck,
   CheckCircle2,
   ChevronDown,
   Clock,
   Clock3,
   FileText,
+  Folder,
+  FolderArchive,
   LayoutDashboard,
+  Layers,
   LogOut,
   Search,
   Settings,
@@ -38,11 +42,21 @@ type DashboardLayoutProps = {
   title?: string;
 };
 
+type SubMenuItem = {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  badge?: string;
+  roles?: ('SuperAdmin' | 'DivisionAdmin' | 'DepartmentAdmin')[];
+};
+
 type MenuItem = {
   name: string;
   href: string;
   icon: typeof LayoutDashboard;
   badge?: string;
+  roles?: ('SuperAdmin' | 'DivisionAdmin' | 'DepartmentAdmin')[];
+  children?: SubMenuItem[];
 };
 
 type MenuSection = {
@@ -75,7 +89,34 @@ const menuSections: MenuSection[] = [
     items: [
       { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
       { name: 'ລໍຖ້າອະນຸມັດ', href: '/documents/pending', icon: Clock3 },
-      { name: 'ຄັງເກັບເອກກະສານ', href: '/documents/archive', icon: Archive },
+      {
+        name: 'ຄັງເກັບເອກກະສານ',
+        href: '/documents/archive',
+        icon: Archive,
+        children: [
+          {
+            name: 'ຄັງເອກະສານ',
+            href: '/documents/archive?level=warehouses',
+            icon: Building2,
+            roles: ['SuperAdmin', 'DivisionAdmin'],
+          },
+          {
+            name: 'ຕູ້ເອກະສານ',
+            href: '/documents/archive?level=cabinets',
+            icon: Layers,
+          },
+          {
+            name: 'ຊັ້ນວາງເອກະສານ',
+            href: '/documents/archive?level=folders',
+            icon: Folder,
+          },
+          {
+            name: 'ແຟ້ມເອກະສານ',
+            href: '/documents/archive?level=documents',
+            icon: FolderArchive,
+          },
+        ],
+      },
     ],
   },
   {
@@ -90,6 +131,7 @@ const menuSections: MenuSection[] = [
 export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user: currentUser, clearUser } = useCurrentUser();
   const { documents } = useDocuments();
   const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
 
@@ -102,6 +144,57 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
 
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    '/documents/archive': true,
+  });
+  const [currentQuery, setCurrentQuery] = useState('');
+  const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
+
+  useEffect(() => {
+    const handleLevelChanged = (e: Event) => {
+      const custom = e as CustomEvent<{ level: string }>;
+      if (custom.detail?.level) {
+        setActiveArchiveLevel(custom.detail.level);
+      }
+    };
+
+    window.addEventListener('dms:archive-level-changed', handleLevelChanged);
+    return () => window.removeEventListener('dms:archive-level-changed', handleLevelChanged);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const lvl = params.get('level');
+      if (lvl) {
+        setActiveArchiveLevel(lvl);
+      } else if (pathname === '/documents/archive') {
+        setActiveArchiveLevel(currentUser?.role === 'DepartmentAdmin' ? 'cabinets' : 'warehouses');
+      }
+    }
+  }, [pathname, currentUser]);
+
+  useEffect(() => {
+    const updateQuery = () => {
+      if (typeof window !== 'undefined') {
+        setCurrentQuery(window.location.search);
+      }
+    };
+    updateQuery();
+    window.addEventListener('popstate', updateQuery);
+    return () => window.removeEventListener('popstate', updateQuery);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname.startsWith('/documents/archive')) {
+      setExpandedMenus((prev) => ({ ...prev, '/documents/archive': true }));
+    }
+  }, [pathname]);
+
+  const toggleExpand = (href: string) => {
+    setExpandedMenus((prev) => ({ ...prev, [href]: !prev[href] }));
+  };
 
   // ດຶງການແຈ້ງເຕືອນຈິງຈາກ backend (persist ໃນຖານຂໍ້ມູນ ບໍ່ຜູກກັບ sessionStorage/ເຄື່ອງໃດເຄື່ອງໜຶ່ງອີກຕໍ່ໄປ)
   const { notifications: apiNotifications, unreadCount, markRead, markAllRead } = useNotifications();
@@ -119,8 +212,6 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
       })),
     [apiNotifications],
   );
-
-  const { user: currentUser, clearUser } = useCurrentUser();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -218,7 +309,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
               .map((section) => ({
                 ...section,
                 items: section.items.filter((item) => {
-                  const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'SuperAdmin';
+                  const isAdmin = currentUser?.role === 'DivisionAdmin' || currentUser?.role === 'SuperAdmin';
                   if (item.href === '/users' && !isAdmin) {
                     return false;
                   }
@@ -235,15 +326,100 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                   <div className="space-y-1">
                     {section.items.map((item) => {
                       const Icon = item.icon;
-                      const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
+                      const hasChildren = !!(item.children && item.children.length > 0);
+                      const isExpanded = !!expandedMenus[item.href];
+                      const isParentActive =
+                        pathname === item.href ||
+                        (item.href === '/dashboard' && pathname === '/') ||
+                        (hasChildren && pathname.startsWith(item.href));
                       const itemBadge = item.href === '/documents/pending' && pendingCount > 0 ? String(pendingCount) : item.badge;
+
+                      const userRole = currentUser?.role ?? 'DepartmentAdmin';
+                      const allowedChildren = hasChildren
+                        ? item.children!.filter((child) => !child.roles || child.roles.includes(userRole))
+                        : [];
+
+                      if (hasChildren) {
+                        return (
+                          <div key={item.name} className="space-y-1">
+                            <div
+                              onClick={() => toggleExpand(item.href)}
+                              className={`group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all select-none ${
+                                isParentActive
+                                  ? 'bg-slate-900 text-white font-semibold'
+                                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                              }`}
+                            >
+                              <Link
+                                href={item.href}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedMenus((prev) => ({ ...prev, [item.href]: true }));
+                                }}
+                                className="flex flex-1 items-center gap-3"
+                              >
+                                <Icon className={`h-4 w-4 shrink-0 ${isParentActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-white'}`} />
+                                <span>{item.name}</span>
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleExpand(item.href);
+                                }}
+                                className="p-0.5 text-slate-400 transition-colors hover:text-white"
+                                title={isExpanded ? 'ຍຸບເມນູ' : 'ຂະຫຍາຍເມນູ'}
+                              >
+                                <ChevronDown
+                                  className={`h-4 w-4 transition-transform duration-200 ${
+                                    isExpanded ? 'rotate-0' : '-rotate-90'
+                                  }`}
+                                />
+                              </button>
+                            </div>
+
+                            {/* Collapsible Children Submenu with vertical guide line like in example picture */}
+                            {isExpanded && allowedChildren.length > 0 && (
+                              <div className="ml-5 space-y-0.5 border-l border-slate-700/60 pl-3 py-1 animate-in fade-in duration-150">
+                                {allowedChildren.map((child) => {
+                                  const ChildIcon = child.icon;
+                                  const childLevel = child.href.includes('level=') ? child.href.split('level=')[1] : '';
+                                  const isChildActive =
+                                    pathname === '/documents/archive' &&
+                                    activeArchiveLevel === childLevel;
+
+                                  return (
+                                    <Link
+                                      key={child.name}
+                                      href={child.href}
+                                      onClick={() => {
+                                        setActiveArchiveLevel(childLevel);
+                                        window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
+                                        window.dispatchEvent(new CustomEvent('dms:archive-level-changed', { detail: { level: childLevel } }));
+                                      }}
+                                      className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
+                                        isChildActive
+                                          ? 'bg-indigo-600/25 text-indigo-300 font-semibold shadow-sm'
+                                          : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                                      }`}
+                                    >
+                                      <ChildIcon className={`h-3.5 w-3.5 shrink-0 transition-colors ${isChildActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                                      <span className="truncate">{child.name}</span>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
 
                       return (
                         <Link
                           key={item.name}
                           href={item.href}
                           className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
-                            isActive
+                            isParentActive
                               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-700/30'
                               : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                           }`}
@@ -276,7 +452,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
             />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold text-white">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</div>
-              <div className="text-xs text-slate-400">{roleLabel(currentUser?.role ?? 'User')}</div>
+              <div className="text-xs text-slate-400">{roleLabel(currentUser?.role ?? 'DepartmentAdmin')}</div>
             </div>
           </div>
 
@@ -457,7 +633,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                 />
                 <div className="hidden text-left sm:block">
                   <p className="text-sm font-semibold leading-none text-gray-900">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</p>
-                  <p className="mt-1 text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'User')}</p>
+                  <p className="mt-1 text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'DepartmentAdmin')}</p>
                 </div>
                 <ChevronDown
                   className={`h-4 w-4 text-gray-400 transition-transform duration-300 ${
@@ -484,7 +660,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                     />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-gray-900">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</p>
-                      <p className="text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'User')}</p>
+                      <p className="text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'DepartmentAdmin')}</p>
                     </div>
                   </div>
                 </div>
@@ -502,7 +678,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                     <UserCog className="h-4 w-4 text-gray-400" />
                     ແກ້ໄຂໂປຣໄຟລ໌
                   </button>
-                  {(currentUser?.role === 'SuperAdmin' || currentUser?.role === 'Admin') && (
+                  {(currentUser?.role === 'SuperAdmin' || currentUser?.role === 'DivisionAdmin') && (
                     <button
                       type="button"
                       onClick={() => {

@@ -50,8 +50,8 @@ export default function DocumentDetailPage() {
     return () => window.removeEventListener('storage', syncRole)
   }, [])
 
-  // RBAC: only Admin / SuperAdmin may approve documents
-  const canModerate = currentRole === 'Admin' || currentRole === 'SuperAdmin'
+  // RBAC: only DivisionAdmin / SuperAdmin may approve documents
+  const canModerate = currentRole === 'DivisionAdmin' || currentRole === 'SuperAdmin'
 
   if (!doc) {
     return (

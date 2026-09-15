@@ -20,6 +20,7 @@ import {
   Building,
   Calendar,
   Sparkles,
+  Briefcase,
 } from "lucide-react";
 import { avatarColors, isAvatarImage } from "@/app/components/users/UserModals";
 import { useUsers } from "../context/UsersContext";
@@ -60,7 +61,7 @@ export default function PersonalProfilePage() {
     setAvatarUrl(currentUser?.avatarUrl ?? "");
   }, [currentUser]);
 
-  const role = currentUser?.role ?? "User";
+  const role = currentUser?.role ?? "DepartmentAdmin";
   const division = currentUser?.division || findDivisionForDepartment(currentUser?.department || "");
   const department = currentUser?.department || "";
   const currentUserId = currentUser?.id;
@@ -102,8 +103,8 @@ export default function PersonalProfilePage() {
   const roleBadgeClass =
     role === "SuperAdmin"
       ? "bg-purple-100 text-purple-700 border-purple-200"
-      : role === "Admin"
-      ? "bg-indigo-100 text-indigo-700 border-indigo-200"
+      : role === "DivisionAdmin"
+      ? "bg-blue-100 text-blue-700 border-blue-200"
       : "bg-emerald-100 text-emerald-700 border-emerald-200";
 
   // ---- Handlers ----
@@ -217,6 +218,11 @@ export default function PersonalProfilePage() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="truncate text-xl font-bold sm:text-2xl">{currentUser?.name || "ຜູ້ໃຊ້ງານ"}</h2>
+                  {currentUser?.position && (
+                    <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-2.5 py-0.5 text-xs font-semibold text-white">
+                      {currentUser.position}
+                    </span>
+                  )}
                   <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold shadow-sm ${roleBadgeClass}`}>
                     {roleLabel(role)}
                   </span>
@@ -421,12 +427,20 @@ export default function PersonalProfilePage() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຕຳແໜ່ງ (Role)</label>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">ສິດນຳໃຊ້ (Role)</label>
                     <div className="flex h-[42px] items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5">
                       <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${roleBadgeClass}`}>
                         {roleLabel(role)}
                       </span>
                       <span className="text-xs text-gray-400">(ຈັດການໂດຍ Admin)</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຕຳແໜ່ງ (Position)</label>
+                    <div className="flex h-[42px] items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-700">
+                      <Briefcase className="h-4 w-4 text-gray-400" />
+                      <span>{currentUser?.position || "—"}</span>
                     </div>
                   </div>
 

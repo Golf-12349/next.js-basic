@@ -201,6 +201,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         fileUrl: doc.fileUrl,
         fileName: doc.fileName,
         uploadDate: doc.uploadDate,
+        warehouseId: doc.warehouseId,
         cabinetId: doc.cabinetId,
         folderId: doc.folderId,
       })

@@ -39,8 +39,8 @@ export default function PendingDocumentsPage() {
     return () => window.removeEventListener('storage', syncRole)
   }, [])
 
-  // RBAC: only Admin / SuperAdmin may approve or reject
-  const canModerate = currentRole === 'Admin' || currentRole === 'SuperAdmin'
+  // RBAC: only DivisionAdmin / SuperAdmin may approve or reject
+  const canModerate = currentRole === 'DivisionAdmin' || currentRole === 'SuperAdmin'
   const list = documents.filter((d) => d.status === 'pending' && !d.deleted)
 
   async function approve(id: string) {

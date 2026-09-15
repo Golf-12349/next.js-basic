@@ -36,8 +36,8 @@ export default function Guard({ children }: Props) {
 
         // Check access to /users route
         if (pathname === '/users' || pathname.startsWith('/users/')) {
-          if (role === 'User' || role === 'Staff') {
-            pushToast({ title: 'ສະເພາະ Admin ເທົ່ານັ້ນທີ່ມີສິດເຂົ້າເຖິງໜ້ານີ້' })
+          if (role === 'DepartmentAdmin') {
+            pushToast({ title: 'ສະເພາະ Admin ຝ່າຍ ຫຼື SuperAdmin ເທົ່ານັ້ນທີ່ມີສິດເຂົ້າເຖິງໜ້ານີ້' })
             setAuthorized(false)
             router.replace('/dashboard')
             return

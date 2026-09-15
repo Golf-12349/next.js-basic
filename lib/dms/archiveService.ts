@@ -6,6 +6,8 @@ export interface CreateCabinetPayload {
   color: string
   department: string
   description: string
+  warehouseId?: string | null
+  division?: string | null
 }
 
 export interface CreateFolderPayload {
@@ -14,8 +16,10 @@ export interface CreateFolderPayload {
   description: string
 }
 
-export async function fetchCabinets(): Promise<ApiCabinet[]> {
-  const res = await apiClient.get<ApiCabinet[]>('/cabinets')
+export async function fetchCabinets(warehouseId?: string): Promise<ApiCabinet[]> {
+  const res = await apiClient.get<ApiCabinet[]>('/cabinets', {
+    params: warehouseId ? { warehouseId } : undefined,
+  })
   return res.data
 }
 
