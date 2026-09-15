@@ -156,16 +156,13 @@ export default function WarehouseView({
           );
         })}
       </div>
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={warehouses.length}
-          pageSize={PAGE_SIZE}
-          onPageChange={setCurrentPage}
-          itemLabel="ຄັງເອກະສານ"
-        />
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={warehouses.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

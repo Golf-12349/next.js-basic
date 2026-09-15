@@ -184,16 +184,13 @@ export default function FolderView({ cabinet, cabinets = [], folders = [], docum
               );
             })}
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={folders.length}
-              pageSize={PAGE_SIZE}
-              onPageChange={setCurrentPage}
-              itemLabel="ຊັ້ນວາງ"
-            />
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={folders.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
     </>

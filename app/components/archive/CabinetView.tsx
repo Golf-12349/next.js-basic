@@ -163,16 +163,13 @@ export default function CabinetView({ cabinets = [], folders = [], documents = [
           />
         ))}
       </div>
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={cabinets.length}
-          pageSize={PAGE_SIZE}
-          onPageChange={setCurrentPage}
-          itemLabel="ຕູ້ເອກະສານ"
-        />
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={cabinets.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }
