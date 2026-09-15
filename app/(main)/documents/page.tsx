@@ -7,6 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { useDocuments } from '../context/DocumentsContext'
 import { useUploadModal } from '../context/UploadModalContext'
 import { useArchive } from '../context/ArchiveContext'
+import { useCurrentUser } from '../context/CurrentUserContext'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -49,7 +50,20 @@ export default function DocumentsPage() {
     const qs = clean.toString()
     router.replace(qs ? `/documents?${qs}` : '/documents')
   }, [searchParams, openUpload, router])
+  const { user: currentUser } = useCurrentUser()
   const { warehouses, cabinets } = useArchive()
+
+  const visibleCabinets = useMemo(() => {
+    if (currentUser?.role === 'DepartmentAdmin' && currentUser.department) {
+      const userDept = currentUser.department.trim().toLowerCase();
+      return cabinets.filter((c) => c.department?.trim().toLowerCase() === userDept);
+    }
+    if (currentUser?.role === 'DivisionAdmin' && currentUser.division) {
+      return cabinets.filter((c) => !c.division || c.division === currentUser.division);
+    }
+    return cabinets;
+  }, [cabinets, currentUser])
+
   const searchParam = searchParams.get('search') || ''
   const [prevParam, setPrevParam] = useState(searchParam)
   const [query, setQuery] = useState(searchParam)
@@ -215,7 +229,7 @@ export default function DocumentsPage() {
               <label className="mb-1 block text-sm font-medium text-gray-700">ຕູ້ເອກະສານ</label>
               <select value={filterCabinet} onChange={(e) => setFilterCabinet(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
                 <option>ທັງໝົດ</option>
-                {cabinets.map((c) => (
+                {visibleCabinets.map((c) => (
                   <option key={c.id} value={c.id}>🗄️ {c.name}</option>
                 ))}
               </select>

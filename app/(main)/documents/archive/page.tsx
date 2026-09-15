@@ -39,15 +39,22 @@ export default function ArchivePage() {
   const isDepartmentAdmin = user?.role === 'DepartmentAdmin';
   const canManage = !isDepartmentAdmin;
 
-  const archive = useArchive(warehouses, cabinets, folders, documents, {
-    createWarehouse,
-    createCabinet,
-    createFolder,
-    deleteWarehouse,
-    deleteCabinet,
-    deleteFolder,
-    deleteDocument,
-  });
+  const archive = useArchive(
+    warehouses,
+    cabinets,
+    folders,
+    documents,
+    {
+      createWarehouse,
+      createCabinet,
+      createFolder,
+      deleteWarehouse,
+      deleteCabinet,
+      deleteFolder,
+      deleteDocument,
+    },
+    user,
+  );
 
 
 
@@ -102,7 +109,7 @@ export default function ArchivePage() {
         {archive.view.level === 'warehouses' && (
           <WarehouseView
             warehouses={warehouses}
-            cabinets={cabinets}
+            cabinets={archive.visibleCabinets}
             documents={documents}
             canManage={canManage}
             onCreate={() => archive.setWarehouseModalOpen(true)}
@@ -132,7 +139,7 @@ export default function ArchivePage() {
         {archive.view.level === 'folders' && (
           <FolderView
             cabinet={archive.activeCabinet}
-            cabinets={cabinets}
+            cabinets={archive.visibleCabinets}
             folders={archive.activeCabinet ? archive.cabinetFolders : folders}
             documents={documents}
             canManage={canManage}
@@ -155,7 +162,7 @@ export default function ArchivePage() {
             cabinet={archive.activeCabinet}
             folder={archive.activeFolder}
             warehouses={warehouses}
-            cabinets={cabinets}
+            cabinets={archive.visibleCabinets}
             folders={folders}
             documents={
               archive.activeFolder
@@ -197,7 +204,9 @@ export default function ArchivePage() {
           warehouses={warehouses}
           defaultWarehouseId={archive.activeWarehouse?.id}
           userDivision={isSuperAdmin ? undefined : user?.division}
+          userDepartment={isSuperAdmin ? undefined : user?.department}
           isSuperAdmin={isSuperAdmin}
+          isDepartmentAdmin={isDepartmentAdmin}
           onCreate={archive.handleCreateCabinet}
         />
 
