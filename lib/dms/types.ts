@@ -75,11 +75,12 @@ export type ApiDocument = {
   cabinet: ApiCabinet | null
   folderId: string | null
   folder: ApiFolder | null
+  transfers?: Document['transfers']
 }
 
 export type ApiNotification = {
   id: string
-  type: 'pending' | 'approved' | 'user' | 'alert'
+  type: 'pending' | 'approved' | 'user' | 'alert' | 'transfer_pending' | 'transfer_approved' | 'transfer_rejected'
   title: string
   detail: string | null
   link: string | null
@@ -128,5 +129,6 @@ export function toFrontendDocument(doc: ApiDocument): Document {
     cabinetName: doc.cabinet?.name,
     folderId: doc.folderId ?? undefined,
     folderName: doc.folder?.name,
+    transfers: doc.transfers,
   }
 }

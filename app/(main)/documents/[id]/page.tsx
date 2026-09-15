@@ -5,8 +5,12 @@ import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import type { Document, DocumentStatus } from '@/types/document'
 import type { UserRole } from '@/types/user'
+import { getStoredUser, type CurrentUser } from '@/types/user'
 import { useDocuments } from '../../context/DocumentsContext'
+import { useArchive } from '../../context/ArchiveContext'
 import { pushToast } from '@/app/components/ui/Toast'
+import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
+import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 
 function getSessionRole(): UserRole | null {
   if (typeof window === 'undefined') return null
@@ -37,14 +41,21 @@ const statusLabels: Record<DocumentStatus, string> = {
 export default function DocumentDetailPage() {
   const params = useParams()
   const id = params?.id
-  const { documents, updateDocument, deleteDocument } = useDocuments()
+  const { documents, updateDocument, deleteDocument, reload } = useDocuments()
+  const { assignDocument } = useArchive()
   const doc = documents.find((d) => d.id === id) as Document | undefined
 
   const [currentRole, setCurrentRole] = useState<UserRole | null>(getSessionRole)
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(getStoredUser)
+
+  // Modals for transfer and storage
+  const [transferOpen, setTransferOpen] = useState<boolean>(false)
+  const [storageOpen, setStorageOpen] = useState<boolean>(false)
 
   useEffect(() => {
     function syncRole() {
       setCurrentRole(getSessionRole())
+      setCurrentUser(getStoredUser())
     }
     window.addEventListener('storage', syncRole)
     return () => window.removeEventListener('storage', syncRole)
@@ -75,6 +86,10 @@ export default function DocumentDetailPage() {
     pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
   }
 
+  const pendingTransfer = doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending'
+    ? doc.transfers[0]
+    : null
+
   return (
     <DashboardLayout title="ເອກະສານ">
       <main className="flex-1 overflow-y-auto p-6">
@@ -88,6 +103,20 @@ export default function DocumentDetailPage() {
             ← ກັບໄປລາຍການ
           </Link>
         </div>
+
+        {/* Transfer Pending Alert Banner */}
+        {pendingTransfer && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
+            <span className="text-xl">🔄</span>
+            <div>
+              <div className="font-semibold">ເອກະສານນີ້ກຳລັງຢູ່ໃນຂັ້ນຕອນການລໍຖ້າອະນຸມັດການໂອນຍ້າຍ</div>
+              <div className="mt-1 text-xs text-amber-800">
+                ສົ່ງຕໍ່ໄປຫາ: <strong>{pendingTransfer.toDepartment}</strong> (ຝ່າຍ <strong>{pendingTransfer.toDivision}</strong>)
+                {pendingTransfer.note && ` • ໝາຍເຫດ: ${pendingTransfer.note}`}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -128,16 +157,63 @@ export default function DocumentDetailPage() {
           </div>
 
           <div className="space-y-6">
+            {/* Actions card */}
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h3 className="text-lg font-bold text-gray-900">ການກະທຳ</h3>
               <div className="mt-4 space-y-3">
-                <button onClick={() => pushToast({ title: 'ເບິ່ງເອກະສານ' })} type="button" className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700">ເບິ່ງໄຟລ໌</button>
-                <button onClick={() => pushToast({ title: 'ດາວໂຫຼດເອກະສານ' })} type="button" className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100">ດາວໂຫຼດ</button>
-                <button onClick={handleDelete} type="button" className="w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 hover:bg-rose-100">ລົບເອກະສານ</button>
-                {canModerate && doc.status === 'pending' && <button onClick={handleApprove} className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700">ອະນຸມັດ</button>}
+                <button
+                  onClick={() => pushToast({ title: 'ເບິ່ງເອກະສານ' })}
+                  type="button"
+                  className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+                >
+                  ເບິ່ງໄຟລ໌
+                </button>
+                <button
+                  onClick={() => pushToast({ title: 'ດາວໂຫຼດເອກະສານ' })}
+                  type="button"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  ດາວໂຫຼດ
+                </button>
+
+                {/* Storage location picker button */}
+                <button
+                  onClick={() => setStorageOpen(true)}
+                  type="button"
+                  className="w-full rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  🗄️ ເລືອກບ່ອນຈັດເກັບໃນຄັງ
+                </button>
+
+                {/* Cross-department transfer button */}
+                <button
+                  onClick={() => setTransferOpen(true)}
+                  type="button"
+                  className="w-full rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+                >
+                  🔄 ສົ່ງເອກະສານຂ້າມພະແນກ
+                </button>
+
+                <button
+                  onClick={handleDelete}
+                  type="button"
+                  className="w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 hover:bg-rose-100 transition-colors"
+                >
+                  ລົບເອກະສານ
+                </button>
+
+                {canModerate && doc.status === 'pending' && (
+                  <button
+                    onClick={handleApprove}
+                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+                  >
+                    ອະນຸມັດ
+                  </button>
+                )}
               </div>
             </div>
 
+            {/* Additional info card */}
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h3 className="text-lg font-bold text-gray-900">ຂໍ້ມູນເພີ່ມເຕີມ</h3>
               <dl className="mt-4 space-y-3 text-sm">
@@ -150,6 +226,28 @@ export default function DocumentDetailPage() {
                   <dd className="text-right text-gray-900">{doc.category}</dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">ຝ່າຍ / ຫ້ອງການ</dt>
+                  <dd className="text-right font-medium text-gray-900">{doc.division || '—'}</dd>
+                </div>
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">ພະແນກ / ສູນ</dt>
+                  <dd className="text-right font-medium text-gray-900">{doc.department || '—'}</dd>
+                </div>
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
+                  <dt className="text-gray-500">ບ່ອນຈັດເກັບໃນຄັງ</dt>
+                  <dd className="text-right text-gray-900">
+                    {doc.warehouseName || doc.cabinetName || doc.folderName ? (
+                      <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+                        {doc.warehouseName ? `${doc.warehouseName} > ` : ''}
+                        {doc.cabinetName ? `🗄️ ${doc.cabinetName}` : ''}
+                        {doc.folderName ? ` > 📁 ${doc.folderName}` : ''}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">ຍັງບໍ່ໄດ້ກຳນົດບ່ອນເກັບ</span>
+                    )}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ຂະໜາດ</dt>
                   <dd className="text-right text-gray-900">{doc.fileSize}</dd>
                 </div>
@@ -157,6 +255,35 @@ export default function DocumentDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Transfer Modal */}
+        <TransferDocumentModal
+          open={transferOpen}
+          doc={doc}
+          currentUser={currentUser}
+          onClose={() => setTransferOpen(false)}
+          onSuccess={() => void reload()}
+        />
+
+        {/* Storage Location Modal */}
+        <SelectStorageLocationModal
+          open={storageOpen}
+          docTitle={doc.title}
+          docNumber={doc.docNumber}
+          department={doc.department}
+          division={doc.division}
+          initialWarehouseId={doc.warehouseId}
+          initialCabinetId={doc.cabinetId}
+          initialFolderId={doc.folderId}
+          confirmLabel="ບັນທຶກບ່ອນຈັດເກັບ"
+          onClose={() => setStorageOpen(false)}
+          onConfirm={async (data) => {
+            await assignDocument(doc.id, data.cabinetId || '', data.folderId || '', data.warehouseId)
+            pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
+            void reload()
+          }}
+        />
+
       </main>
     </DashboardLayout>
   )

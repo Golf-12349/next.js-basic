@@ -61,4 +61,38 @@ export type Document = {
   cabinetName?: string;
   folderId?: string;
   folderName?: string;
+  transfers?: DocumentTransfer[];
+};
+
+export type TransferStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export type DocumentTransfer = {
+  id: string;
+  documentId: string;
+  fromDivision?: string;
+  fromDepartment?: string;
+  toDivision: string;
+  toDepartment: string;
+  senderId: string;
+  reviewerId?: string;
+  status: TransferStatus;
+  note?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  document?: Document;
+  sender?: {
+    id: string;
+    name: string;
+    department?: string;
+    division?: string;
+    role?: string;
+  };
+  reviewer?: {
+    id: string;
+    name: string;
+    department?: string;
+    division?: string;
+    role?: string;
+  };
 };
