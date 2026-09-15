@@ -8,6 +8,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
 import { useEffect, useMemo, useState } from 'react'
 import type { Document, DocumentFileType } from '@/types/document'
+import Pagination from '@/app/components/ui/Pagination'
 import {
   ArchiveRestore,
   CircleCheck,
@@ -74,6 +75,13 @@ export default function TrashPage() {
 
   const trash = useMemo(() => documents.filter((d) => d.deleted), [documents])
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 30
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedQuery, filterCategory])
+
   const visible = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
     return trash.filter((d) => {
@@ -84,6 +92,12 @@ export default function TrashPage() {
       return true
     })
   }, [trash, debouncedQuery, filterCategory])
+
+  const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1
+  const paginatedTrash = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return visible.slice(start, start + PAGE_SIZE)
+  }, [visible, currentPage])
 
   const reclaimableMB = useMemo(() => trash.reduce((sum, d) => sum + parseSizeToMB(d.fileSize), 0), [trash])
 
@@ -250,7 +264,7 @@ export default function TrashPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visible.map((doc) => {
+                  {paginatedTrash.map((doc) => {
                     const { icon: TypeIcon, color: typeColor, label: typeLabel } = fileTypeInfo(doc.fileType)
                     return (
                       <tr key={doc.id} className="border-t border-gray-100 align-top transition hover:bg-gray-50/60">
@@ -323,6 +337,14 @@ export default function TrashPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={visible.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setCurrentPage}
+              itemLabel="ເອກະສານ"
+            />
           </div>
         )}
 

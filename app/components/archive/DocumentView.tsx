@@ -17,6 +17,7 @@ import type { ViewState } from './useArchive'
 import Modal from '@/app/components/ui/Modal'
 import { pushToast } from '@/app/components/ui/Toast'
 import { useUploadModal } from '@/app/(main)/context/UploadModalContext'
+import Pagination from '@/app/components/ui/Pagination'
 
 // ── Breadcrumbs ──────────────────────────────────────────────
 interface BreadcrumbsProps {
@@ -157,6 +158,19 @@ function DocumentList({
   emptySubMessage = 'ສາມາດອັບໂຫຼດເອກະສານເຂົ້າມາກ່ອນໄດ້',
 }: DocumentListProps) {
   const { openUpload } = useUploadModal();
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 30;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [documents]);
+
+  const totalPages = Math.ceil(documents.length / PAGE_SIZE) || 1;
+  const paginatedDocs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return documents.slice(start, start + PAGE_SIZE);
+  }, [documents, currentPage]);
+
   if (!documents || documents.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center">
@@ -178,7 +192,7 @@ function DocumentList({
 
   return (
     <div className="space-y-3">
-      {documents.map((doc) => {
+      {paginatedDocs.map((doc) => {
         const matchedFolder = folders.find((f) => f.id === doc.folderId || f.name === doc.folderId);
         const folderName = doc.folderName || matchedFolder?.name;
         const matchedCabinet = cabinets.find(
@@ -280,6 +294,16 @@ function DocumentList({
           </div>
         );
       })}
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={documents.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+          itemLabel="ເອກະສານ"
+        />
+      </div>
     </div>
   );
 }

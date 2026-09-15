@@ -87,8 +87,8 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     try {
       const [fetchedCategories, activeDocs, deletedDocs] = await Promise.all([
         categoryService.fetchCategories(),
-        documentService.fetchDocuments({ limit: 100 }),
-        documentService.fetchDocuments({ limit: 100, deleted: 'true' }),
+        documentService.fetchDocuments({ limit: 1000 }),
+        documentService.fetchDocuments({ limit: 1000, deleted: 'true' }),
       ])
       let serverCategories = fetchedCategories
       // Auto-seed: ຖ້າ backend ຍັງບໍ່ມີໝວດໝູ່ເລີຍ (ຖານຂໍ້ມູນໃໝ່) ໃຫ້ສ້າງໝວດໝູ່ເລີ່ມຕົ້ນໃຫ້
