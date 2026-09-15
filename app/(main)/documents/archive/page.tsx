@@ -1,6 +1,4 @@
 "use client"
-import { useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '../../context/DocumentsContext';
 import { useArchive as useDMSArchive } from '../../context/ArchiveContext';
@@ -20,11 +18,6 @@ import DocumentView, { Breadcrumbs, BackButton } from '@/app/components/archive/
 import { useArchive } from '@/app/components/archive/useArchive';
 
 export default function ArchivePage() {
-  const searchParams = useSearchParams();
-  const queryLevel = searchParams.get('level') as 'warehouses' | 'cabinets' | 'folders' | 'documents' | null;
-  const queryWarehouseId = searchParams.get('warehouseId') || undefined;
-  const queryCabinetId = searchParams.get('cabinetId') || undefined;
-  const queryFolderId = searchParams.get('folderId') || undefined;
   const { user } = useCurrentUser();
   const { documents, deleteDocument, reload } = useDocuments();
   const {
@@ -56,54 +49,7 @@ export default function ArchivePage() {
     deleteDocument,
   });
 
-  useEffect(() => {
-    if (!queryLevel) return;
 
-    const currentLevel = archive.view.level;
-    const currentWhId = 'warehouseId' in archive.view ? archive.view.warehouseId : undefined;
-    const currentCabId = 'cabinetId' in archive.view ? archive.view.cabinetId : undefined;
-    const currentFolId = 'folderId' in archive.view ? archive.view.folderId : undefined;
-
-    // Check if view already matches to avoid wiping folderId
-    if (
-      currentLevel === queryLevel &&
-      currentWhId === queryWarehouseId &&
-      currentCabId === queryCabinetId &&
-      currentFolId === queryFolderId
-    ) {
-      return;
-    }
-
-    if (queryLevel === 'warehouses') {
-      archive.setView({ level: 'warehouses' });
-    } else if (queryLevel === 'cabinets') {
-      archive.setView({ level: 'cabinets', warehouseId: queryWarehouseId });
-    } else if (queryLevel === 'folders') {
-      archive.setView({ level: 'folders', warehouseId: queryWarehouseId, cabinetId: queryCabinetId });
-    } else if (queryLevel === 'documents') {
-      archive.setView({
-        level: 'documents',
-        warehouseId: queryWarehouseId,
-        cabinetId: queryCabinetId,
-        folderId: queryFolderId,
-      });
-    }
-  }, [queryLevel, queryWarehouseId, queryCabinetId, queryFolderId, archive.view]);
-
-  useEffect(() => {
-    const handleSetLevel = (e: Event) => {
-      const custom = e as CustomEvent<{ level: string; warehouseId?: string; cabinetId?: string; folderId?: string }>;
-      const lvl = custom.detail?.level as 'warehouses' | 'cabinets' | 'folders' | 'documents';
-      if (lvl) {
-        if (lvl === 'warehouses') archive.setView({ level: 'warehouses' });
-        else if (lvl === 'cabinets') archive.setView({ level: 'cabinets', warehouseId: custom.detail?.warehouseId });
-        else if (lvl === 'folders') archive.setView({ level: 'folders', warehouseId: custom.detail?.warehouseId, cabinetId: custom.detail?.cabinetId });
-        else if (lvl === 'documents') archive.setView({ level: 'documents', warehouseId: custom.detail?.warehouseId, cabinetId: custom.detail?.cabinetId, folderId: custom.detail?.folderId });
-      }
-    };
-    window.addEventListener('dms:set-archive-level', handleSetLevel);
-    return () => window.removeEventListener('dms:set-archive-level', handleSetLevel);
-  }, []);
 
   const showCreateInHeader =
     canManage &&

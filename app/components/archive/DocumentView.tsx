@@ -1,6 +1,6 @@
 "use client"
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   ChevronRight,
   Download,
@@ -303,17 +303,17 @@ function MoveToShelfModal({
   onClose,
   onConfirm,
 }: MoveToShelfModalProps) {
-  const [selectedCabinetId, setSelectedCabinetId] = useState<string>('');
-  const [selectedFolderId, setSelectedFolderId] = useState<string>('');
+  const [selectedCabinetId, setSelectedCabinetId] = useState<string>(doc?.cabinetId || '');
+  const [selectedFolderId, setSelectedFolderId] = useState<string>(doc?.folderId || '');
   const [loading, setLoading] = useState(false);
 
   // Pre-fill selection when document changes
-  useState(() => {
+  useEffect(() => {
     if (doc) {
       setSelectedCabinetId(doc.cabinetId || (cabinets[0]?.id ?? ''));
       setSelectedFolderId(doc.folderId || '');
     }
-  });
+  }, [doc, cabinets]);
 
   const availableFolders = useMemo(() => {
     if (!selectedCabinetId) return [];
