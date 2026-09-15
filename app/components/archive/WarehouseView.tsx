@@ -1,6 +1,8 @@
 "use client"
+import { useState, useMemo } from 'react'
 import { Building2, Plus, Trash2 } from 'lucide-react'
 import type { Cabinet, Document, Warehouse } from '@/types/document'
+import Pagination from '@/app/components/ui/Pagination'
 
 interface WarehouseCardProps {
   warehouse: Warehouse;
@@ -100,6 +102,15 @@ export default function WarehouseView({
   onOpen,
   onDelete,
 }: WarehouseViewProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 30;
+
+  const totalPages = Math.ceil(warehouses.length / PAGE_SIZE) || 1;
+  const paginatedWarehouses = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return warehouses.slice(start, start + PAGE_SIZE);
+  }, [warehouses, currentPage]);
+
   if (!warehouses || warehouses.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center">
@@ -121,28 +132,37 @@ export default function WarehouseView({
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-      {warehouses.map((warehouse) => {
-        const whCabinets = cabinets.filter((c) => c.warehouseId === warehouse.id);
-        const whCabinetIds = whCabinets.map((c) => c.id);
-        const whDocs = documents.filter(
-          (d) =>
-            (d.warehouseId === warehouse.id || (d.cabinetId && whCabinetIds.includes(d.cabinetId))) &&
-            !d.deleted,
-        );
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {paginatedWarehouses.map((warehouse) => {
+          const whCabinets = cabinets.filter((c) => c.warehouseId === warehouse.id);
+          const whCabinetIds = whCabinets.map((c) => c.id);
+          const whDocs = documents.filter(
+            (d) =>
+              (d.warehouseId === warehouse.id || (d.cabinetId && whCabinetIds.includes(d.cabinetId))) &&
+              !d.deleted,
+          );
 
-        return (
-          <WarehouseCard
-            key={warehouse.id}
-            warehouse={warehouse}
-            cabinetCount={whCabinets.length}
-            docCount={whDocs.length}
-            canManage={canManage}
-            onOpen={() => onOpen(warehouse.id)}
-            onDelete={() => onDelete(warehouse)}
-          />
-        );
-      })}
+          return (
+            <WarehouseCard
+              key={warehouse.id}
+              warehouse={warehouse}
+              cabinetCount={whCabinets.length}
+              docCount={whDocs.length}
+              canManage={canManage}
+              onOpen={() => onOpen(warehouse.id)}
+              onDelete={() => onDelete(warehouse)}
+            />
+          );
+        })}
+      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={warehouses.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

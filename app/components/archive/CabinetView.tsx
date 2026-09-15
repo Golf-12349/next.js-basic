@@ -1,6 +1,8 @@
 "use client"
+import { useState, useMemo } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import type { Cabinet, Document, Folder } from '@/types/document'
+import Pagination from '@/app/components/ui/Pagination'
 
 // ── Cabinet Card ─────────────────────────────────────────────
 interface CabinetCardProps {
@@ -119,6 +121,15 @@ interface CabinetViewProps {
 }
 
 export default function CabinetView({ cabinets = [], folders = [], documents = [], canManage = true, onCreate, onOpen, onDelete }: CabinetViewProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 30;
+
+  const totalPages = Math.ceil(cabinets.length / PAGE_SIZE) || 1;
+  const paginatedCabinets = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return cabinets.slice(start, start + PAGE_SIZE);
+  }, [cabinets, currentPage]);
+
   if (!cabinets || cabinets.length === 0) {
     return (
       <EmptyState
@@ -131,25 +142,34 @@ export default function CabinetView({ cabinets = [], folders = [], documents = [
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-      {cabinets.map((cabinet) => (
-        <CabinetCard
-          key={cabinet.id}
-          cabinet={cabinet}
-          folderCount={folders.filter((f) => f.cabinetId === cabinet.id).length}
-          docCount={
-            documents.filter(
-              (d) =>
-                !d.deleted &&
-                (d.cabinetId === cabinet.id ||
-                  folders.some((f) => f.cabinetId === cabinet.id && (f.id === d.folderId || (f.name && d.folderName === f.name))))
-            ).length
-          }
-          canManage={canManage}
-          onOpen={() => onOpen(cabinet.id)}
-          onDelete={() => onDelete(cabinet)}
-        />
-      ))}
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {paginatedCabinets.map((cabinet) => (
+          <CabinetCard
+            key={cabinet.id}
+            cabinet={cabinet}
+            folderCount={folders.filter((f) => f.cabinetId === cabinet.id).length}
+            docCount={
+              documents.filter(
+                (d) =>
+                  !d.deleted &&
+                  (d.cabinetId === cabinet.id ||
+                    folders.some((f) => f.cabinetId === cabinet.id && (f.id === d.folderId || (f.name && d.folderName === f.name))))
+              ).length
+            }
+            canManage={canManage}
+            onOpen={() => onOpen(cabinet.id)}
+            onDelete={() => onDelete(cabinet)}
+          />
+        ))}
+      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={cabinets.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

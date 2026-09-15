@@ -16,6 +16,7 @@ import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
 import DirectionBadge, { resolveDirection } from '@/app/components/documents/DirectionBadge'
 import { edlStructure } from '@/types/user'
+import Pagination from '@/app/components/ui/Pagination'
 
 const statusStyles: Record<DocumentStatus, string> = {
   draft: 'bg-slate-100 text-slate-700',
@@ -85,6 +86,13 @@ export default function DocumentsPage() {
   const [manageCategoryOpen, setManageCategoryOpen] = useState(false)
   const debouncedQuery = useDebounce(query, 250)
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 30
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDirection, filterDivision, filterDepartment])
+
   const visible = useMemo(() => {
     return documents.filter((d) => !d.deleted && d.status !== 'pending').filter((d) => {
       const q = debouncedQuery.trim().toLowerCase()
@@ -105,6 +113,12 @@ export default function DocumentsPage() {
       return true
     })
   }, [documents, debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDirection, filterDivision, filterDepartment])
+
+  const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1
+  const paginatedDocs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return visible.slice(start, start + PAGE_SIZE)
+  }, [visible, currentPage])
 
   function handleDelete(doc: Document) {
     setConfirmDelete(doc)
@@ -303,7 +317,7 @@ export default function DocumentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((doc) => (
+                {paginatedDocs.map((doc) => (
                   <tr key={doc.id} className="border-t border-gray-100 align-top">
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-900">{doc.title}</div>
@@ -349,6 +363,14 @@ export default function DocumentsPage() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={visible.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+            itemLabel="ເອກະສານ"
+          />
         </div>
 
         <Modal

@@ -17,6 +17,7 @@ import type { ViewState } from './useArchive'
 import Modal from '@/app/components/ui/Modal'
 import { pushToast } from '@/app/components/ui/Toast'
 import { useUploadModal } from '@/app/(main)/context/UploadModalContext'
+import Pagination from '@/app/components/ui/Pagination'
 
 // ── Breadcrumbs ──────────────────────────────────────────────
 interface BreadcrumbsProps {
@@ -142,6 +143,7 @@ interface DocumentListProps {
   onMoveShelf?: (doc: Document) => void;
   emptyMessage?: string;
   emptySubMessage?: string;
+  showPagination?: boolean;
 }
 
 function DocumentList({
@@ -155,8 +157,23 @@ function DocumentList({
   onMoveShelf,
   emptyMessage = 'ຍັງບໍ່ມີເອກະສານໃນຊັ້ນວາງນີ້',
   emptySubMessage = 'ສາມາດອັບໂຫຼດເອກະສານເຂົ້າມາກ່ອນໄດ້',
+  showPagination = false,
 }: DocumentListProps) {
   const { openUpload } = useUploadModal();
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 30;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [documents]);
+
+  const totalPages = Math.ceil(documents.length / PAGE_SIZE) || 1;
+  const paginatedDocs = useMemo(() => {
+    if (!showPagination) return documents;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return documents.slice(start, start + PAGE_SIZE);
+  }, [documents, currentPage, showPagination]);
+
   if (!documents || documents.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center">
@@ -178,7 +195,7 @@ function DocumentList({
 
   return (
     <div className="space-y-3">
-      {documents.map((doc) => {
+      {paginatedDocs.map((doc) => {
         const matchedFolder = folders.find((f) => f.id === doc.folderId || f.name === doc.folderId);
         const folderName = doc.folderName || matchedFolder?.name;
         const matchedCabinet = cabinets.find(
@@ -280,6 +297,15 @@ function DocumentList({
           </div>
         );
       })}
+      {showPagination && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={documents.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
   );
 }
@@ -445,6 +471,11 @@ export default function DocumentView({
   const [filterCabinetId, setFilterCabinetId] = useState<string>('all');
   const [filterFolderId, setFilterFolderId] = useState<string>('all');
   const [moveDoc, setMoveDoc] = useState<Document | null>(null);
+  const [shelfPage, setShelfPage] = useState<number>(1);
+
+  useEffect(() => {
+    setShelfPage(1);
+  }, [filterCabinetId, filterFolderId]);
 
   // Grouping documents by shelf for All Documents View
   const shelvesWithDocs = useMemo(() => {
@@ -470,6 +501,10 @@ export default function DocumentView({
       };
     });
   }, [folders, cabinets, documents, filterCabinetId, filterFolderId]);
+
+  const paginatedShelves = useMemo(() => {
+    return shelvesWithDocs.slice((shelfPage - 1) * 30, shelfPage * 30);
+  }, [shelvesWithDocs, shelfPage]);
 
   // Documents unassigned to any shelf
   const unassignedDocs = useMemo(() => {
@@ -515,6 +550,7 @@ export default function DocumentView({
 
         <DocumentList
           documents={documents}
+          showPagination={true}
           folders={folders}
           cabinets={cabinets}
           warehouses={warehouses}
@@ -627,7 +663,7 @@ export default function DocumentView({
 
       {/* Grouped by Shelf display */}
       <div className="space-y-6">
-        {shelvesWithDocs.map(({ folder: f, cabinet: cab, docs }) => (
+        {paginatedShelves.map(({ folder: f, cabinet: cab, docs }) => (
           <div
             key={f.id}
             className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm space-y-3 transition hover:border-gray-300"
@@ -710,6 +746,14 @@ export default function DocumentView({
           </div>
         )}
       </div>
+
+      <Pagination
+        currentPage={shelfPage}
+        totalPages={Math.ceil(shelvesWithDocs.length / 30) || 1}
+        totalItems={shelvesWithDocs.length}
+        pageSize={30}
+        onPageChange={setShelfPage}
+      />
 
       <MoveToShelfModal
         open={Boolean(moveDoc)}

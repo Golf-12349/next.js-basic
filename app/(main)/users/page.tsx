@@ -1,8 +1,9 @@
 "use client"
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useDebounce } from '@/hooks/useDebounce'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
+import Pagination from '@/app/components/ui/Pagination'
 import { useUsers } from '../context/UsersContext'
 import { useCurrentUser } from '../context/CurrentUserContext'
 import { normalizeCurrentUser } from '@/types/user'
@@ -57,6 +58,13 @@ export default function UsersPage() {
     }
   }, [users])
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 30
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedQuery, filterRole, filterDepartment, filterStatus])
+
   const visible = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
     return users.filter((u) => {
@@ -75,6 +83,12 @@ export default function UsersPage() {
       return true
     })
   }, [users, debouncedQuery, filterRole, filterDepartment, filterStatus])
+
+  const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return visible.slice(start, start + PAGE_SIZE)
+  }, [visible, currentPage])
 
   // ── RBAC: only SuperAdmin / DivisionAdmin may manage users ─────────────────────
   if (currentUserRole === 'DepartmentAdmin') {
@@ -313,7 +327,7 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 ) : (
-                    visible.map((u) => {
+                    paginatedUsers.map((u) => {
                       const isPrivilegedRow = u.role === 'SuperAdmin' || u.role === 'DivisionAdmin'
                       const canManageUser = currentUserRole === 'SuperAdmin' || !isPrivilegedRow
 
@@ -395,6 +409,14 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={visible.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+            itemLabel="ຜູ້ໃຊ້"
+          />
         </div>
 
         <UserDetailModal user={detailUser} open={!!detailUser} onClose={() => setDetailUser(null)} />

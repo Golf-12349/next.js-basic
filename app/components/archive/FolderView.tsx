@@ -1,6 +1,8 @@
 "use client"
+import { useState, useMemo } from 'react'
 import { FileText, Plus, Trash2 } from 'lucide-react'
 import type { Cabinet, Document, Folder } from '@/types/document'
+import Pagination from '@/app/components/ui/Pagination'
 
 // ── Folder Card (ຊັ້ນວາງເອກະສານ) ──────────────────────────────
 interface FolderCardProps {
@@ -118,6 +120,15 @@ interface FolderViewProps {
 }
 
 export default function FolderView({ cabinet, cabinets = [], folders = [], documents = [], canManage = true, onCreate, onOpen, onDelete }: FolderViewProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 30;
+
+  const totalPages = Math.ceil(folders.length / PAGE_SIZE) || 1;
+  const paginatedFolders = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return folders.slice(start, start + PAGE_SIZE);
+  }, [folders, currentPage]);
+
   return (
     <>
       <div className="mb-5 flex items-center justify-between">
@@ -149,28 +160,37 @@ export default function FolderView({ cabinet, cabinets = [], folders = [], docum
           onAction={canManage ? onCreate : undefined}
         />
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {folders.map((folder) => {
-            const cab = cabinets.find((c) => c.id === folder.cabinetId);
-            return (
-              <FolderCard
-                key={folder.id}
-                folder={folder}
-                cabinetName={!cabinet && cab ? cab.name : undefined}
-                canManage={canManage}
-                docCount={
-                  documents.filter(
-                    (d) =>
-                      !d.deleted &&
-                      (d.folderId === folder.id ||
-                        (Boolean(folder.name) && Boolean(d.folderName) && d.folderName === folder.name))
-                  ).length
-                }
-                onOpen={() => onOpen(folder.id)}
-                onDelete={() => onDelete(folder)}
-              />
-            );
-          })}
+        <div className="space-y-6">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {paginatedFolders.map((folder) => {
+              const cab = cabinets.find((c) => c.id === folder.cabinetId);
+              return (
+                <FolderCard
+                  key={folder.id}
+                  folder={folder}
+                  cabinetName={!cabinet && cab ? cab.name : undefined}
+                  canManage={canManage}
+                  docCount={
+                    documents.filter(
+                      (d) =>
+                        !d.deleted &&
+                        (d.folderId === folder.id ||
+                          (Boolean(folder.name) && Boolean(d.folderName) && d.folderName === folder.name))
+                    ).length
+                  }
+                  onOpen={() => onOpen(folder.id)}
+                  onDelete={() => onDelete(folder)}
+                />
+              );
+            })}
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={folders.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
     </>
