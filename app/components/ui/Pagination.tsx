@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export interface PaginationProps {
   currentPage: number
@@ -10,6 +9,8 @@ export interface PaginationProps {
   pageSize?: number
   onPageChange: (page: number) => void
   itemLabel?: string
+  prevLabel?: string
+  nextLabel?: string
 }
 
 export default function Pagination({
@@ -19,70 +20,92 @@ export default function Pagination({
   pageSize = 30,
   onPageChange,
   itemLabel = 'ລາຍການ',
+  prevLabel = 'Prev',
+  nextLabel = 'Next',
 }: PaginationProps) {
   if (totalItems === 0) return null
 
+  const safeTotalPages = Math.max(totalPages, 1)
   const startItem = (currentPage - 1) * pageSize + 1
   const endItem = Math.min(currentPage * pageSize, totalItems)
 
-  // Generate page numbers with smart ellipsis
+  // Generate page numbers matching exact screenshot format:
+  // e.g. [Prev] [1] [2] [3] [4] [5] ... [40] [41] [Next]
   const getPageNumbers = () => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    if (safeTotalPages <= 7) {
+      return Array.from({ length: safeTotalPages }, (_, i) => i + 1)
     }
 
-    const pages: (number | string)[] = [1]
-
-    if (currentPage > 3) {
+    // Near beginning (e.g. page 1 to 4)
+    if (currentPage <= 4) {
+      const pages: (number | string)[] = []
+      const count = Math.min(5, safeTotalPages)
+      for (let i = 1; i <= count; i++) {
+        pages.push(i)
+      }
       pages.push('...')
+      pages.push(safeTotalPages - 1)
+      pages.push(safeTotalPages)
+      return pages
     }
 
-    const start = Math.max(2, currentPage - 1)
-    const end = Math.min(totalPages - 1, currentPage + 1)
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i)
+    // Near end (e.g. within 4 of the last page)
+    if (currentPage >= safeTotalPages - 3) {
+      const pages: (number | string)[] = [1, 2, '...']
+      for (let i = safeTotalPages - 4; i <= safeTotalPages; i++) {
+        pages.push(i)
+      }
+      return pages
     }
 
-    if (currentPage < totalPages - 2) {
-      pages.push('...')
-    }
-
-    pages.push(totalPages)
-    return pages
+    // In the middle
+    return [
+      1,
+      '...',
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      '...',
+      safeTotalPages,
+    ]
   }
 
   const pageNumbers = getPageNumbers()
 
   return (
-    <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 px-4 py-3 sm:flex-row sm:px-6">
+    <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      {/* Left side: Item counter text */}
       <div className="text-xs text-gray-500 sm:text-sm">
         ສະແດງ <span className="font-semibold text-gray-800">{startItem}</span> -{' '}
         <span className="font-semibold text-gray-800">{endItem}</span> ຈາກທັງໝົດ{' '}
         <span className="font-semibold text-gray-800">{totalItems}</span> {itemLabel}
       </div>
 
-      {totalPages > 1 && (
-        <nav aria-label="Pagination" className="inline-flex items-center gap-1">
-          {/* Previous Page */}
+      {/* Right side: Dark pill buttons matching user design */}
+      <div className="flex items-center justify-end sm:ml-auto">
+        <nav aria-label="Pagination" className="inline-flex items-center gap-1.5">
+          {/* Prev button */}
           <button
             type="button"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-600 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className={`inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs font-medium transition sm:h-9 sm:px-3.5 sm:text-sm ${
+              currentPage <= 1
+                ? 'cursor-not-allowed border-neutral-700 bg-neutral-950 text-neutral-500 opacity-60'
+                : 'border-white/80 bg-neutral-950 text-white hover:bg-neutral-800'
+            }`}
           >
-            <ChevronLeft size={14} />
-            <span className="hidden sm:inline">ກ່ອນໜ້າ</span>
+            {prevLabel}
           </button>
 
-          {/* Page numbers */}
-          <div className="flex items-center gap-1">
+          {/* Numbered buttons & ellipsis */}
+          <div className="flex items-center gap-1.5">
             {pageNumbers.map((page, idx) => {
               if (page === '...') {
                 return (
                   <span
                     key={`ellipsis-${idx}`}
-                    className="flex h-8 w-8 items-center justify-center text-xs text-gray-400"
+                    className="flex h-8 w-6 items-center justify-center text-xs font-bold tracking-widest text-neutral-400 select-none sm:h-9 sm:w-7 sm:text-sm"
                   >
                     …
                   </span>
@@ -97,10 +120,10 @@ export default function Pagination({
                   key={pageNum}
                   type="button"
                   onClick={() => onPageChange(pageNum)}
-                  className={`flex h-8 min-w-[2rem] items-center justify-center rounded-lg px-2 text-xs font-semibold transition ${
+                  className={`flex h-8 min-w-[2rem] items-center justify-center rounded-md px-2 text-xs font-semibold transition sm:h-9 sm:min-w-[2.25rem] sm:text-sm ${
                     isActive
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      ? 'border-2 border-white bg-neutral-950 text-white shadow-sm'
+                      : 'border border-transparent bg-neutral-950 text-white hover:bg-neutral-800'
                   }`}
                 >
                   {pageNum}
@@ -109,18 +132,21 @@ export default function Pagination({
             })}
           </div>
 
-          {/* Next Page */}
+          {/* Next button */}
           <button
             type="button"
             onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-600 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={currentPage >= safeTotalPages}
+            className={`inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs font-medium transition sm:h-9 sm:px-3.5 sm:text-sm ${
+              currentPage >= safeTotalPages
+                ? 'cursor-not-allowed border-neutral-700 bg-neutral-950 text-neutral-500 opacity-60'
+                : 'border-transparent bg-neutral-950 text-white hover:bg-neutral-800'
+            }`}
           >
-            <span className="hidden sm:inline">ຕໍ່ໄປ</span>
-            <ChevronRight size={14} />
+            {nextLabel}
           </button>
         </nav>
-      )}
+      </div>
     </div>
   )
 }
