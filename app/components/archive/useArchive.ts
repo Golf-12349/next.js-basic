@@ -1,5 +1,6 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
 import type { DeleteTarget } from './ArchiveModals'
@@ -27,57 +28,72 @@ export function useArchive(
   documents: Document[] = [],
   actions: ArchiveActions
 ) {
-  const [view, setView] = useState<ViewState>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const lvl = params.get('level');
-      const wId = params.get('warehouseId') || undefined;
-      const cId = params.get('cabinetId') || undefined;
-      const fId = params.get('folderId') || undefined;
-      if (lvl === 'documents') return { level: 'documents', warehouseId: wId, cabinetId: cId, folderId: fId };
-      if (lvl === 'folders') return { level: 'folders', warehouseId: wId, cabinetId: cId };
-      if (lvl === 'cabinets') return { level: 'cabinets', warehouseId: wId };
-      if (lvl === 'warehouses') return { level: 'warehouses' };
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const queryLevel = (searchParams.get('level') as ViewState['level']) || 'warehouses';
+  const queryWarehouseId = searchParams.get('warehouseId') || undefined;
+  const queryCabinetId = searchParams.get('cabinetId') || undefined;
+  const queryFolderId = searchParams.get('folderId') || undefined;
+
+  const view: ViewState = useMemo(() => {
+    if (queryLevel === 'documents') {
+      return {
+        level: 'documents',
+        warehouseId: queryWarehouseId,
+        cabinetId: queryCabinetId,
+        folderId: queryFolderId,
+      };
+    }
+    if (queryLevel === 'folders') {
+      return {
+        level: 'folders',
+        warehouseId: queryWarehouseId,
+        cabinetId: queryCabinetId,
+      };
+    }
+    if (queryLevel === 'cabinets') {
+      return {
+        level: 'cabinets',
+        warehouseId: queryWarehouseId,
+      };
     }
     return { level: 'warehouses' };
-  });
+  }, [queryLevel, queryWarehouseId, queryCabinetId, queryFolderId]);
+
+  const setView = useCallback(
+    (nextView: ViewState) => {
+      const params = new URLSearchParams();
+      params.set('level', nextView.level);
+      if ('warehouseId' in nextView && nextView.warehouseId) {
+        params.set('warehouseId', nextView.warehouseId);
+      }
+      if ('cabinetId' in nextView && nextView.cabinetId) {
+        params.set('cabinetId', nextView.cabinetId);
+      }
+      if ('folderId' in nextView && nextView.folderId) {
+        params.set('folderId', nextView.folderId);
+      }
+      const query = params.toString();
+      const newUrl = query ? `/documents/archive?${query}` : '/documents/archive';
+      router.push(newUrl);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('dms:archive-level-changed', {
+            detail: { level: nextView.level },
+          })
+        );
+      }
+    },
+    [router]
+  );
+
   const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
   const [cabinetModalOpen, setCabinetModalOpen] = useState(false);
   const [folderModalOpen, setFolderModalOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<DeleteTarget | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      params.set('level', view.level);
-      if ('warehouseId' in view && view.warehouseId) {
-        params.set('warehouseId', view.warehouseId);
-      } else {
-        params.delete('warehouseId');
-      }
-      if ('cabinetId' in view && view.cabinetId) {
-        params.set('cabinetId', view.cabinetId);
-      } else {
-        params.delete('cabinetId');
-      }
-      if ('folderId' in view && view.folderId) {
-        params.set('folderId', view.folderId);
-      } else {
-        params.delete('folderId');
-      }
-
-      const query = params.toString();
-      const newUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
-      window.history.replaceState(null, '', newUrl);
-
-      window.dispatchEvent(
-        new CustomEvent('dms:archive-level-changed', {
-          detail: { level: view.level },
-        })
-      );
-    }
-  }, [view]);
 
   const activeFolder: Folder | undefined =
     view.level === 'documents' && 'folderId' in view && view.folderId
