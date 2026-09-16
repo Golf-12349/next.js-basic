@@ -334,12 +334,12 @@ export default function UsersPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-4 py-3">ຜູ້ໃຊ້ງານ</th>
-                  <th className="px-4 py-3">ພະແນກ</th>
-                  <th className="px-4 py-3">ສິດນຳໃຊ້</th>
-                  <th className="px-4 py-3">ສະຖານະ</th>
-                  <th className="px-4 py-3">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
-                  <th className="px-4 py-3 text-center">ຈັດການ</th>
+                  <th className="px-4 py-3 min-w-[220px]">ຜູ້ໃຊ້ງານ</th>
+                  <th className="px-4 py-3 min-w-[140px]">ພະແນກ</th>
+                  <th className="px-4 py-3 w-40 min-w-[140px] whitespace-nowrap">ສິດນຳໃຊ້</th>
+                  <th className="px-4 py-3 w-36 min-w-[130px] whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-4 py-3 w-44 min-w-[150px] whitespace-nowrap">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
+                  <th className="px-4 py-3 text-center w-28 min-w-[100px] whitespace-nowrap">ຈັດການ</th>
                 </tr>
               </thead>
               <tbody>
@@ -383,19 +383,19 @@ export default function UsersPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{u.department}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${roleStyles[u.role]}`}>
+                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{u.department}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center justify-center min-w-[110px] rounded-full px-2.5 py-1 text-xs font-medium text-center ${roleStyles[u.role]}`}>
                               {roleLabels[u.role]}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[u.status]}`}>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center justify-center min-w-[100px] rounded-full px-2.5 py-1 text-xs font-medium text-center ${statusStyles[u.status]}`}>
                               {statusLabels[u.status]}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{u.lastActive || '-'}</td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{u.lastActive || '-'}</td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
                             <div className="relative inline-flex items-center justify-center">
                               {/* Dropdown Menu Trigger */}
                               <button
