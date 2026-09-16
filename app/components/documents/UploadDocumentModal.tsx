@@ -59,8 +59,8 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
   const [docNumber, setDocNumber] = useState(generateDocNumber)
   const [direction, setDirection] = useState<DocumentDirection>('inbound')
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0])
-  const [division, setDivision] = useState('')
-  const [department, setDepartment] = useState('')
+  const [division, setDivision] = useState(currentUser?.division || '')
+  const [department, setDepartment] = useState(currentUser?.department || '')
   const [uploadDate, setUploadDate] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -145,7 +145,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
       return false
     }
     if (!docNumber.trim()) {
-      setError('ກະລຸນາປ້ອນຍັງທີ')
+      setError('ກະລຸນາປ້ອນເລກທີເອກະສານ')
       return false
     }
     if (!division) {
@@ -158,14 +158,6 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
     }
     if (!selectedFile) {
       setError('ກະລຸນາເລືອກໄຟລ໌')
-      return false
-    }
-    if (!cabinetId) {
-      setError('ກະລຸນາເລືອກຕູ້ເອກະສານ')
-      return false
-    }
-    if (!folderId) {
-      setError('ກະລຸນາເລືອກແຟ້ມ')
       return false
     }
     setError(null)
@@ -199,9 +191,9 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
         fileUrl: uploaded.fileUrl,
         fileName: uploaded.fileName,
         // 3-Level archive: save cabinet + folder
-        cabinetId,
+        cabinetId: cabinetId || undefined,
         cabinetName: selectedCabinet?.name,
-        folderId,
+        folderId: folderId || undefined,
         folderName: selectedFolder?.name,
       })
 
@@ -214,9 +206,14 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
 
       // ປິດ modal — ຜູ້ໃຊ້ ຄົ້ນ ຢູ່ໜ້າທີເກົ່າ ກັບຂໍ້ມູນທີ່ refresh ແລ້ວ
       onClose()
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Upload failed:', err)
-      setError('ອັບໂຫຼດເອກະສານລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່')
+      let msg = 'ອັບໂຫຼດເອກະສານລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່'
+      if (err instanceof Error && err.message) {
+        msg = err.message
+      }
+      setError(msg)
+      pushToast({ title: 'ອັບໂຫຼດເອກະສານບໍ່ສຳເລັດ', description: msg })
     } finally {
       setIsSubmitting(false)
     }
@@ -430,14 +427,14 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                 {/* 3-Level archive: Cabinet + Folder dropdowns */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">
-                    ຕູ້ເອກະສານ <span className="text-rose-500">*</span>
+                    ຕູ້ເອກະສານ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
                   </label>
                   <select
                     value={cabinetId}
                     onChange={handleCabinetChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400"
                   >
-                    <option value=""> ເລືອກຕູ້ເອກະສານ </option>
+                    <option value="">— ເລືອກຕູ້ເອກະສານ (ບໍ່ບັງຄັບ) —</option>
                     {visibleCabinets.map((c) => (
                       <option key={c.id} value={c.id}>🗄️ {c.name}</option>
                     ))}
@@ -445,7 +442,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">
-                    ແຟ້ມ <span className="text-rose-500">*</span>
+                    ແຟ້ມ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
                   </label>
                   <select
                     value={folderId}
@@ -453,13 +450,13 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                     disabled={!cabinetId}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:bg-slate-800/40 disabled:text-slate-500"
                   >
-                    <option value="">{cabinetId ? '— ເລືອກແຟ້ມ —' : '— ກະລຸນາເລືອກຕູ້ກ່ອນ —'}</option>
+                    <option value="">{cabinetId ? '— ເລືອກແຟ້ມ (ບໍ່ບັງຄັບ) —' : '— ກະລຸນາເລືອກຕູ້ກ່ອນ —'}</option>
                     {visibleFolders.map((f) => (
                       <option key={f.id} value={f.id}>📁 {f.name}</option>
                     ))}
                   </select>
                   {cabinetId && visibleFolders.length === 0 && (
-                    <p className="mt-1 text-xs text-amber-400">ຕູ້ນີ້ຍັງບໍ່ມີແຟ້ມ — ກະລຸນາສ້າງແຟ້ມກ່ອນທີ່ໜ້າ ຄັງເກັບເອກະສານ</p>
+                    <p className="mt-1 text-xs text-amber-400">ຕູ້ນີ້ຍັງບໍ່ມີແຟ້ມ — ສາມາດສ້າງແຟ້ມໄດ້ທີ່ໜ້າ ຄັງເກັບເອກະສານ</p>
                   )}
                 </div>
                 <div>
