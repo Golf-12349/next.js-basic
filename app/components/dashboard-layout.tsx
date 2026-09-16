@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -64,7 +64,14 @@ type MenuSection = {
   items: MenuItem[];
 };
 
-type NotificationType = 'pending' | 'approved' | 'user' | 'alert';
+type NotificationType =
+  | 'pending'
+  | 'approved'
+  | 'user'
+  | 'alert'
+  | 'transfer_pending'
+  | 'transfer_approved'
+  | 'transfer_rejected';
 
 function formatNotifTime(dateStr: string): string {
   if (!dateStr) return '';
@@ -289,6 +296,24 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
         return (
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
             <UserPlus className="h-4 w-4" />
+          </div>
+        );
+      case 'transfer_pending':
+        return (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <Layers className="h-4 w-4" />
+          </div>
+        );
+      case 'transfer_approved':
+        return (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+        );
+      case 'transfer_rejected':
+        return (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+            <AlertCircle className="h-4 w-4" />
           </div>
         );
     }

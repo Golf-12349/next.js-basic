@@ -15,6 +15,8 @@ import { Settings } from 'lucide-react'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
 import DirectionBadge, { resolveDirection } from '@/app/components/documents/DirectionBadge'
+import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
+import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 
@@ -52,7 +54,9 @@ export default function DocumentsPage() {
     router.replace(qs ? `/documents?${qs}` : '/documents')
   }, [searchParams, openUpload, router])
   const { user: currentUser } = useCurrentUser()
-  const { warehouses, cabinets } = useArchive()
+  const { warehouses, cabinets, assignDocument } = useArchive()
+  const [transferDoc, setTransferDoc] = useState<Document | null>(null)
+  const [storageDoc, setStorageDoc] = useState<Document | null>(null)
 
   const visibleCabinets = useMemo(() => {
     if (currentUser?.role === 'DepartmentAdmin' && currentUser.department) {
@@ -332,6 +336,13 @@ export default function DocumentsPage() {
                           {doc.warehouseName ? `🏛️ ${doc.warehouseName} > ` : ''}🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
                         </span>
                       )}
+                      {doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending' && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                            🔄 ກຳລັງໂອນຍ້າຍຫາ: {doc.transfers[0].toDepartment}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3"><CategoryBadge category={doc.category} /></td>
                     <td className="px-4 py-3"><DirectionBadge direction={doc.direction} category={doc.category} /></td>
@@ -346,12 +357,28 @@ export default function DocumentsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
                         <button onClick={() => setPreviewDoc(doc)} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
                           ເບິ່ງ
                         </button>
                         <button type="button" onClick={() => handleDownload(doc)} className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
                           ດາວໂຫຼດ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStorageDoc(doc)}
+                          className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                          title="ເລືອກບ່ອນຈັດເກັບໃນຄັງ (Warehouse > Cabinet > Shelf)"
+                        >
+                          🗄️ ບ່ອນເກັບ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTransferDoc(doc)}
+                          className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100"
+                          title="ສົ່ງເອກະສານຂ້າມພະແນກ / ຂ້າມຝ່າຍ"
+                        >
+                          🔄 ສົ່ງຂ້າມພະແນກ
                         </button>
                         <button onClick={() => handleDelete(doc)} type="button" className="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100">
                           ລົບ
@@ -427,6 +454,33 @@ export default function DocumentsPage() {
           onAdd={handleAddCategory}
           onRemove={handleRemoveCategory}
           countDocs={countDocsInCategory}
+        />
+
+        <TransferDocumentModal
+          open={!!transferDoc}
+          doc={transferDoc}
+          currentUser={currentUser}
+          onClose={() => setTransferDoc(null)}
+          onSuccess={() => void reload()}
+        />
+
+        <SelectStorageLocationModal
+          open={!!storageDoc}
+          docTitle={storageDoc?.title}
+          docNumber={storageDoc?.docNumber}
+          department={storageDoc?.department}
+          division={storageDoc?.division}
+          initialWarehouseId={storageDoc?.warehouseId}
+          initialCabinetId={storageDoc?.cabinetId}
+          initialFolderId={storageDoc?.folderId}
+          confirmLabel="ບັນທຶກບ່ອນຈັດເກັບ"
+          onClose={() => setStorageDoc(null)}
+          onConfirm={async (data) => {
+            if (!storageDoc) return
+            await assignDocument(storageDoc.id, data.cabinetId || '', data.folderId || '', data.warehouseId)
+            pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
+            void reload()
+          }}
         />
       </main>
     </DashboardLayout>

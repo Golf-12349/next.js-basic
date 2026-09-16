@@ -66,3 +66,49 @@ export async function permanentDeleteDocument(id: string): Promise<void> {
 export async function archiveDocument(id: string): Promise<void> {
   await apiClient.patch(`/documents/${id}/archive`)
 }
+
+export async function transferDocument(
+  id: string,
+  payload: { toDivision: string; toDepartment: string; note?: string },
+): Promise<import('@/types/document').DocumentTransfer> {
+  const res = await apiClient.post<import('@/types/document').DocumentTransfer>(`/documents/${id}/transfer`, payload)
+  return res.data
+}
+
+export async function fetchIncomingTransfers(): Promise<import('@/types/document').DocumentTransfer[]> {
+  const res = await apiClient.get<import('@/types/document').DocumentTransfer[]>('/documents/transfers/incoming')
+  return res.data
+}
+
+export async function approveTransfer(
+  transferId: string,
+  payload: { warehouseId?: string; cabinetId?: string; folderId?: string; note?: string },
+): Promise<{ transfer: import('@/types/document').DocumentTransfer; document: import('@/types/document').Document }> {
+  const res = await apiClient.post<{ transfer: import('@/types/document').DocumentTransfer; document: import('@/types/document').Document }>(
+    `/documents/transfers/${transferId}/approve`,
+    payload,
+  )
+  return res.data
+}
+
+export async function rejectTransfer(
+  transferId: string,
+  reason?: string,
+): Promise<import('@/types/document').DocumentTransfer> {
+  const res = await apiClient.post<import('@/types/document').DocumentTransfer>(`/documents/transfers/${transferId}/reject`, { reason })
+  return res.data
+}
+
+export async function cancelTransfer(
+  transferId: string,
+): Promise<import('@/types/document').DocumentTransfer> {
+  const res = await apiClient.post<import('@/types/document').DocumentTransfer>(`/documents/transfers/${transferId}/cancel`)
+  return res.data
+}
+
+export async function fetchDocumentTransfers(
+  documentId: string,
+): Promise<import('@/types/document').DocumentTransfer[]> {
+  const res = await apiClient.get<import('@/types/document').DocumentTransfer[]>(`/documents/${documentId}/transfers`)
+  return res.data
+}
