@@ -55,6 +55,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
   const { cabinets, folders } = useArchive()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'saving'>('idle')
   const [title, setTitle] = useState('')
   const [docNumber, setDocNumber] = useState(generateDocNumber)
   const [direction, setDirection] = useState<DocumentDirection>('inbound')
@@ -171,10 +172,13 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
     const selectedFolder = folders.find((f) => f.id === folderId)
 
     setIsSubmitting(true)
+    setUploadStep('uploading')
     try {
-      // ອັບໂຫຼດໄຟລ໌ຈິງຂຶ້ນ Supabase Storage ກ່ອນ ແລ້ວຄ່ອຍສ້າງ record ເອກະສານ
+      // 1. ອັບໂຫຼດໄຟລ໌ຈິງຂຶ້ນ Supabase Storage ກ່ອນ
       const uploaded = await uploadFile(selectedFile)
 
+      // 2. ບັນທຶກຂໍ້ມູນເອກະສານລົງຖານຂໍ້ມູນ
+      setUploadStep('saving')
       await addDocument({
         title: title.trim(),
         docNumber: docNumber.trim(),
@@ -182,7 +186,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
         direction,
         division,
         department,
-        status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບົ່ງອະນຸມັດ
+        status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບສົ່ງອະນຸມັດ
         fileType: resolveFileType(selectedFile.name),
         fileSize: uploaded.fileSize,
         uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
@@ -197,15 +201,14 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
         folderName: selectedFolder?.name,
       })
 
-      // Auto refresh data across contexts and pages
-      await reload()
-
+      // ແຈ້ງ toast ແລະ ປິດ modal ທັນທີ (ບໍ່ຕ້ອງລໍຖ້າ reload ທັງໝົດໃຫ້ໜ່ວງ)
       pushToast({
         title: status === 'draft' ? 'ບັນທຶກເປັນສະບັບຮ່າງສຳເລັດ' : 'ອັບໂຫຼດເອກະສານສຳເລັດ',
       })
-
-      // ປິດ modal — ຜູ້ໃຊ້ ຄົ້ນ ຢູ່ໜ້າທີເກົ່າ ກັບຂໍ້ມູນທີ່ refresh ແລ້ວ
       onClose()
+
+      // Sync ຂໍ້ມູນໃນພື້ນຫຼັງ (Background)
+      void reload()
     } catch (err: unknown) {
       console.error('Upload failed:', err)
       let msg = 'ອັບໂຫຼດເອກະສານລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່'
@@ -216,6 +219,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
       pushToast({ title: 'ອັບໂຫຼດເອກະສານບໍ່ສຳເລັດ', description: msg })
     } finally {
       setIsSubmitting(false)
+      setUploadStep('idle')
     }
   }
 
@@ -607,7 +611,11 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
               disabled={isSubmitting || loading}
               className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? 'ກຳລັງອັບໂຫຼດ...' : 'ບັນທຶກເປັນຮ່າງ'}
+              {isSubmitting
+                ? uploadStep === 'uploading'
+                  ? 'ກຳລັງອັບໂຫຼດໄຟລ໌...'
+                  : 'ກຳລັງບັນທຶກ...'
+                : 'ບັນທຶກເປັນຮ່າງ'}
             </button>
             <button
               type="button"
@@ -616,7 +624,11 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
               className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-900/60"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting ? 'ກຳລັງອັບໂຫຼດ...' : 'ອັບໂຫຼດເອກະສານ'}
+              {isSubmitting
+                ? uploadStep === 'uploading'
+                  ? 'ກຳລັງອັບໂຫຼດໄຟລ໌...'
+                  : 'ກຳລັງບັນທຶກ...'
+                : 'ອັບໂຫຼດເອກະສານ'}
             </button>
           </div>
         </div>
