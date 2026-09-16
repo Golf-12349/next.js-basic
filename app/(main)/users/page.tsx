@@ -9,11 +9,13 @@ import { useCurrentUser } from '../context/CurrentUserContext'
 import { normalizeCurrentUser } from '@/types/user'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { User, UserRole, UserStatus } from '@/types/user'
+import { adminResetPassword } from '@/lib/dms/userService'
 import {
   UserDetailModal,
   UserFormModal,
   DeleteUserModal,
   TemporaryPasswordModal,
+  ResetPasswordModal,
   roleStyles,
   roleLabels,
   statusStyles,
@@ -21,7 +23,7 @@ import {
   UserAvatar,
   type UserFormValues,
 } from '@/app/components/users/UserModals'
-import { Search, Users as UsersIcon, ShieldCheck, UserCheck, Eye, Pencil, Lock, Unlock, Trash2 } from 'lucide-react'
+import { Search, Users as UsersIcon, ShieldCheck, UserCheck, Eye, Pencil, Lock, Unlock, Trash2, KeyRound } from 'lucide-react'
 
 const ALL = 'ທັງໝົດ'
 
@@ -42,6 +44,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [temporaryPasswordUser, setTemporaryPasswordUser] = useState<{ name: string; email: string; password: string } | null>(null)
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<User | null>(null)
 
   const departments = useMemo(() => {
     const set = new Set(users.map((u) => u.department).filter(Boolean))
@@ -189,6 +192,25 @@ export default function UsersPage() {
     setDeleteTarget(null)
   }
 
+  async function handleResetPassword(userId: string, newPassword: string) {
+    try {
+      await adminResetPassword(userId, newPassword)
+      pushToast({
+        title: 'ສຳເລັດ',
+        description: 'ປ່ຽນລະຫັດຜ່ານຜູ້ໃຊ້ງານຮຽບຮ້ອຍແລ້ວ',
+      })
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'ບໍ່ສາມາດປ່ຽນລະຫັດຜ່ານໄດ້'
+      pushToast({
+        title: 'ເກີດຂໍ້ຜິດພາດ',
+        description: msg,
+      })
+      throw err
+    }
+  }
+
   return (
     <DashboardLayout title="ຈັດການຜູ້ໃຊ້ງານ">
       <main className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -330,6 +352,12 @@ export default function UsersPage() {
                     paginatedUsers.map((u) => {
                       const isPrivilegedRow = u.role === 'SuperAdmin' || u.role === 'DivisionAdmin'
                       const canManageUser = currentUserRole === 'SuperAdmin' || !isPrivilegedRow
+                      const canResetPassword =
+                        (currentUserRole === 'SuperAdmin' && u.id !== currentUser?.id) ||
+                        (currentUserRole === 'DivisionAdmin' &&
+                          u.role === 'DepartmentAdmin' &&
+                          u.id !== currentUser?.id &&
+                          (!currentUser?.division || !u.division || currentUser.division === u.division))
 
                       return (
                         <tr key={u.id} className="border-t border-gray-100 align-top">
@@ -375,6 +403,15 @@ export default function UsersPage() {
                               >
                                 <Eye size={15} />
                               </button>
+                              {canResetPassword && (
+                                <button
+                                  onClick={() => setResetPasswordTarget(u)}
+                                  title="ປ່ຽນລະຫັດຜ່ານ"
+                                  className="rounded-md border border-violet-200 bg-violet-50 p-1.5 text-violet-700 hover:bg-violet-100"
+                                >
+                                  <KeyRound size={15} />
+                                </button>
+                              )}
                               {canManageUser && (
                                 <>
                                   <button
@@ -443,6 +480,13 @@ export default function UsersPage() {
           user={temporaryPasswordUser}
           open={!!temporaryPasswordUser}
           onClose={() => setTemporaryPasswordUser(null)}
+        />
+
+        <ResetPasswordModal
+          user={resetPasswordTarget}
+          open={!!resetPasswordTarget}
+          onClose={() => setResetPasswordTarget(null)}
+          onReset={handleResetPassword}
         />
       </main>
     </DashboardLayout>

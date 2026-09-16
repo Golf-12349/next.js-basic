@@ -56,3 +56,7 @@ export async function updateOwnProfile(patch: UpdateOwnProfilePayload): Promise<
 export async function updateOwnPassword(currentPassword: string, newPassword: string): Promise<void> {
   await apiClient.patch('/users/me/password', { currentPassword, newPassword })
 }
+
+export async function adminResetPassword(id: string, newPassword: string): Promise<void> {
+  await apiClient.patch(`/users/${id}/password`, { newPassword })
+}

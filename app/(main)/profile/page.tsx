@@ -15,6 +15,7 @@ import {
   Mail,
   Phone,
   ShieldCheck,
+  ShieldAlert,
   Trash2,
   User as UserIcon,
   Building,
@@ -147,6 +148,11 @@ export default function PersonalProfilePage() {
   }
 
   async function handleUpdatePassword() {
+    if (role === "DivisionAdmin" || role === "DepartmentAdmin") {
+      setPasswordError("Admin ຝ່າຍ ແລະ Admin ພະແນກ ບໍ່ສາມາດປ່ຽນລະຫັດຜ່ານຂອງຕົນເອງໄດ້");
+      return;
+    }
+
     const err: string[] = [];
     if (!currentPassword) err.push("ກະລຸນາປ້ອນລະຫັດຜ່ານປັດຈຸບັນ");
     if (newPassword.length < 8) err.push("ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຢ່າງໜ້ອຍ 8 ໂຕອັກສອນ");
@@ -489,91 +495,112 @@ export default function PersonalProfilePage() {
               </div>
             </div>
 
-            <div className="max-w-xl space-y-5">
-              {/* Current Password */}
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານປັດຈຸບັນ</label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type={showCurrent ? "text" : "password"}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className={`${inputBase} pl-10 pr-10`}
-                    placeholder="••••••••"
-                  />
+            {(role === "DivisionAdmin" || role === "DepartmentAdmin") ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-amber-900">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
+                    <ShieldAlert className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-amber-900">
+                      ບໍ່ອະນຸຍາດໃຫ້ປ່ຽນລະຫັດຜ່ານດ້ວຍຕົນເອງ
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                      ບັນຊີລະດັບ {role === "DivisionAdmin" ? "Admin ຝ່າຍ" : "Admin ພະແນກ"} ບໍ່ສາມາດປ່ຽນລະຫັດຜ່ານດ້ວຍຕົນເອງໄດ້ຕາມນະໂຍບາຍຄວາມປອດໄພຂອງລະບົບ.
+                      {role === "DivisionAdmin"
+                        ? " ຫາກຕ້ອງການປ່ຽນລະຫັດຜ່ານ ກະລຸນາຕິດຕໍ່ ຜູ້ດູແລລະບົບສູງສຸດ (SuperAdmin)."
+                        : " ຫາກຕ້ອງການປ່ຽນລະຫັດຜ່ານ ກະລຸນາຕິດຕໍ່ Admin ຝ່າຍ ຫຼື ຜູ້ດູແລລະບົບສູງສຸດ (SuperAdmin)."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="max-w-xl space-y-5">
+                {/* Current Password */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານປັດຈຸບັນ</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showCurrent ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className={`${inputBase} pl-10 pr-10`}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrent((s) => !s)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານໃໝ່</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showNew ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className={`${inputBase} pl-10 pr-10`}
+                      placeholder="ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNew((s) => !s)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຢືນຢັນລະຫັດຜ່ານໃໝ່</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type={showConfirm ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`${inputBase} pl-10 pr-10`}
+                      placeholder="ຢືນຢັນລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((s) => !s)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {passwordError && (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">
+                    {passwordError}
+                  </div>
+                )}
+
+                <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowCurrent((s) => !s)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={handleUpdatePassword}
+                    disabled={isUpdatingPassword}
+                    className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/30 transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    <Lock className="h-4 w-4" />
+                    <span>{isUpdatingPassword ? "ກຳລັງປ່ຽນແປງ..." : "ປ່ຽນລະຫັດຜ່ານ"}</span>
                   </button>
                 </div>
               </div>
-
-              {/* New Password */}
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານໃໝ່</label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type={showNew ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className={`${inputBase} pl-10 pr-10`}
-                    placeholder="ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNew((s) => !s)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຢືນຢັນລະຫັດຜ່ານໃໝ່</label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type={showConfirm ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`${inputBase} pl-10 pr-10`}
-                    placeholder="ຢືນຢັນລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm((s) => !s)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {passwordError && (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">
-                  {passwordError}
-                </div>
-              )}
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleUpdatePassword}
-                  disabled={isUpdatingPassword}
-                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/30 transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Lock className="h-4 w-4" />
-                  <span>{isUpdatingPassword ? "ກຳລັງປ່ຽນແປງ..." : "ປ່ຽນລະຫັດຜ່ານ"}</span>
-                </button>
-              </div>
-            </div>
+            )}
           </section>
         )}
 
