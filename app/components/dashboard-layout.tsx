@@ -98,7 +98,6 @@ const menuSections: MenuSection[] = [
     items: [
       { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
       { name: 'ລໍຖ້າອະນຸມັດ', href: '/documents/pending', icon: Clock3 },
-      { name: 'ເອກະສານໝົດອາຍຸ', href: '/documents/expired', icon: CalendarX },
       {
         name: 'ຄັງເກັບເອກກະສານ',
         href: '/documents/archive',
@@ -133,6 +132,7 @@ const menuSections: MenuSection[] = [
     title: 'SYSTEM',
     items: [
       { name: 'ຈັດການຜູ້ໃຊ້ງານ', href: '/users', icon: Users },
+      { name: 'ເອກະສານໝົດອາຍຸ', href: '/documents/expired', icon: CalendarX },
       { name: 'ຖັງຂີ້ເຫຍື້ອ', href: '/documents/trash', icon: Trash2 },
     ],
   },
