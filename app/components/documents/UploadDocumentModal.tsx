@@ -6,17 +6,17 @@ import { useArchive } from '@/app/(main)/context/ArchiveContext'
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
-import { CheckCircle2, FileText, Loader2, RefreshCw, Trash2, Upload, X } from 'lucide-react'
+import { CheckCircle2, FileText, Loader2, Lock, RefreshCw, Trash2, Upload, X } from 'lucide-react'
 import { edlStructure } from '@/types/user'
 import { DEFAULT_CATEGORIES, DOCUMENT_DIRECTIONS } from '@/lib/dms/constants'
 
 const edlDivisions = Object.keys(edlStructure)
 
-// ສ້າງເລກທີເອກະສານອັດຕະໂນມັດ ເຊັ່ນ DOC-2026-001
+// ສ້າງເລກທີເອກະສານອັດຕະໂນມັດ ເຊັ່ນ DOC-2026-4819
 function generateDocNumber(): string {
   const year = new Date().getFullYear()
-  const seq = Date.now().toString().slice(-3).padStart(3, '0')
-  return `DOC-${year}-${seq}`
+  const rand = Math.floor(1000 + Math.random() * 9000)
+  return `DOC-${year}-${rand}`
 }
 
 // ກຳນົດ fileType ຈາກນາມສະກຸນໄຟລ໌ທີ່ຜູ້ໃຊ້ເລືອກ
@@ -246,28 +246,28 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
           </button>
         </div>
 
-        {/* Body: 2 columns (left dropzone/file card, right metadata form), scrolls independently */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          <div className="grid items-start gap-5 lg:grid-cols-2">
-            {/* ── LEFT: dropzone + file card ── */}
-            <div className="flex flex-col gap-3">
-              <label className="mb-0.5 block text-sm font-medium text-slate-300">
+        {/* Body: 2 columns (left dropzone/file card fills full height, right metadata form scrolls independently) */}
+        <div className="min-h-0 flex-1 overflow-hidden px-5 py-4">
+          <div className="grid h-full min-h-0 gap-6 lg:grid-cols-2">
+            {/* ── LEFT: dropzone + file card (Full height, pinned) ── */}
+            <div className="flex h-full min-h-0 flex-col gap-2.5 overflow-hidden">
+              <label className="mb-0.5 block text-sm font-medium text-slate-300 shrink-0">
                 ໄຟລ໌ <span className="text-rose-500">*</span>
               </label>
 
               {selectedFile ? (
-                <div className="flex flex-col overflow-hidden rounded-xl border border-slate-600 bg-slate-800/80">
+                <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-xl border border-slate-600 bg-slate-800/80 shadow-inner">
                   {resolveFileType(selectedFile.name) === 'image' ? (
-                    <div className="flex items-center justify-center overflow-hidden bg-slate-900 px-4 py-4">
+                    <div className="flex flex-1 min-h-0 items-center justify-center overflow-hidden bg-slate-900 px-4 py-4">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={filePreviewUrl}
                         alt={selectedFile.name}
-                        className="max-h-[220px] max-w-full rounded-lg object-contain"
+                        className="max-h-full max-w-full rounded-lg object-contain"
                       />
                     </div>
                   ) : resolveFileType(selectedFile.name) === 'pdf' ? (
-                    <div className="relative h-60 overflow-hidden bg-slate-900">
+                    <div className="relative flex-1 min-h-0 overflow-hidden bg-slate-900">
                       {pdfLoading && (
                         <div className="absolute inset-x-0 top-0 z-10 flex items-center gap-2 bg-slate-800/90 px-3 py-1.5 text-xs font-medium text-slate-300">
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -277,21 +277,21 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                       <iframe
                         src={filePreviewUrl}
                         title={selectedFile.name}
-                        className="h-full w-full"
+                        className="h-full w-full border-0"
                         onLoad={() => setPdfLoading(false)}
                       />
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center gap-3 bg-slate-900 px-6 py-10 text-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500/10">
-                        <FileText className="h-7 w-7 text-indigo-400" />
+                    <div className="flex flex-1 min-h-0 flex-col items-center justify-center gap-3 bg-slate-900 px-6 py-10 text-center">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-500/10">
+                        <FileText className="h-8 w-8 text-indigo-400" />
                       </div>
                       <p className="text-sm text-slate-400">ໄຟລ໌ປະເພດນີ້ບໍ່ສາມາດສະແດງຕົວຢ່າງໄດ້</p>
                     </div>
                   )}
 
                   {/* File card footer: name/size + checkmark + actions */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 px-4 py-3">
+                  <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-800/90 px-4 py-3">
                     <div className="flex min-w-0 items-center gap-2">
                       <FileText className="h-5 w-5 shrink-0 text-indigo-400" />
                       <div className="min-w-0">
@@ -302,11 +302,11 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
                         <CheckCircle2 className="h-3.5 w-3.5" />
-                        ກຽມພາບ
+                        ກຽມພ້ອມ
                       </span>
                       <label
                         htmlFor="upload-file-input"
-                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-600 bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:border-indigo-400 hover:text-indigo-300"
+                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-600 bg-slate-800 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:border-indigo-400 hover:text-indigo-300 transition"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
                         ປ່ຽນໄຟລ໌
@@ -314,7 +314,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                       <button
                         type="button"
                         onClick={handleRemoveFile}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 px-2.5 py-1.5 text-xs font-medium text-rose-400 hover:bg-rose-500/20"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 px-2.5 py-1.5 text-xs font-medium text-rose-400 hover:bg-rose-500/20 transition"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                         ລຶບໄຟລ໌
@@ -341,24 +341,26 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                     const file = e.dataTransfer?.files?.[0]
                     if (file) applyFile(file)
                   }}
-                  className={`flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${
+                  className={`flex flex-1 h-full min-h-0 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 text-center transition ${
                     dragActive
-                      ? 'border-indigo-400 bg-indigo-500/15'
-                      : 'border-slate-600 bg-slate-800/40 hover:border-indigo-400/60 hover:bg-slate-800/60'
+                      ? 'border-indigo-400 bg-indigo-500/15 ring-4 ring-indigo-500/20'
+                      : 'border-slate-600/80 bg-slate-800/30 hover:border-indigo-400/80 hover:bg-slate-800/50'
                   }`}
                 >
                   <div
-                    className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
-                      dragActive ? 'bg-indigo-500/20' : 'bg-indigo-500/10'
+                    className={`mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl transition ${
+                      dragActive ? 'bg-indigo-500/20 text-indigo-300 scale-110' : 'bg-indigo-500/10 text-indigo-400'
                     }`}
                   >
-                    <Upload className={`h-6 w-6 ${dragActive ? 'text-indigo-300' : 'text-indigo-400'}`} />
+                    <Upload className="h-10 w-10" />
                   </div>
-                  <p className="text-base font-semibold text-slate-200">
-                    {dragActive ? 'ປົດໄຟລ໌ມາບໍ່ລິກ...' : 'ລາກ & ວາງໄຟລ໌ ຫຼື ກົດມາບໍ່ລິກ'}
+                  <p className="text-base font-bold text-slate-100">
+                    {dragActive ? 'ປ່ອຍໄຟລ໌ລົງທີ່ນີ້...' : 'ລາກ & ວາງໄຟລ໌ ຫຼື ກົດເພື່ອເລືອກໄຟລ໌'}
                   </p>
-                  <p className="mt-1 text-xs text-slate-400">PDF, DOC, PNG, JPG ຈະຖືກຮັບຮອງໃນລະບົບ</p>
-                  <span className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500">
+                  <p className="mt-1.5 text-xs text-slate-400 max-w-xs">
+                    ຮອງຮັບ PDF, DOC, DOCX, PNG, JPG ຈະຖືກຮັບຮອງໃນລະບົບ
+                  </p>
+                  <span className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/30 transition hover:bg-indigo-500 active:scale-95">
                     <Upload className="h-4 w-4" />
                     ເລືອກໄຟລ໌
                   </span>
@@ -374,9 +376,9 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
               />
             </div>
 
-            {/* ── RIGHT: metadata form ── */}
-            <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-bold text-slate-200">ຂໍ້ມູນເອກະສານ</h3>
+            {/* ── RIGHT: metadata form (Independently scrollable) ── */}
+            <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto pr-1.5">
+              <h3 className="text-sm font-bold text-slate-200 shrink-0">ຂໍ້ມູນເອກະສານ</h3>
               <div className="space-y-3.5 rounded-xl border border-slate-700 bg-slate-800/60 p-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">
@@ -389,16 +391,40 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-400"
                   />
                 </div>
+
+                {/* ເລກທີ: ສ້າງອັດຕະໂນມັດ ແລະ ບໍ່ສາມາດແກ້ໄຂໄດ້ */}
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    ເລກທີ <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    value={docNumber}
-                    onChange={(e) => setDocNumber(e.target.value)}
-                    placeholder="DOC-2026-XXX"
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-400"
-                  />
+                  <div className="mb-1 flex items-center justify-between">
+                    <label className="text-sm font-medium text-slate-300">
+                      ເລກທີເອກະສານ <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-0.5 text-[11px] font-semibold text-indigo-400 ring-1 ring-indigo-500/20">
+                      <Lock className="h-3 w-3" />
+                      ອັດຕະໂນມັດ (Auto)
+                    </span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      value={docNumber}
+                      readOnly
+                      tabIndex={-1}
+                      title="ເລກທີເອກະສານຖືກສ້າງຂຶ້ນອັດຕະໂນມັດ ບໍ່ສາມາດແກ້ໄຂໄດ້"
+                      className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm font-mono font-bold text-indigo-300 outline-none cursor-not-allowed select-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setDocNumber(generateDocNumber())}
+                      title="ສ້າງເລກທີໃໝ່ອັດຕະໂນມັດ"
+                      className="absolute right-2 inline-flex items-center gap-1 rounded-md bg-slate-800 px-2 py-1 text-xs font-medium text-slate-300 transition hover:bg-slate-700 hover:text-white"
+                    >
+                      <RefreshCw className="h-3 w-3 text-indigo-400" />
+                      <span>ສ້າງໃໝ່</span>
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    ລະບົບກຳນົດເລກທີເອກະສານໃຫ້ອັດຕະໂນມັດ ບໍ່ສາມາດພິມແກ້ໄຂໄດ້
+                  </p>
                 </div>
 
                 {/* 3-Level archive: Cabinet + Folder dropdowns */}
