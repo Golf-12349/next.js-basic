@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
-import { Download, Plus } from 'lucide-react'
+import { Download, Plus, Search, X } from 'lucide-react'
 import type { Document } from '@/types/document'
 import { edlStructure } from '@/types/user'
 
@@ -39,6 +39,9 @@ interface PageHeaderProps {
   showSecondaryButton?: boolean;
   secondaryButtonLabel?: string;
   onSecondaryCreate?: () => void;
+  searchValue?: string;
+  onSearchChange?: (val: string) => void;
+  searchPlaceholder?: string;
 }
 
 export function PageHeader({
@@ -48,9 +51,12 @@ export function PageHeader({
   showSecondaryButton,
   secondaryButtonLabel = '+ ສ້າງຄັງເອກະສານໃໝ່',
   onSecondaryCreate,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = 'ຄົ້ນຫາ...',
 }: PageHeaderProps) {
   return (
-    <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">ຄັງເກັບເອກກະສານ</h1>
         <p className="mt-1 text-sm text-gray-500">
@@ -58,7 +64,29 @@ export function PageHeader({
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
+        {onSearchChange && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchValue ?? ''}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-48 sm:w-60 rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-8 text-xs sm:text-sm text-gray-800 placeholder-gray-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10"
+            />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => onSearchChange('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         {showSecondaryButton && (
           <button
             onClick={onSecondaryCreate}

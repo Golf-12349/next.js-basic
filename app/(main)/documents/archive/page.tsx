@@ -1,4 +1,5 @@
 "use client"
+import { useState, useMemo, useEffect } from 'react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '../../context/DocumentsContext';
 import { useArchive as useDMSArchive } from '../../context/ArchiveContext';
@@ -59,11 +60,23 @@ export default function ArchivePage() {
 
 
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset search query when navigating between levels or containers
+  useEffect(() => {
+    setSearchQuery('');
+  }, [archive.view]);
+
   const showCreateInHeader =
     canManage &&
     (archive.view.level === 'warehouses' ||
       archive.view.level === 'cabinets' ||
       archive.view.level === 'folders');
+
+  const showSearchInHeader =
+    archive.view.level === 'warehouses' ||
+    archive.view.level === 'cabinets' ||
+    archive.view.level === 'folders';
 
   const headerCreateLabel =
     archive.view.level === 'warehouses'
@@ -71,6 +84,15 @@ export default function ArchivePage() {
       : archive.view.level === 'cabinets'
       ? '+ ສ້າງຕູ້ເອກະສານໃໝ່'
       : '+ ສ້າງຊັ້ນວາງເອກະສານໃໝ່';
+
+  const searchPlaceholder =
+    archive.view.level === 'warehouses'
+      ? 'ຄົ້ນຫາຄັງເອກະສານ...'
+      : archive.view.level === 'cabinets'
+      ? 'ຄົ້ນຫາຕູ້ເອກະສານ...'
+      : archive.view.level === 'folders'
+      ? 'ຄົ້ນຫາຊັ້ນວາງເອກະສານ...'
+      : 'ຄົ້ນຫາ...';
 
   const handleHeaderCreate = () => {
     if (archive.view.level === 'warehouses') {
@@ -82,6 +104,41 @@ export default function ArchivePage() {
     }
   };
 
+  // Filtered lists based on search query
+  const filteredWarehouses = useMemo(() => {
+    if (!searchQuery.trim()) return warehouses;
+    const q = searchQuery.toLowerCase().trim();
+    return warehouses.filter(
+      (w) =>
+        w.name.toLowerCase().includes(q) ||
+        (w.division && w.division.toLowerCase().includes(q)) ||
+        (w.description && w.description.toLowerCase().includes(q)),
+    );
+  }, [warehouses, searchQuery]);
+
+  const filteredCabinets = useMemo(() => {
+    const base = archive.warehouseCabinets;
+    if (!searchQuery.trim()) return base;
+    const q = searchQuery.toLowerCase().trim();
+    return base.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.department && c.department.toLowerCase().includes(q)) ||
+        (c.description && c.description.toLowerCase().includes(q)),
+    );
+  }, [archive.warehouseCabinets, searchQuery]);
+
+  const filteredFolders = useMemo(() => {
+    const base = archive.activeCabinet ? archive.cabinetFolders : folders;
+    if (!searchQuery.trim()) return base;
+    const q = searchQuery.toLowerCase().trim();
+    return base.filter(
+      (f) =>
+        f.name.toLowerCase().includes(q) ||
+        (f.description && f.description.toLowerCase().includes(q)),
+    );
+  }, [archive.activeCabinet, archive.cabinetFolders, folders, searchQuery]);
+
   return (
     <DashboardLayout title="ຄັງເກັບເອກກະສານ">
       <main className="flex-1 overflow-y-auto p-6">
@@ -89,9 +146,9 @@ export default function ArchivePage() {
           showCreateButton={showCreateInHeader}
           createButtonLabel={headerCreateLabel}
           onCreate={handleHeaderCreate}
-          showSecondaryButton={canManage && archive.view.level !== 'warehouses'}
-          secondaryButtonLabel="+ ສ້າງຄັງເອກະສານໃໝ່"
-          onSecondaryCreate={() => archive.setWarehouseModalOpen(true)}
+          searchValue={searchQuery}
+          onSearchChange={showSearchInHeader ? setSearchQuery : undefined}
+          searchPlaceholder={searchPlaceholder}
         />
 
         <div className="mb-6">
@@ -108,7 +165,7 @@ export default function ArchivePage() {
 
         {archive.view.level === 'warehouses' && (
           <WarehouseView
-            warehouses={warehouses}
+            warehouses={filteredWarehouses}
             cabinets={archive.visibleCabinets}
             documents={documents}
             canManage={canManage}
@@ -120,7 +177,7 @@ export default function ArchivePage() {
 
         {archive.view.level === 'cabinets' && (
           <CabinetView
-            cabinets={archive.warehouseCabinets}
+            cabinets={filteredCabinets}
             folders={folders}
             documents={documents}
             canManage={canManage}
@@ -140,7 +197,7 @@ export default function ArchivePage() {
           <FolderView
             cabinet={archive.activeCabinet}
             cabinets={archive.visibleCabinets}
-            folders={archive.activeCabinet ? archive.cabinetFolders : folders}
+            folders={filteredFolders}
             documents={documents}
             canManage={canManage}
             onCreate={() => archive.setFolderModalOpen(true)}
