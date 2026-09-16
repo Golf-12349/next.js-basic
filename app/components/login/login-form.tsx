@@ -14,21 +14,18 @@ import {
   FileText,
   Loader2,
   Lock,
-  Mail,
   ShieldCheck,
-  Smartphone,
   Sparkles,
+  User,
 } from "lucide-react";
 
-type LoginTab = "email" | "phone";
-
 type LoginForm = {
-  email: string;
+  identifier: string;
   password: string;
 };
 
 type LoginErrors = {
-  email?: string | null;
+  identifier?: string | null;
   password?: string | null;
   terms?: string | null;
 };
@@ -119,12 +116,11 @@ function GlassBubble({
 
 export default function LoginForm() {
   const { setCurrentUser } = useCurrentUser();
-  const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
+  const [form, setForm] = useState<LoginForm>({ identifier: "", password: "" });
   const [errors, setErrors] = useState<LoginErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState<LoginTab>("email");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
@@ -181,9 +177,18 @@ export default function LoginForm() {
 
   const validateForm = (): boolean => {
     const newErrors: LoginErrors = {};
-    const email = form.email.trim();
-    if (!email || !EMAIL_PATTERN.test(email)) {
-      newErrors.email = EMAIL_FORMAT_ERROR;
+    const identifier = form.identifier.trim();
+    if (!identifier) {
+      newErrors.identifier = "ກະລຸນາປ້ອນອີເມວ ຫຼື ເບີໂທລະສັບ";
+    } else if (identifier.includes("@")) {
+      if (!EMAIL_PATTERN.test(identifier)) {
+        newErrors.identifier = EMAIL_FORMAT_ERROR;
+      }
+    } else {
+      const digits = identifier.replace(/\D/g, "");
+      if (digits.length < 6) {
+        newErrors.identifier = "ຮູບແບບເບີໂທບໍ່ຖືກຕ້ອງ (ຕົວຢ່າງ: 020 1234 5678)";
+      }
     }
     if (!acceptedTerms) {
       newErrors.terms =
@@ -203,7 +208,11 @@ export default function LoginForm() {
 
     setIsSubmitting(true);
     try {
-      const { accessToken, user } = await authService.login(form);
+      const { accessToken, user } = await authService.login({
+        email: form.identifier.trim(),
+        identifier: form.identifier.trim(),
+        password: form.password,
+      });
 
       toast.dismiss();
       toast.success("ເຂົ້າສູ່ລະບົບສຳເລັດ");
@@ -335,67 +344,30 @@ export default function LoginForm() {
               </p>
             </div>
 
-            {/* Switcher Tabs */}
-            <div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200/70 bg-slate-100/70 p-1">
-              {(
-                [
-                  { key: "email" as LoginTab, label: "ອີເມວ", icon: <Mail size={15} /> },
-                  {
-                    key: "phone" as LoginTab,
-                    label: "ເບີໂທ",
-                    icon: <Smartphone size={15} />,
-                  },
-                ] as { key: LoginTab; label: string; icon: React.ReactNode }[]
-              ).map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-all ${
-                    activeTab === tab.key
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
             <form onSubmit={handleSubmit} noValidate className="space-y-5">
               {/* Identifier input (Email / Phone) */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-700">
-                  {activeTab === "email" ? "ຊື່ຜູ້ໃຊ້ ຫຼື ອີເມວ" : "ເບີໂທລະບົບ"}
+                  ອີເມວ ຫຼື ເບີໂທລະສັບ
                 </label>
                 <div className="relative">
-                  {activeTab === "email" ? (
-                    <Mail
-                      size={16}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                  ) : (
-                    <Smartphone
-                      size={16}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                  )}
+                  <User
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
                   <input
                     type="text"
-                    placeholder={
-                      activeTab === "email" ? "name@company.com" : "+856 20 1234 5678"
-                    }
-                    value={form.email}
-                    onChange={handleChange("email")}
+                    placeholder="name@company.com ຫຼື 020 1234 5678"
+                    value={form.identifier}
+                    onChange={handleChange("identifier")}
                     disabled={cooldownSeconds > 0}
                     className={`w-full rounded-xl border border-slate-200/60 bg-slate-50/80 py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 ${
-                      errors.email ? "border-rose-400" : ""
+                      errors.identifier ? "border-rose-400" : ""
                     }`}
                   />
                 </div>
-                {errors.email && (
-                  <p className="mt-1 text-[11px] font-medium text-rose-600">{errors.email}</p>
+                {errors.identifier && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">{errors.identifier}</p>
                 )}
               </div>
               <div>
