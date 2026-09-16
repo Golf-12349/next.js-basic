@@ -41,6 +41,7 @@ import { UserAvatar } from './users/UserModals';
 type DashboardLayoutProps = {
   children: ReactNode;
   title?: string;
+  showSearch?: boolean;
 };
 
 type SubMenuItem = {
@@ -138,7 +139,7 @@ const menuSections: MenuSection[] = [
   },
 ];
 
-export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
+export function DashboardLayout({ children, title = 'Dashboard', showSearch }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user: currentUser, clearUser } = useCurrentUser();
@@ -165,8 +166,9 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
     ).length;
   }, [documents, todayStr, in7DaysStr]);
 
-  // Routes where the global header search is visible
-  const searchAllowedRoutes = ['/dashboard', '/', '/documents', '/documents/archive', '/documents/expired'];
+  // Routes where the global header search is visible (only /documents)
+  const searchAllowedRoutes = ['/documents'];
+  const shouldShowSearch = showSearch !== undefined ? showSearch : searchAllowedRoutes.includes(pathname);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -542,8 +544,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Global Search Input in Header (visible only on /dashboard, /, /documents, /documents/archive) */}
-            {searchAllowedRoutes.includes(pathname) && (
+            {/* Global Search Input in Header (visible only when shouldShowSearch is true) */}
+            {shouldShowSearch && (
             <form onSubmit={handleSearchSubmit} className="relative">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
