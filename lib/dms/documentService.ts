@@ -160,4 +160,4 @@ export async function fetchExpiredSummary(): Promise<{
     expiring30DaysCount: number
   }>('/documents/expired/summary')
   return res.data
-}
+}

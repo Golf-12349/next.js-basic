@@ -492,16 +492,21 @@ export default function ExpiredDocumentsPage() {
                         {/* Title & Organization info */}
                         <td className="px-4 py-3.5">
                           <div className="font-semibold text-gray-900">{doc.title}</div>
-                          <div className="text-xs text-gray-500">ID: {doc.id}</div>
-                          {(doc.division || doc.department) && (
-                            <div className="text-xs text-gray-500">
-                              🏢 {[doc.division, doc.department].filter(Boolean).join(' • ')}
+                          {(doc.department || doc.division) && (
+                            <div
+                              className="mt-0.5 max-w-xs truncate text-xs text-gray-500"
+                              title={[doc.division, doc.department].filter(Boolean).join(' • ')}
+                            >
+                              🏢 {doc.department || doc.division}
                             </div>
                           )}
                           {(doc.warehouseName || doc.cabinetName || doc.folderName) && (
                             <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                              {doc.warehouseName ? `🏛️ ${doc.warehouseName} > ` : ''}🗄️{' '}
-                              {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+                              {[
+                                doc.warehouseName && `🏛️ ${doc.warehouseName}`,
+                                doc.cabinetName && `🗄️ ${doc.cabinetName}`,
+                                doc.folderName && `📁 ${doc.folderName}`,
+                              ].filter(Boolean).join(' > ')}
                             </span>
                           )}
                         </td>

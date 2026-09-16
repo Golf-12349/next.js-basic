@@ -573,7 +573,11 @@ export function DocumentPreviewModal({ doc, onClose, onDownload }: DocumentPrevi
             <div>
               <div className="text-xs text-gray-500">ທີ່ຕັ້ງ</div>
               <div className="text-sm font-semibold">
-                {doc.warehouseName ? `🏛️ ${doc.warehouseName} > ` : ''}🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+                {[
+                  doc.warehouseName && `🏛️ ${doc.warehouseName}`,
+                  doc.cabinetName && `🗄️ ${doc.cabinetName}`,
+                  doc.folderName && `📁 ${doc.folderName}`,
+                ].filter(Boolean).join(' > ') || '—'}
               </div>
             </div>
           </div>
