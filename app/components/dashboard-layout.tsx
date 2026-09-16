@@ -10,6 +10,7 @@ import {
   Bell,
   BellOff,
   Building2,
+  CalendarX,
   CheckCheck,
   CheckCircle2,
   ChevronDown,
@@ -97,6 +98,7 @@ const menuSections: MenuSection[] = [
     items: [
       { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
       { name: 'ລໍຖ້າອະນຸມັດ', href: '/documents/pending', icon: Clock3 },
+      { name: 'ເອກະສານໝົດອາຍຸ', href: '/documents/expired', icon: CalendarX },
       {
         name: 'ຄັງເກັບເອກກະສານ',
         href: '/documents/archive',
@@ -143,8 +145,28 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
   const { documents } = useDocuments();
   const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
 
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const in7DaysStr = useMemo(() => new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10), []);
+
+  const expiredCount = useMemo(() => {
+    return documents.filter(
+      (d) => !d.deleted && (d.status === 'expired' || (Boolean(d.expiresAt) && d.expiresAt! <= todayStr))
+    ).length;
+  }, [documents, todayStr]);
+
+  const expiringSoonCount = useMemo(() => {
+    return documents.filter(
+      (d) =>
+        !d.deleted &&
+        d.status !== 'expired' &&
+        Boolean(d.expiresAt) &&
+        d.expiresAt! > todayStr &&
+        d.expiresAt! <= in7DaysStr
+    ).length;
+  }, [documents, todayStr, in7DaysStr]);
+
   // Routes where the global header search is visible
-  const searchAllowedRoutes = ['/dashboard', '/', '/documents', '/documents/archive'];
+  const searchAllowedRoutes = ['/dashboard', '/', '/documents', '/documents/archive', '/documents/expired'];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -361,7 +383,21 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                         pathname === item.href ||
                         (item.href === '/dashboard' && pathname === '/') ||
                         (hasChildren && pathname.startsWith(item.href));
-                      const itemBadge = item.href === '/documents/pending' && pendingCount > 0 ? String(pendingCount) : item.badge;
+                      let itemBadge: string | undefined = item.badge;
+                      let badgeClass = 'bg-amber-400 text-slate-900';
+
+                      if (item.href === '/documents/pending' && pendingCount > 0) {
+                        itemBadge = String(pendingCount);
+                        badgeClass = 'bg-amber-400 text-slate-900';
+                      } else if (item.href === '/documents/expired') {
+                        if (expiredCount > 0) {
+                          itemBadge = String(expiredCount);
+                          badgeClass = 'bg-rose-500 text-white font-extrabold shadow-sm shadow-rose-900/50';
+                        } else if (expiringSoonCount > 0) {
+                          itemBadge = `${expiringSoonCount} ໃກ້ໝົດ`;
+                          badgeClass = 'bg-amber-500 text-white font-medium';
+                        }
+                      }
 
                       const userRole = currentUser?.role ?? 'DepartmentAdmin';
                       const allowedChildren = hasChildren
@@ -458,7 +494,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                             {item.name}
                           </span>
                           {itemBadge ? (
-                            <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeClass}`}>
                               {itemBadge}
                             </span>
                           ) : null}
