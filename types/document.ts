@@ -1,4 +1,4 @@
-export type DocumentStatus = 'draft' | 'pending' | 'approved' | 'archived';
+export type DocumentStatus = 'draft' | 'pending' | 'approved' | 'archived' | 'expired';
 export type DocumentFileType = 'pdf' | 'doc' | 'image';
 /** ທິດທາງເອກະສານ — ແຍກຈາກໝວດໝູ່ ເພື່ອຮອງຮັບເອກະສານທີ່ເປັນທັງຂາເຂົ້າ ແລະ ເປັນສັນຍາພ້ອມກັນ */
 export type DocumentDirection = 'inbound' | 'outbound';
@@ -46,6 +46,7 @@ export type Document = {
   fileType: DocumentFileType;
   fileSize: string;
   uploadDate: string;
+  expiresAt?: string;
   uploadedBy: string;
   fileUrl: string;
   fileName?: string;

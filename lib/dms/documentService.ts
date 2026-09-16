@@ -21,6 +21,7 @@ export interface CreateDocumentPayload {
   fileUrl?: string
   fileName?: string
   uploadDate: string
+  expiresAt?: string
   warehouseId?: string
   cabinetId?: string
   folderId?: string
@@ -112,3 +113,24 @@ export async function fetchDocumentTransfers(
   const res = await apiClient.get<import('@/types/document').DocumentTransfer[]>(`/documents/${documentId}/transfers`)
   return res.data
 }
+
+export async function renewDocumentExpiry(
+  id: string,
+  payload: { expiresAt: string; note?: string },
+): Promise<ApiDocument> {
+  const res = await apiClient.post<ApiDocument>(`/documents/${id}/renew-expiry`, payload)
+  return res.data
+}
+
+export async function fetchExpiredSummary(): Promise<{
+  expiredCount: number
+  expiring7DaysCount: number
+  expiring30DaysCount: number
+}> {
+  const res = await apiClient.get<{
+    expiredCount: number
+    expiring7DaysCount: number
+    expiring30DaysCount: number
+  }>('/documents/expired/summary')
+  return res.data
+}

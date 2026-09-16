@@ -71,7 +71,8 @@ type NotificationType =
   | 'alert'
   | 'transfer_pending'
   | 'transfer_approved'
-  | 'transfer_rejected';
+  | 'transfer_rejected'
+  | 'expired';
 
 function formatNotifTime(dateStr: string): string {
   if (!dateStr) return '';
@@ -311,6 +312,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
           </div>
         );
       case 'transfer_rejected':
+      case 'expired':
         return (
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
             <AlertCircle className="h-4 w-4" />

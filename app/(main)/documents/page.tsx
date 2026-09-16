@@ -17,6 +17,7 @@ import CategoryBadge from '@/app/components/documents/CategoryBadge'
 import DirectionBadge, { resolveDirection } from '@/app/components/documents/DirectionBadge'
 import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
+import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 
@@ -25,6 +26,7 @@ const statusStyles: Record<DocumentStatus, string> = {
   pending: 'bg-amber-100 text-amber-700',
   approved: 'bg-emerald-100 text-emerald-700',
   archived: 'bg-gray-200 text-gray-700',
+  expired: 'bg-rose-100 text-rose-700 font-semibold',
 }
 
 const statusLabels: Record<DocumentStatus, string> = {
@@ -32,6 +34,7 @@ const statusLabels: Record<DocumentStatus, string> = {
   pending: 'ລໍຖ້າອະນຸມັດ',
   approved: 'ອະນຸມັດ',
   archived: 'ເກັບເຂົ້າຄັງ',
+  expired: '🔴 ໝົດອາຍຸ',
 }
 
 export default function DocumentsPage() {
@@ -57,6 +60,7 @@ export default function DocumentsPage() {
   const { warehouses, cabinets, assignDocument } = useArchive()
   const [transferDoc, setTransferDoc] = useState<Document | null>(null)
   const [storageDoc, setStorageDoc] = useState<Document | null>(null)
+  const [renewDoc, setRenewDoc] = useState<Document | null>(null)
 
   const visibleCabinets = useMemo(() => {
     if (currentUser?.role === 'DepartmentAdmin' && currentUser.department) {
@@ -110,6 +114,15 @@ export default function DocumentsPage() {
         if (filterStatus === 'ຮ່າງ' && d.status !== 'draft') return false
         if (filterStatus === 'ອະນຸມັດ' && d.status !== 'approved') return false
         if (filterStatus === 'ເກັບເຂົ້າຄັງ' && d.status !== 'archived') return false
+        if (filterStatus === 'ໝົດອາຍຸ') {
+          const isExp = d.status === 'expired' || (Boolean(d.expiresAt) && (d.expiresAt ?? '') <= new Date().toISOString().slice(0, 10))
+          if (!isExp) return false
+        }
+        if (filterStatus === 'ໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)') {
+          if (!d.expiresAt || d.status === 'expired') return false
+          const diff = Math.ceil((new Date(d.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          if (diff < 0 || diff > 7) return false
+        }
       }
       if (filterDirection !== 'ທັງໝົດ' && resolveDirection(d) !== filterDirection) return false
       if (filterDivision !== 'ທັງໝົດ' && d.division !== filterDivision) return false
@@ -260,6 +273,8 @@ export default function DocumentsPage() {
                 <option>ຮ່າງ</option>
                 <option>ອະນຸມັດ</option>
                 <option>ເກັບເຂົ້າຄັງ</option>
+                <option>ໝົດອາຍຸ</option>
+                <option>ໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)</option>
               </select>
             </div>
 
@@ -349,7 +364,22 @@ export default function DocumentsPage() {
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.docNumber}</td>
                     <td className="px-4 py-3 text-sm text-gray-700 uppercase">{doc.fileType}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.fileSize}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadDate}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      <div>{doc.uploadDate}</div>
+                      {doc.expiresAt && (
+                        <div className="mt-1">
+                          {doc.status === 'expired' || doc.expiresAt <= new Date().toISOString().slice(0, 10) ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 whitespace-nowrap">
+                              ໝົດ: {doc.expiresAt}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 whitespace-nowrap">
+                              ໝົດ: {doc.expiresAt}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadedBy}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
@@ -363,6 +393,14 @@ export default function DocumentsPage() {
                         </button>
                         <button type="button" onClick={() => handleDownload(doc)} className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
                           ດາວໂຫຼດ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRenewDoc(doc)}
+                          className="rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100"
+                          title="ຕໍ່ອາຍຸເອກະສານ"
+                        >
+                          🔄 ຕໍ່ອາຍຸ
                         </button>
                         <button
                           type="button"
@@ -481,6 +519,13 @@ export default function DocumentsPage() {
             pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
             void reload()
           }}
+        />
+
+        <RenewExpiryModal
+          open={Boolean(renewDoc)}
+          document={renewDoc}
+          onClose={() => setRenewDoc(null)}
+          onSuccess={() => void reload()}
         />
       </main>
     </DashboardLayout>

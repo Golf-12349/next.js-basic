@@ -32,6 +32,18 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function addMonths(months: number): string {
+  const d = new Date()
+  d.setMonth(d.getMonth() + months)
+  return d.toISOString().slice(0, 10)
+}
+
+function addYears(years: number): string {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() + years)
+  return d.toISOString().slice(0, 10)
+}
+
 interface UploadDocumentModalProps {
   open: boolean
   onClose: () => void
@@ -50,6 +62,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
   const [division, setDivision] = useState('')
   const [department, setDepartment] = useState('')
   const [uploadDate, setUploadDate] = useState('')
+  const [expiresAt, setExpiresAt] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
   const [pdfLoading, setPdfLoading] = useState(true)
@@ -181,6 +194,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
         fileType: resolveFileType(selectedFile.name),
         fileSize: uploaded.fileSize,
         uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
+        expiresAt: expiresAt || undefined,
         uploadedBy: currentUser?.name || 'ຜູ້ໃຊ້ງານ',
         fileUrl: uploaded.fileUrl,
         fileName: uploaded.fileName,
@@ -492,6 +506,58 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                     onChange={(e) => setUploadDate(e.target.value)}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400"
                   />
+                </div>
+
+                {/* ວັນທີໝົດອາຍຸ (Expiration Date) */}
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <label className="text-sm font-medium text-slate-300">
+                      ວັນທີໝົດອາຍຸ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
+                    </label>
+                    {expiresAt && (
+                      <button
+                        type="button"
+                        onClick={() => setExpiresAt('')}
+                        className="text-[11px] text-rose-400 hover:text-rose-300 underline"
+                      >
+                        ລ້າງອອກ (ບໍ່ກຳນົດ)
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Presets */}
+                  <div className="mb-2 grid grid-cols-4 gap-1.5">
+                    {[
+                      { label: '6 ເດືອນ', val: addMonths(6) },
+                      { label: '1 ປີ', val: addYears(1) },
+                      { label: '3 ປີ', val: addYears(3) },
+                      { label: '5 ປີ', val: addYears(5) },
+                    ].map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => setExpiresAt(p.val)}
+                        className={`rounded-md border py-1 text-xs font-medium transition ${
+                          expiresAt === p.val
+                            ? 'border-indigo-500 bg-indigo-600/30 text-indigo-200'
+                            : 'border-slate-700 bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="date"
+                    value={expiresAt}
+                    min={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    ຖ້າບໍ່ເລືອກ ລະບົບຈະຖືວ່າເອກະສານນີ້ບໍ່ມີກຳນົດໝົດອາຍຸ
+                  </p>
                 </div>
               </div>
             </div>

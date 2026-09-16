@@ -68,6 +68,7 @@ export type ApiDocument = {
   uploadedById: string | null
   uploadedBy: { id: string; name: string } | null
   uploadDate: string
+  expiresAt: string | null
   deleted: boolean
   warehouseId?: string | null
   warehouse?: ApiWarehouse | null
@@ -80,7 +81,7 @@ export type ApiDocument = {
 
 export type ApiNotification = {
   id: string
-  type: 'pending' | 'approved' | 'user' | 'alert' | 'transfer_pending' | 'transfer_approved' | 'transfer_rejected'
+  type: 'pending' | 'approved' | 'user' | 'alert' | 'transfer_pending' | 'transfer_approved' | 'transfer_rejected' | 'expired'
   title: string
   detail: string | null
   link: string | null
@@ -119,6 +120,7 @@ export function toFrontendDocument(doc: ApiDocument): Document {
     fileType: doc.fileType,
     fileSize: doc.fileSize ?? '-',
     uploadDate: doc.uploadDate.slice(0, 10),
+    expiresAt: doc.expiresAt ? doc.expiresAt.slice(0, 10) : undefined,
     uploadedBy: doc.uploadedBy?.name ?? '-',
     fileUrl: doc.fileUrl ?? '#',
     fileName: doc.fileName ?? undefined,

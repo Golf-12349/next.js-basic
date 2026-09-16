@@ -11,6 +11,7 @@ import { useArchive } from '../../context/ArchiveContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
+import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 
 function getSessionRole(): UserRole | null {
   if (typeof window === 'undefined') return null
@@ -29,6 +30,7 @@ const statusStyles: Record<DocumentStatus, string> = {
   pending: 'bg-amber-100 text-amber-700',
   approved: 'bg-emerald-100 text-emerald-700',
   archived: 'bg-gray-200 text-gray-700',
+  expired: 'bg-rose-100 text-rose-700 font-semibold',
 }
 
 const statusLabels: Record<DocumentStatus, string> = {
@@ -36,6 +38,7 @@ const statusLabels: Record<DocumentStatus, string> = {
   pending: 'ລໍຖ້າອະນຸມັດ',
   approved: 'ອະນຸມັດ',
   archived: 'ເກັບເຂົ້າຄັງ',
+  expired: '🔴 ໝົດອາຍຸ',
 }
 
 export default function DocumentDetailPage() {
@@ -48,9 +51,10 @@ export default function DocumentDetailPage() {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(getSessionRole)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(getStoredUser)
 
-  // Modals for transfer and storage
+  // Modals for transfer, storage, and renewal
   const [transferOpen, setTransferOpen] = useState<boolean>(false)
   const [storageOpen, setStorageOpen] = useState<boolean>(false)
+  const [renewOpen, setRenewOpen] = useState<boolean>(false)
 
   useEffect(() => {
     function syncRole() {
@@ -90,6 +94,13 @@ export default function DocumentDetailPage() {
     ? doc.transfers[0]
     : null
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const isExpired = doc.status === 'expired' || (Boolean(doc.expiresAt) && (doc.expiresAt ?? '') <= todayStr)
+  const daysUntilExpiry = doc.expiresAt
+    ? Math.ceil((new Date(doc.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null
+  const isExpiringSoon = !isExpired && daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 7
+
   return (
     <DashboardLayout title="ເອກະສານ">
       <main className="flex-1 overflow-y-auto p-6">
@@ -103,6 +114,53 @@ export default function DocumentDetailPage() {
             ← ກັບໄປລາຍການ
           </Link>
         </div>
+
+        {/* Expiration Alert Banners */}
+        {isExpired && (
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-900 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <div className="font-semibold text-rose-800">
+                  ເອກະສານນີ້ໝົດອາຍຸແລ້ວ {doc.expiresAt ? `(ວັນທີ ${doc.expiresAt})` : ''}
+                </div>
+                <div className="mt-0.5 text-xs text-rose-700">
+                  ເອກະສານບໍ່ສາມາດນຳໃຊ້ໃນການອ້າງອີງທາງການໄດ້ ຈົນກວ່າຈະໄດ້ຮັບການຕໍ່ອາຍຸ
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRenewOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-rose-700 transition shrink-0"
+            >
+              🔄 ຕໍ່ອາຍຸເອກະສານ
+            </button>
+          </div>
+        )}
+
+        {isExpiringSoon && (
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⏳</span>
+              <div>
+                <div className="font-semibold text-amber-800">
+                  ເອກະສານນີ້ໃກ້ຈະໝົດອາຍຸ (ເຫຼືອອີກ {daysUntilExpiry} ວັນ - ຮອດວັນທີ {doc.expiresAt})
+                </div>
+                <div className="mt-0.5 text-xs text-amber-700">
+                  ກະລຸນາດຳເນີນການຕໍ່ອາຍຸ ຫຼື ທົບທວນເອກະສານກ່ອນຮອດກຳນົດ
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRenewOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 transition shrink-0"
+            >
+              🔄 ຕໍ່ອາຍຸເອກະສານ
+            </button>
+          </div>
+        )}
 
         {/* Transfer Pending Alert Banner */}
         {pendingTransfer && (
@@ -153,6 +211,18 @@ export default function DocumentDetailPage() {
                 <div className="text-xs uppercase tracking-wide text-gray-500">ຮູບແບບໄຟລ໌</div>
                 <div className="mt-2 font-semibold text-gray-900 uppercase">{doc.fileType}</div>
               </div>
+              <div className="rounded-xl bg-gray-50 p-4">
+                <div className="text-xs uppercase tracking-wide text-gray-500">ວັນທີໝົດອາຍຸ</div>
+                <div className="mt-2 font-semibold">
+                  {doc.expiresAt ? (
+                    <span className={isExpired ? 'text-rose-600 font-bold' : isExpiringSoon ? 'text-amber-600 font-bold' : 'text-gray-900'}>
+                      {doc.expiresAt} {isExpired ? '(ໝົດອາຍຸ)' : isExpiringSoon ? `(ເຫຼືອ ${daysUntilExpiry} ວັນ)` : ''}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 font-normal">ບໍ່ມີກຳນົດ</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -174,6 +244,15 @@ export default function DocumentDetailPage() {
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   ດາວໂຫຼດ
+                </button>
+
+                {/* Renew document button */}
+                <button
+                  onClick={() => setRenewOpen(true)}
+                  type="button"
+                  className="w-full rounded-lg border border-purple-200 bg-purple-50 px-4 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-100 transition-colors"
+                >
+                  🔄 ຕໍ່ອາຍຸເອກະສານ
                 </button>
 
                 {/* Storage location picker button */}
@@ -282,6 +361,14 @@ export default function DocumentDetailPage() {
             pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
             void reload()
           }}
+        />
+
+        {/* Renew Expiry Modal */}
+        <RenewExpiryModal
+          open={renewOpen}
+          document={doc}
+          onClose={() => setRenewOpen(false)}
+          onSuccess={() => void reload()}
         />
 
       </main>
