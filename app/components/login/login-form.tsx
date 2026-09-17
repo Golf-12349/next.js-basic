@@ -393,17 +393,9 @@ export default function LoginForm() {
                 )}
               </div>
               <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label className="block text-xs font-semibold text-slate-700">
-                    ລະຫັດຜ່ານ
-                  </label>
-                  <a
-                    href="#"
-                    className="text-[11px] font-medium text-blue-600 hover:text-blue-700"
-                  >
-                    ລືມລະຫັດຜ່ານ?
-                  </a>
-                </div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                  ລະຫັດຜ່ານ
+                </label>
                 <div className="relative">
                   <Lock
                     size={16}
