@@ -12,6 +12,7 @@ import { pushToast } from '@/app/components/ui/Toast'
 import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
+import { fetchDocumentById } from '@/lib/dms/documentService'
 
 function getSessionRole(): UserRole | null {
   if (typeof window === 'undefined') return null
@@ -43,10 +44,26 @@ const statusLabels: Record<DocumentStatus, string> = {
 
 export default function DocumentDetailPage() {
   const params = useParams()
-  const id = params?.id
+  const id = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : undefined
   const { documents, updateDocument, deleteDocument, reload } = useDocuments()
   const { assignDocument } = useArchive()
-  const doc = documents.find((d) => d.id === id) as Document | undefined
+  const contextDoc = documents.find((d) => d.id === id) as Document | undefined
+  const [fetchedDoc, setFetchedDoc] = useState<Document | null>(null)
+  const [loadingDoc, setLoadingDoc] = useState<boolean>(!contextDoc)
+
+  const doc = contextDoc || fetchedDoc
+
+  useEffect(() => {
+    if (!contextDoc && id) {
+      setLoadingDoc(true)
+      fetchDocumentById(id)
+        .then((d) => setFetchedDoc(d))
+        .catch(() => setFetchedDoc(null))
+        .finally(() => setLoadingDoc(false))
+    } else if (contextDoc) {
+      setLoadingDoc(false)
+    }
+  }, [id, contextDoc])
 
   const [currentRole, setCurrentRole] = useState<UserRole | null>(getSessionRole)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(getStoredUser)
@@ -67,6 +84,16 @@ export default function DocumentDetailPage() {
 
   // RBAC: only DivisionAdmin / SuperAdmin may approve documents
   const canModerate = currentRole === 'DivisionAdmin' || currentRole === 'SuperAdmin'
+
+  if (loadingDoc) {
+    return (
+      <DashboardLayout title="ເອກະສານ">
+        <main className="p-6">
+          <div className="text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນເອກະສານ...</div>
+        </main>
+      </DashboardLayout>
+    )
+  }
 
   if (!doc) {
     return (
@@ -169,7 +196,7 @@ export default function DocumentDetailPage() {
             <div>
               <div className="font-semibold">ເອກະສານນີ້ກຳລັງຢູ່ໃນຂັ້ນຕອນການລໍຖ້າອະນຸມັດການໂອນຍ້າຍ</div>
               <div className="mt-1 text-xs text-amber-800">
-                ສົ່ງຕໍ່ໄປຫາ: <strong>{pendingTransfer.toDepartment}</strong> (ຝ່າຍ <strong>{pendingTransfer.toDivision}</strong>)
+                ສົ່ງຕໍ່ໄປຫາ: <strong>{typeof pendingTransfer.toDepartment === 'object' && pendingTransfer.toDepartment !== null ? (pendingTransfer.toDepartment as any).name : (pendingTransfer.toDepartment || '—')}</strong> (ຝ່າຍ <strong>{typeof pendingTransfer.toDivision === 'object' && pendingTransfer.toDivision !== null ? (pendingTransfer.toDivision as any).name : (pendingTransfer.toDivision || '—')}</strong>)
                 {pendingTransfer.keepCopy && ' • (ເກັບສຳເນົາຕົ້ນສະບັບໄວ້)'}
                 {pendingTransfer.note && ` • ໝາຍເຫດ: ${pendingTransfer.note}`}
               </div>
@@ -181,7 +208,9 @@ export default function DocumentDetailPage() {
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs uppercase tracking-wide text-indigo-600">{doc.category}</div>
+                <div className="text-xs uppercase tracking-wide text-indigo-600">
+                  {typeof doc.category === 'object' && doc.category !== null ? (doc.category as any).name : (doc.category || '—')}
+                </div>
                 <h2 className="mt-2 text-2xl font-bold text-gray-900">{doc.title}</h2>
               </div>
               <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
@@ -206,7 +235,9 @@ export default function DocumentDetailPage() {
               </div>
               <div className="rounded-xl bg-gray-50 p-4">
                 <div className="text-xs uppercase tracking-wide text-gray-500">ຜູ້ອັບໂຫຼດ</div>
-                <div className="mt-2 font-semibold text-gray-900">{doc.uploadedBy}</div>
+                <div className="mt-2 font-semibold text-gray-900">
+                  {typeof doc.uploadedBy === 'object' && doc.uploadedBy !== null ? (doc.uploadedBy as any).name : (doc.uploadedBy || '—')}
+                </div>
               </div>
               <div className="rounded-xl bg-gray-50 p-4">
                 <div className="text-xs uppercase tracking-wide text-gray-500">ຮູບແບບໄຟລ໌</div>
@@ -232,20 +263,44 @@ export default function DocumentDetailPage() {
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h3 className="text-lg font-bold text-gray-900">ການກະທຳ</h3>
               <div className="mt-4 space-y-3">
-                <button
-                  onClick={() => pushToast({ title: 'ເບິ່ງເອກະສານ' })}
-                  type="button"
-                  className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
-                >
-                  ເບິ່ງໄຟລ໌
-                </button>
-                <button
-                  onClick={() => pushToast({ title: 'ດາວໂຫຼດເອກະສານ' })}
-                  type="button"
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  ດາວໂຫຼດ
-                </button>
+                {doc.fileUrl && doc.fileUrl !== '#' ? (
+                  <a
+                    href={doc.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm"
+                  >
+                    ເບິ່ງໄຟລ໌
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })}
+                    type="button"
+                    className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+                  >
+                    ເບິ່ງໄຟລ໌
+                  </button>
+                )}
+
+                {doc.fileUrl && doc.fileUrl !== '#' ? (
+                  <a
+                    href={doc.fileUrl}
+                    download={doc.fileName || doc.title}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    ດາວໂຫຼດ
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })}
+                    type="button"
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    ດາວໂຫຼດ
+                  </button>
+                )}
 
                 {/* Renew document button */}
                 <button
@@ -303,15 +358,21 @@ export default function DocumentDetailPage() {
                 </div>
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ໝວດໝູ່</dt>
-                  <dd className="text-right text-gray-900">{doc.category}</dd>
+                  <dd className="text-right text-gray-900">
+                    {typeof doc.category === 'object' && doc.category !== null ? (doc.category as any).name : (doc.category || '—')}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ຝ່າຍ / ຫ້ອງການ</dt>
-                  <dd className="text-right font-medium text-gray-900">{doc.division || '—'}</dd>
+                  <dd className="text-right font-medium text-gray-900">
+                    {typeof doc.division === 'object' && doc.division !== null ? (doc.division as any).name : (doc.division || '—')}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ພະແນກ / ສູນ</dt>
-                  <dd className="text-right font-medium text-gray-900">{doc.department || '—'}</dd>
+                  <dd className="text-right font-medium text-gray-900">
+                    {typeof doc.department === 'object' && doc.department !== null ? (doc.department as any).name : (doc.department || '—')}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ບ່ອນຈັດເກັບໃນຄັງ</dt>

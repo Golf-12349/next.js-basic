@@ -1,7 +1,7 @@
 import apiClient from '@/config/axiosClient'
 import { isAxiosError } from 'axios'
-import type { DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
-import type { ApiDocument } from './types'
+import type { Document, DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
+import { toFrontendDocument, type ApiDocument } from './types'
 
 export interface UploadFileResult {
   fileUrl: string
@@ -39,6 +39,11 @@ export async function uploadFile(file: File): Promise<UploadFileResult> {
 export async function fetchDocuments(params?: { limit?: number; deleted?: string }): Promise<ApiDocument[]> {
   const res = await apiClient.get<{ data: ApiDocument[] }>('/documents', { params })
   return res.data.data
+}
+
+export async function fetchDocumentById(id: string): Promise<Document> {
+  const res = await apiClient.get<ApiDocument>(`/documents/${id}`)
+  return toFrontendDocument(res.data)
 }
 
 export async function createDocument(payload: CreateDocumentPayload): Promise<ApiDocument> {
@@ -172,19 +177,25 @@ export async function transferDocument(
 }
 
 export async function fetchIncomingTransfers(): Promise<import('@/types/document').DocumentTransfer[]> {
-  const res = await apiClient.get<import('@/types/document').DocumentTransfer[]>('/documents/transfers/incoming')
-  return res.data
+  const res = await apiClient.get<any[]>('/documents/transfers/incoming')
+  return (res.data || []).map((t) => ({
+    ...t,
+    document: t.document ? toFrontendDocument(t.document) : undefined,
+  }))
 }
 
 export async function approveTransfer(
   transferId: string,
   payload: { warehouseId?: string; cabinetId?: string; shelfId?: string; folderId?: string; note?: string },
 ): Promise<{ transfer: import('@/types/document').DocumentTransfer; document: import('@/types/document').Document }> {
-  const res = await apiClient.post<{ transfer: import('@/types/document').DocumentTransfer; document: import('@/types/document').Document }>(
+  const res = await apiClient.post<any>(
     `/documents/transfers/${transferId}/approve`,
     payload,
   )
-  return res.data
+  return {
+    ...res.data,
+    document: res.data?.document ? toFrontendDocument(res.data.document) : res.data?.document,
+  }
 }
 
 export async function rejectTransfer(
@@ -205,8 +216,11 @@ export async function cancelTransfer(
 export async function fetchDocumentTransfers(
   documentId: string,
 ): Promise<import('@/types/document').DocumentTransfer[]> {
-  const res = await apiClient.get<import('@/types/document').DocumentTransfer[]>(`/documents/${documentId}/transfers`)
-  return res.data
+  const res = await apiClient.get<any[]>(`/documents/${documentId}/transfers`)
+  return (res.data || []).map((t) => ({
+    ...t,
+    document: t.document ? toFrontendDocument(t.document) : undefined,
+  }))
 }
 
 export async function renewDocumentExpiry(

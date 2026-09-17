@@ -122,33 +122,47 @@ export function toFrontendUser(user: ApiUser): User {
   }
 }
 
-export function toFrontendDocument(doc: ApiDocument): Document {
+export function toFrontendDocument(doc: any): Document {
   return {
     id: doc.id,
     title: doc.title,
     docNumber: doc.docNumber,
-    category: doc.category?.name ?? '',
-    categoryId: doc.categoryId ?? undefined,
+    category:
+      typeof doc.category === 'string'
+        ? doc.category
+        : (doc.category?.name ?? ''),
+    categoryId:
+      doc.categoryId ??
+      (typeof doc.category === 'object' && doc.category !== null ? doc.category.id : undefined),
     direction: doc.direction,
-    division: doc.division ?? undefined,
-    department: doc.department ?? undefined,
+    division:
+      typeof doc.division === 'object' && doc.division !== null
+        ? (doc.division.name ?? '')
+        : (doc.division ?? undefined),
+    department:
+      typeof doc.department === 'object' && doc.department !== null
+        ? (doc.department.name ?? '')
+        : (doc.department ?? undefined),
     status: doc.status,
     fileType: doc.fileType,
     fileSize: doc.fileSize ?? '-',
-    uploadDate: doc.uploadDate.slice(0, 10),
-    expiresAt: doc.expiresAt ? doc.expiresAt.slice(0, 10) : undefined,
-    uploadedBy: doc.uploadedBy?.name ?? '-',
+    uploadDate: doc.uploadDate ? String(doc.uploadDate).slice(0, 10) : '',
+    expiresAt: doc.expiresAt ? String(doc.expiresAt).slice(0, 10) : undefined,
+    uploadedBy:
+      typeof doc.uploadedBy === 'object' && doc.uploadedBy !== null
+        ? (doc.uploadedBy.name ?? '-')
+        : (typeof doc.uploadedBy === 'string' ? doc.uploadedBy : '-'),
     fileUrl: doc.fileUrl ?? '#',
     fileName: doc.fileName ?? undefined,
-    deleted: doc.deleted,
+    deleted: Boolean(doc.deleted),
     warehouseId: doc.warehouseId ?? doc.cabinet?.warehouseId ?? doc.cabinet?.warehouse?.id ?? undefined,
-    warehouseName: doc.warehouse?.name ?? doc.cabinet?.warehouse?.name,
+    warehouseName: typeof doc.warehouseName === 'string' ? doc.warehouseName : (doc.warehouse?.name ?? doc.cabinet?.warehouse?.name),
     cabinetId: doc.cabinetId ?? doc.folder?.cabinetId ?? undefined,
-    cabinetName: doc.cabinet?.name ?? doc.folder?.cabinet?.name,
+    cabinetName: typeof doc.cabinetName === 'string' ? doc.cabinetName : (doc.cabinet?.name ?? doc.folder?.cabinet?.name),
     shelfId: doc.shelfId ?? doc.folder?.shelfId ?? undefined,
-    shelfName: doc.shelf?.name ?? doc.folder?.shelf?.name,
+    shelfName: typeof doc.shelfName === 'string' ? doc.shelfName : (doc.shelf?.name ?? doc.folder?.shelf?.name),
     folderId: doc.folderId ?? undefined,
-    folderName: doc.folder?.name,
+    folderName: typeof doc.folderName === 'string' ? doc.folderName : doc.folder?.name,
     transfers: doc.transfers,
   }
 }

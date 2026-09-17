@@ -10,6 +10,7 @@ import type { Document, DocumentTransfer } from '@/types/document'
 import { getStoredUser, type CurrentUser } from '@/types/user'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import { approveTransfer, fetchIncomingTransfers, rejectTransfer } from '@/lib/dms/documentService'
+import { toFrontendDocument } from '@/lib/dms/types'
 
 export default function PendingDocumentsPage() {
   const { reload } = useDocuments()
@@ -239,7 +240,7 @@ export default function PendingDocumentsPage() {
                             {docItem && (
                               <button
                                 type="button"
-                                onClick={() => setPreviewDoc(docItem)}
+                                onClick={() => setPreviewDoc(toFrontendDocument(docItem))}
                                 className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition shadow-sm"
                               >
                                 ເບິ່ງ
@@ -377,7 +378,11 @@ export default function PendingDocumentsPage() {
                 </div>
                 <div>
                   <div className="text-sm text-gray-500">ໝວດໝູ່</div>
-                  <div className="font-semibold">{previewDoc.category}</div>
+                  <div className="font-semibold">
+                    {typeof previewDoc.category === 'object' && previewDoc.category !== null
+                      ? ((previewDoc.category as any).name || '—')
+                      : (previewDoc.category || '—')}
+                  </div>
                 </div>
               </div>
               <DocumentPreview doc={previewDoc} heightClassName="min-h-0 flex-1" />

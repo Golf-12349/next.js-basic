@@ -40,7 +40,12 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === 'undefined') return []
     try {
       const stored = localStorage.getItem(DOCS_STORAGE_KEY) || sessionStorage.getItem(DOCS_STORAGE_KEY)
-      if (stored) return JSON.parse(stored)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          return parsed.map(toFrontendDocument)
+        }
+      }
     } catch {}
     return []
   })
