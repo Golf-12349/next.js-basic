@@ -1,14 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Moon, Plus, Sun, Sunrise } from 'lucide-react';
+import { CalendarDays, Moon, Sun, Sunrise } from 'lucide-react';
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext';
-import { useUploadModal } from '@/app/(main)/context/UploadModalContext';
 import { formatFullDateLao, shiftOfHour } from './dashboard-utils';
 
 export function GreetingHeader() {
   const { user: currentUser } = useCurrentUser();
-  const { openUpload } = useUploadModal();
   const [now, setNow] = useState<Date>(() => new Date());
 
   useEffect(() => {
@@ -42,15 +40,6 @@ export function GreetingHeader() {
           </span>
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={openUpload}
-        className="inline-flex w-fit items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-200/60 transition-all duration-300 hover:-translate-y-0.5 hover:bg-indigo-500 hover:shadow-indigo-300/60"
-      >
-        <Plus className="h-4 w-4" />
-        ອັບໂຫຼດເອກະສານ
-      </button>
     </div>
   );
 }
