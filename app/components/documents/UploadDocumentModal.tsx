@@ -7,10 +7,7 @@ import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
 import { CheckCircle2, FileText, Loader2, Lock, RefreshCw, Trash2, Upload, X } from 'lucide-react'
-import { edlStructure } from '@/types/user'
-import { DEFAULT_CATEGORIES, DOCUMENT_DIRECTIONS } from '@/lib/dms/constants'
-
-const edlDivisions = Object.keys(edlStructure)
+import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
 
 // ສ້າງເລກທີເອກະສານອັດຕະໂນມັດ ເຊັ່ນ DOC-2026-4819
 function generateDocNumber(): string {
@@ -90,10 +87,7 @@ export default function UploadDocumentModal({
   const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'saving'>('idle')
   const [title, setTitle] = useState('')
   const [docNumber, setDocNumber] = useState(generateDocNumber)
-  const [direction, setDirection] = useState<DocumentDirection>('inbound')
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0])
-  const [division, setDivision] = useState(currentUser?.division || '')
-  const [department, setDepartment] = useState(currentUser?.department || '')
   const [uploadDate, setUploadDate] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -184,13 +178,6 @@ export default function UploadDocumentModal({
     setFolderId('')
   }
 
-  function handleDivisionChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const value = e.target.value
-    setDivision(value)
-    const available = value ? (edlStructure[value] ?? []) : []
-    if (!available.includes(department)) setDepartment('')
-  }
-
   function validateForm(): boolean {
     if (!title.trim()) {
       setError('ກະລຸນາປ້ອນຊື່ເອກະສານ')
@@ -198,14 +185,6 @@ export default function UploadDocumentModal({
     }
     if (!docNumber.trim()) {
       setError('ກະລຸນາປ້ອນເລກທີເອກະສານ')
-      return false
-    }
-    if (!division) {
-      setError('ກະລຸນາເລືອກຝ່າຍ / ຫ້ອງການ')
-      return false
-    }
-    if (!department) {
-      setError('ກະລຸນາເລືອກພະແນກ / ສູນ')
       return false
     }
     if (!selectedFile) {
@@ -226,6 +205,9 @@ export default function UploadDocumentModal({
       ? warehouses.find((w) => w.id === selectedCabinet.warehouseId)
       : undefined
 
+    const effectiveDivision = currentUser?.division || selectedCabinet?.division || undefined
+    const effectiveDepartment = currentUser?.department || selectedCabinet?.department || undefined
+
     setIsSubmitting(true)
     setUploadStep('uploading')
     try {
@@ -238,10 +220,9 @@ export default function UploadDocumentModal({
         title: title.trim(),
         docNumber: docNumber.trim(),
         category,
-        direction,
-        division,
-        department,
-        status, // 'draft' ສຳລັບບັນທຶກຮ່າງ, 'pending' ສຳລັບສົ່ງອະນຸມັດ
+        division: effectiveDivision,
+        department: effectiveDepartment,
+        status,
         fileType: resolveFileType(selectedFile.name),
         fileSize: uploaded.fileSize,
         uploadDate: uploadDate || new Date().toISOString().slice(0, 10),
@@ -538,55 +519,17 @@ export default function UploadDocumentModal({
                     <p className="mt-1 text-xs text-amber-400">ຕູ້ນີ້ຍັງບໍ່ມີແຟ້ມ — ສາມາດສ້າງແຟ້ມໄດ້ທີ່ໜ້າ ຄັງເກັບເອກະສານ</p>
                   )}
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    ຝ່າຍ / ຫ້ອງການ / ສະຖາບັນ <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={division}
-                    onChange={handleDivisionChange}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400"
-                  >
-                    <option value=""> ເລືອກຝ່າຍ / ຫ້ອງການ </option>
-                    {edlDivisions.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">
-                    ພະແນກ / ສູນ <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    disabled={!division}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:bg-slate-800/40 disabled:text-slate-500"
-                  >
-                    <option value="">{division ? '— ເລືອກພະແນກ / ສູນ —' : '— ເລືອກຝ່າຍກ່ອນ —'}</option>
-                    {(division ? (edlStructure[division] ?? []) : []).map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-300">ທິດທາງ</label>
-                  <div className="flex gap-2">
-                    {DOCUMENT_DIRECTIONS.map((dir) => (
-                      <button
-                        key={dir.value}
-                        type="button"
-                        onClick={() => setDirection(dir.value)}
-                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
-                          direction === dir.value
-                            ? 'border-indigo-500 bg-indigo-600 text-white'
-                            : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
-                        }`}
-                      >
-                        {dir.emoji} {dir.label}
-                      </button>
-                    ))}
+                {/* ຂໍ້ມູນພະແນກ ແລະ ຝ່າຍ (ກຳນົດອັດຕະໂນມັດຈາກຜູ້ໃຊ້) */}
+                <div className="rounded-lg border border-slate-700/80 bg-slate-800/60 p-3 text-xs text-slate-300">
+                  <div className="flex items-center gap-1.5 font-medium text-slate-200">
+                    <span>🏢 ພະແນກ:</span>
+                    <span className="text-indigo-400 font-semibold">{currentUser?.department || '—'}</span>
                   </div>
+                  {currentUser?.division && (
+                    <div className="mt-1 text-slate-400">
+                      <span>ຝ່າຍ:</span> {currentUser.division}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">ປະເພດເອກະສານ</label>
@@ -694,7 +637,7 @@ export default function UploadDocumentModal({
             </button>
             <button
               type="button"
-              onClick={() => handleSubmit('pending')}
+              onClick={() => handleSubmit('approved')}
               disabled={isSubmitting || loading}
               className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-900/60"
             >

@@ -114,7 +114,14 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         setCategories(serverCategories.map((c) => c.name))
       }
       const fetchedDocs = [
-        ...activeDocs.map(toFrontendDocument),
+        ...activeDocs.map((d) => {
+          const doc = toFrontendDocument(d)
+          if (doc.status === 'pending') {
+            doc.status = 'approved'
+            void documentService.updateDocumentStatus(doc.id, 'approved').catch(() => {})
+          }
+          return doc
+        }),
         ...deletedDocs.map(toFrontendDocument),
       ]
       setDocuments(fetchedDocs)

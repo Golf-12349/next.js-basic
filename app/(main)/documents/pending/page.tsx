@@ -7,31 +7,15 @@ import { pushToast } from '@/app/components/ui/Toast'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import type { Document, DocumentTransfer } from '@/types/document'
-import { getStoredUser, type CurrentUser, type UserRole } from '@/types/user'
-import CategoryBadge from '@/app/components/documents/CategoryBadge'
+import { getStoredUser, type CurrentUser } from '@/types/user'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import { approveTransfer, fetchIncomingTransfers, rejectTransfer } from '@/lib/dms/documentService'
 
-function getSessionRole(): UserRole | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const stored = sessionStorage.getItem('data')
-    if (!stored) return null
-    const parsed = (typeof stored === 'string' ? JSON.parse(stored) : stored) as { role?: UserRole }
-    return parsed?.role ?? null
-  } catch {
-    return null
-  }
-}
-
 export default function PendingDocumentsPage() {
-  const { documents, updateDocument, reload } = useDocuments()
+  const { reload } = useDocuments()
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
-  const [currentRole, setCurrentRole] = useState<UserRole | null>(getSessionRole)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(getStoredUser)
 
-  // Tabs: 'internal' (Regular pending documents) | 'incoming' (Transfers from other departments/divisions)
-  const [activeTab, setActiveTab] = useState<'internal' | 'incoming'>('incoming')
   const [incomingTransfers, setIncomingTransfers] = useState<DocumentTransfer[]>([])
   const [loadingTransfers, setLoadingTransfers] = useState<boolean>(false)
 
@@ -62,26 +46,11 @@ export default function PendingDocumentsPage() {
 
   useEffect(() => {
     function syncUser() {
-      setCurrentRole(getSessionRole())
       setCurrentUser(getStoredUser())
     }
     window.addEventListener('storage', syncUser)
     return () => window.removeEventListener('storage', syncUser)
   }, [])
-
-  // Moderation for internal documents: only DivisionAdmin / SuperAdmin
-  const canModerateInternal = currentRole === 'DivisionAdmin' || currentRole === 'SuperAdmin'
-  const list = documents.filter((d) => d.status === 'pending' && !d.deleted)
-
-  async function approveInternal(id: string) {
-    await updateDocument(id, { status: 'approved' })
-    pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
-  }
-
-  async function rejectInternal(id: string) {
-    await updateDocument(id, { status: 'draft' })
-    pushToast({ title: 'ເອກະສານຖືກປະຕິເສດ' })
-  }
 
   // Handle transfer approval with chosen storage location
   async function handleConfirmTransferStorage(data: {
@@ -92,14 +61,19 @@ export default function PendingDocumentsPage() {
     note?: string
   }) {
     if (!transferToApprove) return
-    await approveTransfer(transferToApprove.id, data)
-    pushToast({
-      title: 'ຮັບເອກະສານສຳເລັດ',
-      description: `ເອກະສານຖືກຮັບເຂົ້າ ${transferToApprove.toDepartment} ແລະ ຈັດເກັບຮຽບຮ້ອຍແລ້ວ`,
-    })
-    setTransferToApprove(null)
-    void reload()
-    void loadTransfers()
+    try {
+      await approveTransfer(transferToApprove.id, data)
+      pushToast({
+        title: 'ຮັບເອກະສານສຳເລັດ',
+        description: `ເອກະສານຖືກຮັບເຂົ້າ ${transferToApprove.toDepartment} ແລະ ຈັດເກັບຮຽບຮ້ອຍແລ້ວ`,
+      })
+      setTransferToApprove(null)
+      void reload()
+      void loadTransfers()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'ເກີດຂໍ້ຜິດພາດໃນການຮັບເອກະສານ'
+      pushToast({ title: 'ບໍ່ສາມາດຮັບເອກະສານໄດ້', description: msg })
+    }
   }
 
   // Handle transfer rejection
@@ -125,275 +99,178 @@ export default function PendingDocumentsPage() {
   }
 
   return (
-    <DashboardLayout title="ເອກະສານລໍຖ້າອະນຸມັດ">
+    <DashboardLayout title="ເອກະສານສົ່ງຂ້າມມາຫາທ່ານ">
       <main className="flex-1 overflow-y-auto p-6">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">ເອກະສານລໍຖ້າອະນຸມັດ</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              ກວດສອບ ແລະ ອະນຸມັດເອກະສານທົ່ວໄປ ລວມທັງເອກະສານທີ່ຖືກສົ່ງຂ້າມພະແນກ/ຂ້າມຝ່າຍ
-            </p>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="inline-flex rounded-xl bg-gray-100 p-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab('incoming')}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                activeTab === 'incoming'
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <span>🔄 ເອກະສານສົ່ງຂ້າມມາຫາທ່ານ</span>
+            <h1 className="text-2xl font-bold text-gray-900">
+              🔄 ເອກະສານສົ່ງຂ້າມມາຫາທ່ານ
               {incomingTransfers.length > 0 && (
-                <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-indigo-600 px-1.5 text-xs font-bold text-white">
-                  {incomingTransfers.length}
+                <span className="ml-2.5 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                  {incomingTransfers.length} ລາຍການ
                 </span>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('internal')}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                activeTab === 'internal'
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <span>📑 ເອກະສານລໍຖ້າອະນຸມັດທົ່ວໄປ</span>
-              {list.length > 0 && (
-                <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-bold text-white">
-                  {list.length}
-                </span>
-              )}
-            </button>
+            </h1>
+            <p className="mt-1 text-sm text-gray-500">
+              ກວດສອບ ແລະ ຮັບເອກະສານທີ່ຖືກສົ່ງຂ້າມມາຫາພະແນກ / ຝ່າຍຂອງທ່ານ ພ້ອມກຳນົດບ່ອນຈັດເກັບໃນຄັງ
+            </p>
           </div>
         </div>
 
-        {/* Tab 1: Incoming Cross-department / Cross-division Transfers */}
-        {activeTab === 'incoming' && (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-4">
-              <h2 className="text-base font-semibold text-gray-900">
-                ລາຍການເອກະສານທີ່ຖືກສົ່ງຂ້າມມາຫາພະແນກ / ຝ່າຍຂອງທ່ານ
-              </h2>
-              <p className="mt-0.5 text-xs text-gray-500">
-                ກະລຸນາກວດສອບເອກະສານ ແລະ ກົດຮັບເອກະສານເພື່ອເລືອກບ່ອນຈັດເກັບເຂົ້າຄັງ/ຕູ້/ຊັ້ນວາງ
+        {/* Incoming Cross-department / Cross-division Transfers */}
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          {loadingTransfers ? (
+            <div className="p-12 text-center text-sm text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
+          ) : incomingTransfers.length === 0 ? (
+            <div className="p-16 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-3xl">
+                📥
+              </div>
+              <div className="mt-4 text-base font-semibold text-gray-900">ບໍ່ມີເອກະສານສົ່ງຂ້າມທີ່ລໍຖ້າການຕອບຮັບ</div>
+              <p className="mt-1 text-xs text-gray-500 max-w-sm mx-auto">
+                ເມື່ອມີພະແນກ ຫຼື ຝ່າຍອື່ນສົ່ງເອກະສານມາຫາພະແນກຂອງທ່ານ ລາຍການຈະສະແດງຢູ່ນີ້ເພື່ອໃຫ້ທ່ານກວດສອບ ແລະ ຈັດເກັບເຂົ້າຄັງ
               </p>
             </div>
-
-            {loadingTransfers ? (
-              <div className="p-8 text-center text-sm text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
-            ) : incomingTransfers.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-2xl">
-                  📥
-                </div>
-                <div className="mt-3 text-sm font-medium text-gray-900">ບໍ່ມີເອກະສານສົ່ງຂ້າມທີ່ລໍຖ້າອະນຸມັດ</div>
-                <div className="mt-1 text-xs text-gray-500">
-                  ເມື່ອມີພະແນກ ຫຼື ຝ່າຍອື່ນສົ່ງເອກະສານມາຫາທ່ານ ລາຍການຈະສະແດງຢູ່ນີ້
-                </div>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left">
-                  <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-                    <tr>
-                      <th className="px-4 py-3">ເອກະສານ</th>
-                      <th className="px-4 py-3">ຕົ້ນທາງ (ສົ່ງມາຈາກ)</th>
-                      <th className="px-4 py-3">ປາຍທາງ (ສົ່ງຫາ)</th>
-                      <th className="px-4 py-3">ໝາຍເຫດ</th>
-                      <th className="px-4 py-3">ວັນທີສົ່ງ</th>
-                      <th className="px-4 py-3 text-center">ການກະທຳ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {incomingTransfers.map((t) => {
-                      const docItem = t.document
-                      const isCross =
-                        t.fromDivision &&
-                        t.toDivision &&
-                        t.fromDivision.trim().toLowerCase() !== t.toDivision.trim().toLowerCase()
-
-                      // Check permission to approve this transfer:
-                      // If cross-division: only DivisionAdmin of toDivision or SuperAdmin
-                      // If same-division: DepartmentAdmin of toDepartment or DivisionAdmin or SuperAdmin
-                      const canApproveTransfer =
-                        currentUser?.role === 'SuperAdmin' ||
-                        (isCross
-                          ? currentUser?.role === 'DivisionAdmin'
-                          : true)
-
-                      return (
-                        <tr key={t.id} className="border-t border-gray-100 hover:bg-gray-50/50">
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-semibold text-gray-900">
-                                {docItem?.title || 'ເອກະສານບໍ່ລະບຸຊື່'}
-                              </span>
-                              {docItem?.docNumber && (
-                                <div className="mt-0.5">
-                                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-700">
-                                    {docItem.docNumber}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="px-4 py-3">
-                            <div className="text-xs">
-                              <div className="font-medium text-gray-900">{t.fromDepartment || '—'}</div>
-                              <div className="text-gray-500">{t.fromDivision || '—'}</div>
-                              {t.sender?.name && (
-                                <div className="mt-0.5 text-indigo-600">👤 {t.sender.name}</div>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="px-4 py-3">
-                            <div className="text-xs">
-                              <div className="font-medium text-gray-900">{t.toDepartment}</div>
-                              <div className="text-gray-500">{t.toDivision}</div>
-                              {isCross ? (
-                                <span className="mt-1 inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-semibold text-purple-700">
-                                  🌐 ຂ້າມຝ່າຍ
-                                </span>
-                              ) : (
-                                <span className="mt-1 inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                                  🏢 ພາຍໃນຝ່າຍ
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="px-4 py-3 text-xs text-gray-700 max-w-[200px] truncate">
-                            {t.note || <span className="text-gray-400">—</span>}
-                          </td>
-
-                          <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                            {t.createdAt ? t.createdAt.slice(0, 10) : '—'}
-                          </td>
-
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-2">
-                              {docItem && (
-                                <button
-                                  type="button"
-                                  onClick={() => setPreviewDoc(docItem)}
-                                  className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100"
-                                >
-                                  ເບິ່ງ
-                                </button>
-                              )}
-
-                              {canApproveTransfer ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => setTransferToApprove(t)}
-                                    className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 shadow-sm"
-                                  >
-                                    🗄️ ຮັບເອກະສານ & ເລືອກບ່ອນເກັບ
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setTransferToReject(t)}
-                                    className="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100"
-                                  >
-                                    ປະຕິເສດ
-                                  </button>
-                                </>
-                              ) : (
-                                <span className="text-xs text-amber-600">
-                                  ລໍຖ້າ Admin ຝ່າຍ ອະນຸມັດ
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab 2: Regular Internal Pending Documents */}
-        {activeTab === 'internal' && (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left">
-                <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 border-b border-gray-100">
                   <tr>
-                    <th className="px-4 py-3">ເອກະສານ</th>
-                    <th className="px-4 py-3">ສະຖານະ</th>
-                    <th className="px-4 py-3">ວັນທີ</th>
-                    <th className="px-4 py-3">ຜູ້ອັບໂຫຼດ</th>
-                    <th className="px-4 py-3 text-center">ການກະທຳ</th>
+                    <th className="px-4 py-3.5">ເອກະສານ</th>
+                    <th className="px-4 py-3.5">ຕົ້ນທາງ (ສົ່ງມາຈາກ)</th>
+                    <th className="px-4 py-3.5">ປາຍທາງ (ສົ່ງຫາ)</th>
+                    <th className="px-4 py-3.5">ໝາຍເຫດ</th>
+                    <th className="px-4 py-3.5">ວັນທີສົ່ງ</th>
+                    <th className="px-4 py-3.5 text-center">ການກະທຳ</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {list.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-sm text-gray-500">
-                        ບໍ່ມີເອກະສານລໍຖ້າອະນຸມັດ
-                      </td>
-                    </tr>
-                  ) : (
-                    list.map((d) => (
-                      <tr key={d.id} className="border-t border-gray-100">
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium text-gray-900">{d.title}</span>
-                            <CategoryBadge category={d.category} />
+                <tbody className="divide-y divide-gray-100">
+                  {incomingTransfers.map((t) => {
+                    const docItem = t.document
+                    const isCross =
+                      t.fromDivision &&
+                      t.toDivision &&
+                      t.fromDivision.trim().toLowerCase() !== t.toDivision.trim().toLowerCase()
+
+                    // Check permission:
+                    // SuperAdmin has full permission.
+                    // If cross-division: DivisionAdmin of toDivision or SuperAdmin.
+                    // If same-division: DepartmentAdmin of toDepartment, DivisionAdmin, or SuperAdmin.
+                    const canApproveTransfer =
+                      currentUser?.role === 'SuperAdmin' ||
+                      (isCross
+                        ? currentUser?.role === 'DivisionAdmin'
+                        : true)
+
+                    return (
+                      <tr key={t.id} className="hover:bg-gray-50/60 transition">
+                        <td className="px-4 py-3.5">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-gray-900">
+                              {docItem?.title || 'ເອກະສານບໍ່ລະບຸຊື່'}
+                            </span>
+                            {docItem?.docNumber && (
+                              <div className="mt-1">
+                                <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-mono text-gray-700">
+                                  {docItem.docNumber}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
-                            ລໍຖ້າອະນຸມັດ
-                          </span>
+
+                        <td className="px-4 py-3.5">
+                          <div className="flex flex-col text-xs">
+                            <span className="font-semibold text-gray-800">
+                              🏢 {t.fromDepartment || '—'}
+                            </span>
+                            {t.fromDivision && (
+                              <span className="text-gray-500">
+                                🏛️ {t.fromDivision}
+                              </span>
+                            )}
+                            {t.sender?.name && (
+                              <span className="mt-1 text-gray-400">
+                                👤 {t.sender.name}
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{d.uploadDate}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{d.uploadedBy}</td>
-                        <td className="px-4 py-3">
+
+                        <td className="px-4 py-3.5">
+                          <div className="flex flex-col text-xs">
+                            <span className="font-semibold text-indigo-700">
+                              🏢 {t.toDepartment}
+                            </span>
+                            {t.toDivision && (
+                              <span className="text-gray-500">
+                                🏛️ {t.toDivision}
+                              </span>
+                            )}
+                            {isCross && (
+                              <span className="mt-1 inline-flex w-fit rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">
+                                ຂ້າມຝ່າຍ
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3.5 text-xs text-gray-600 max-w-xs">
+                          {t.note ? (
+                            <span className="italic">{t.note}</span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                          {t.createdAt?.slice(0, 10) || '—'}
+                        </td>
+
+                        <td className="px-4 py-3.5">
                           <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => setPreviewDoc(d)}
-                              className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                            >
-                              ເບິ່ງ
-                            </button>
-                            {canModerateInternal && (
+                            {docItem && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewDoc(docItem)}
+                                className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                              >
+                                ເບິ່ງ
+                              </button>
+                            )}
+
+                            {canApproveTransfer ? (
                               <>
                                 <button
-                                  onClick={() => approveInternal(d.id)}
-                                  className="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                                  type="button"
+                                  onClick={() => setTransferToApprove(t)}
+                                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition shadow-sm"
                                 >
                                   ອະນຸມັດ
                                 </button>
                                 <button
-                                  onClick={() => rejectInternal(d.id)}
-                                  className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100"
+                                  type="button"
+                                  onClick={() => setTransferToReject(t)}
+                                  className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 transition"
                                 >
                                   ປະຕິເສດ
                                 </button>
                               </>
+                            ) : (
+                              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                ລໍຖ້າ Admin ຝ່າຍ ອະນຸມັດ
+                              </span>
                             )}
                           </div>
                         </td>
                       </tr>
-                    ))
-                  )}
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Modal: Select Storage Location when accepting transfer */}
         <SelectStorageLocationModal
@@ -463,49 +340,24 @@ export default function PendingDocumentsPage() {
           scrollBody={false}
           footer={
             previewDoc && (
-              <>
-                {canModerateInternal && activeTab === 'internal' && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        approveInternal(previewDoc.id)
-                        setPreviewDoc(null)
-                      }}
-                      className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
-                    >
-                      ອະນຸມັດ
-                    </button>
-                    <button
-                      onClick={() => {
-                        rejectInternal(previewDoc.id)
-                        setPreviewDoc(null)
-                      }}
-                      className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-100"
-                    >
-                      ປະຕິເສດ
-                    </button>
-                  </div>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  className="px-4 py-2 rounded-lg bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 transition"
+                >
+                  ປິດ
+                </button>
+                {previewDoc.fileUrl && previewDoc.fileUrl !== '#' && (
+                  <a
+                    href={previewDoc.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 transition inline-flex items-center gap-1.5"
+                  >
+                    ດາວໂຫຼດໄຟລ໌
+                  </a>
                 )}
-                <div className="ml-auto flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setPreviewDoc(null)
-                      pushToast({ title: 'ປິດການເບິ່ງ' })
-                    }}
-                    className="px-3 py-2 rounded bg-gray-100 text-sm"
-                  >
-                    ປິດ
-                  </button>
-                  <button
-                    onClick={() => {
-                      pushToast({ title: 'ດາວໂຫຼດເອກະສານ' })
-                    }}
-                    className="px-3 py-2 rounded bg-indigo-600 text-sm text-white"
-                  >
-                    ດາວໂຫຼດ
-                  </button>
-                </div>
-              </>
+              </div>
             )
           }
         >
