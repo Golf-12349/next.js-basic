@@ -256,15 +256,23 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
 
   const notifications = useMemo(
     () =>
-      apiNotifications.map((n) => ({
-        id: n.id,
-        title: n.title,
-        detail: n.detail ?? '',
-        time: formatNotifTime(n.createdAt),
-        link: n.link ?? '/documents',
-        read: n.read,
-        type: n.type,
-      })),
+      apiNotifications.map((n) => {
+        let title = n.title;
+        if (title === 'เอกสารของคุณได้รับการอนุมัติแล้ว') {
+          title = 'ເອກະສານຂອງທ່ານໄດ້ຮັບການອະນຸມັດແລ້ວ';
+        } else if (title === 'มีเอกสารรอตรวจใหม่') {
+          title = 'ມີເອກະສານລໍຖ້າກວດສອບໃໝ່';
+        }
+        return {
+          id: n.id,
+          title,
+          detail: n.detail ?? '',
+          time: formatNotifTime(n.createdAt),
+          link: n.link ?? '/documents',
+          read: n.read,
+          type: n.type,
+        };
+      }),
     [apiNotifications],
   );
 
