@@ -1,6 +1,8 @@
 'use client'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../../context/DocumentsContext'
+import { useCurrentUser } from '../../context/CurrentUserContext'
+import { useRouter } from 'next/navigation'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -60,7 +62,15 @@ function formatMB(mb: number): string {
 
 // ── Main page ───────────────────────────────────────────────────────────────
 export default function TrashPage() {
+  const router = useRouter()
+  const { user: currentUser } = useCurrentUser()
   const { documents, restoreDocument, permDeleteDocument, reload } = useDocuments()
+
+  useEffect(() => {
+    if (currentUser?.role === 'DepartmentAdmin') {
+      router.replace('/documents')
+    }
+  }, [currentUser, router])
 
   useEffect(() => {
     void reload()
@@ -124,6 +134,10 @@ export default function TrashPage() {
     pushToast({ title: 'ລ້າງຖັງຂີ້ເຫຍື້ອສຳເລັດ', description: `ລຶບ ${trash.length} ເອກະສານຢ່າງຖາວອນ` })
     setConfirmEmpty(false)
     void reload()
+  }
+
+  if (currentUser?.role === 'DepartmentAdmin') {
+    return null
   }
 
   return (

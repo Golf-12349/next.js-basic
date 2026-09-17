@@ -137,7 +137,12 @@ const menuSections: MenuSection[] = [
     items: [
       { name: 'ຈັດການຜູ້ໃຊ້ງານ', href: '/users', icon: Users },
       { name: 'ເອກະສານໝົດອາຍຸ', href: '/documents/expired', icon: CalendarX },
-      { name: 'ຖັງຂີ້ເຫຍື້ອ', href: '/documents/trash', icon: Trash2 },
+      {
+        name: 'ຖັງຂີ້ເຫຍື້ອ',
+        href: '/documents/trash',
+        icon: Trash2,
+        roles: ['SuperAdmin', 'DivisionAdmin'],
+      },
     ],
   },
 ];
@@ -378,6 +383,10 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
               .map((section) => ({
                 ...section,
                 items: section.items.filter((item) => {
+                  const userRole = currentUser?.role ?? 'DepartmentAdmin';
+                  if (item.roles && !item.roles.includes(userRole)) {
+                    return false;
+                  }
                   const isAdmin = currentUser?.role === 'DivisionAdmin' || currentUser?.role === 'SuperAdmin';
                   if (item.href === '/users' && !isAdmin) {
                     return false;
