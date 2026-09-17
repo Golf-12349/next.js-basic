@@ -91,7 +91,8 @@ export default function DocumentsPage() {
     setQuery(searchParam)
   }
 
-  const [filterWarehouse, setFilterWarehouse] = useState('ທັງໝົດ')
+  const warehouseParam = searchParams.get('warehouse') || ''
+  const [filterWarehouse, setFilterWarehouse] = useState(warehouseParam === 'unassigned' ? 'unassigned' : 'ທັງໝົດ')
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
@@ -105,6 +106,24 @@ export default function DocumentsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const PAGE_SIZE = 30
 
+  const unassignedCount = useMemo(() => {
+    return documents.filter(
+      (d) =>
+        !d.deleted &&
+        d.status !== 'pending' &&
+        !(
+          d.warehouseId ||
+          d.cabinetId ||
+          d.shelfId ||
+          d.folderId ||
+          d.warehouseName ||
+          d.cabinetName ||
+          d.shelfName ||
+          d.folderName
+        ),
+    ).length
+  }, [documents])
+
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDivision, filterDepartment])
@@ -115,7 +134,23 @@ export default function DocumentsPage() {
       if (q) {
         if (!(d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q))) return false
       }
-      if (filterWarehouse !== 'ທັງໝົດ' && d.warehouseId !== filterWarehouse) return false
+      if (filterWarehouse !== 'ທັງໝົດ') {
+        if (filterWarehouse === 'unassigned') {
+          const hasLocation = Boolean(
+            d.warehouseId ||
+            d.cabinetId ||
+            d.shelfId ||
+            d.folderId ||
+            d.warehouseName ||
+            d.cabinetName ||
+            d.shelfName ||
+            d.folderName
+          )
+          if (hasLocation) return false
+        } else if (d.warehouseId !== filterWarehouse) {
+          return false
+        }
+      }
       if (filterCategory !== 'ທັງໝົດ' && d.category !== filterCategory) return false
       if (filterCabinet !== 'ທັງໝົດ' && d.cabinetId !== filterCabinet) return false
       if (filterStatus !== 'ທັງໝົດ') {
@@ -221,6 +256,31 @@ export default function DocumentsPage() {
           </button>
         </div>
 
+        {unassignedCount > 0 && filterWarehouse !== 'unassigned' && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-amber-900 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xl">
+                ⚠️
+              </span>
+              <div>
+                <div className="text-sm font-semibold text-amber-900">
+                  ມີ {unassignedCount} ເອກະສານທີ່ຍັງບໍ່ທັນໄດ້ກຳນົດບ່ອນຈັດເກັບໃນຄັງ
+                </div>
+                <div className="text-xs text-amber-700">
+                  ເອກະສານເຫຼົ່ານີ້ຍັງບໍ່ມີ ສາງ/ຕູ້/ຊັ້ນ/ແຟ້ມ ເພື່ອຄວາມເປັນລະບຽບ ກະລຸນາກຳນົດບ່ອນເກັບໃຫ້ຄົບຖ້ວນ
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFilterWarehouse('unassigned')}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 transition shrink-0"
+            >
+              🔍 ກວດສອບເອກະສານທີ່ຍັງບໍ່ມີບ່ອນເກັບ
+            </button>
+          </div>
+        )}
+
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
@@ -256,7 +316,10 @@ export default function DocumentsPage() {
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">ຄັງເອກະສານ</label>
               <select value={filterWarehouse} onChange={(e) => setFilterWarehouse(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
-                <option>ທັງໝົດ</option>
+                <option value="ທັງໝົດ">ທັງໝົດ</option>
+                {unassignedCount > 0 && (
+                  <option value="unassigned">⚠️ ຍັງບໍ່ມີບ່ອນເກັບ ({unassignedCount})</option>
+                )}
                 {warehouses.map((w) => (
                   <option key={w.id} value={w.id}>🏛️ {w.name}</option>
                 ))}
@@ -345,7 +408,7 @@ export default function DocumentsPage() {
                           🏢 {doc.department || doc.division}
                         </div>
                       )}
-                      {(doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName) && (
+                      {doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName ? (
                         <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700">
                           {[
                             doc.warehouseName && `🏛️ ${doc.warehouseName}`,
@@ -354,6 +417,19 @@ export default function DocumentsPage() {
                             doc.folderName && `📁 ${doc.folderName}`,
                           ].filter(Boolean).join(' > ')}
                         </span>
+                      ) : (
+                        <div className="mt-1">
+                          <button
+                            type="button"
+                            onClick={() => setStorageDoc(doc)}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-300 px-2.5 py-0.5 text-[11px] font-medium text-amber-800 hover:bg-amber-100 hover:border-amber-400 transition shadow-xs"
+                            title="ກົດເພື່ອເລືອກບ່ອນຈັດເກັບໃນຄັງ"
+                          >
+                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            <span>⚠️ ຍັງບໍ່ມີບ່ອນເກັບ</span>
+                            <span className="text-[10px] text-amber-900 underline font-semibold">+ ລະບຸບ່ອນເກັບ</span>
+                          </button>
+                        </div>
                       )}
                       {doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending' && (
                         <div className="mt-1">
@@ -543,14 +619,32 @@ export default function DocumentsPage() {
         >
           {previewDoc && (
             <div className="flex min-h-0 flex-1 flex-col gap-4">
-              <div className="grid shrink-0 grid-cols-2 gap-4">
+              <div className="grid shrink-0 grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
                   <div className="text-sm text-gray-500">ເລກທີ</div>
                   <div className="font-semibold">{previewDoc.docNumber}</div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-500">ໝວດໝູ່</div>
-                  <div className="font-semibold">{previewDoc.category}</div>
+                  <div className="font-semibold">
+                    {typeof previewDoc.category === 'object' && previewDoc.category !== null
+                      ? ((previewDoc.category as any).name || '—')
+                      : (previewDoc.category || '—')}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ບ່ອນຈັດເກັບ</div>
+                  <div className="font-semibold text-xs mt-0.5">
+                    {previewDoc.warehouseName || previewDoc.cabinetName || previewDoc.shelfName || previewDoc.folderName ? (
+                      <span className="text-indigo-700">
+                        {[previewDoc.warehouseName, previewDoc.cabinetName, previewDoc.shelfName, previewDoc.folderName].filter(Boolean).join(' > ')}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-200 px-2 py-0.5 font-medium text-amber-800">
+                        ⚠️ ຍັງບໍ່ມີບ່ອນເກັບ
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               {/* PDF/image viewer fills the remaining space and scrolls independently inside the modal body */}
