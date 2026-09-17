@@ -304,8 +304,26 @@ export function UserFormModal({
   function handleDivisionChange(division: string) {
     setForm((prev) => {
       const available = division ? (edlStructure[division] ?? []) : []
-      const department = available.includes(prev.department) ? prev.department : ''
+      let department = available.includes(prev.department) ? prev.department : ''
+      // ຖ້າເປັນ Admin ຝ່າຍ, ຕັ້ງຄ່າເລີ່ມຕົ້ນໃຫ້ອັດຕະໂນມັດເປັນພະແນກທຳອິດຂອງຝ່າຍນັ້ນ
+      if (prev.role === 'DivisionAdmin' && available.length > 0) {
+        department = available[0]
+      }
       return { ...prev, division, department }
+    })
+  }
+
+  function handleRoleChange(role: UserRole) {
+    setForm((prev) => {
+      let department = prev.department
+      // ຖ້າປ່ຽນສິດເປັນ Admin ຝ່າຍ ແລະ ໄດ້ເລືອກຝ່າຍແລ້ວ, ຕັ້ງພະແນກເປັນຄ່າເລີ່ມຕົ້ນ
+      if (role === 'DivisionAdmin' && prev.division) {
+        const available = edlStructure[prev.division] ?? []
+        if (available.length > 0 && (!department || !available.includes(department))) {
+          department = available[0]
+        }
+      }
+      return { ...prev, role, department }
     })
   }
 
@@ -334,9 +352,28 @@ export function UserFormModal({
     (isEditingDivisionAdmin && currentUserRole !== 'SuperAdmin')
 
   function handleSubmit() {
-    if (!form.name.trim() || !form.email.trim() || !form.division.trim() || !form.department.trim()) {
-      setError('ກະລຸນາປ້ອນຊື່, ອີເມວ, ຝ່າຍ/ຫ້ອງການ ແລະ ພະແນກ/ສູນ ໃຫ້ຄົບຖ້ວນ')
+    let finalDepartment = form.department.trim()
+    if (form.role === 'DivisionAdmin' && !finalDepartment && form.division.trim()) {
+      const available = edlStructure[form.division.trim()] ?? []
+      if (available.length > 0) {
+        finalDepartment = available[0]
+      }
+    }
+
+    if (!form.name.trim() || !form.email.trim()) {
+      setError('ກະລຸນາປ້ອນຊື່ ແລະ ອີເມວ')
       return
+    }
+
+    if (form.role !== 'SuperAdmin') {
+      if (!form.division.trim()) {
+        setError('ກະລຸນາເລືອກຝ່າຍ/ຫ້ອງການ')
+        return
+      }
+      if (form.role === 'DepartmentAdmin' && !finalDepartment) {
+        setError('ກະລຸນາເລືອກພະແນກ/ສູນ')
+        return
+      }
     }
 
     if (!EMAIL_PATTERN.test(form.email.trim())) {
@@ -359,7 +396,7 @@ export function UserFormModal({
       return
     }
 
-    onSubmit(form)
+    onSubmit({ ...form, department: finalDepartment })
   }
 
   return (
@@ -505,19 +542,28 @@ export function UserFormModal({
             </select>
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">ພະແນກ / ສູນ</label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700">
+                ພະແນກ / ສູນ
+              </label>
+              {form.role === 'DivisionAdmin' && (
+                <span className="text-[11px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                  ກຳນົດຄ່າເລີ່ມຕົ້ນອັດຕະໂນມັດສຳລັບ Admin ຝ່າຍ
+                </span>
+              )}
+            </div>
             <select
               value={form.department}
-              disabled={!form.division}
+              disabled={!form.division || form.role === 'SuperAdmin'}
               onChange={(e) => handleChange('department', e.target.value)}
               className={`w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400 ${
-                !form.division ? 'cursor-not-allowed bg-gray-100 opacity-70' : ''
+                !form.division || form.role === 'SuperAdmin' ? 'cursor-not-allowed bg-gray-100 opacity-70' : ''
               }`}
             >
               <option value="">{form.division ? '— ເລືອກພະແນກ / ສູນ —' : '— ເລືອກຝ່າຍກ່ອນ —'}</option>
-              {(form.division ? (edlStructure[form.division] ?? []) : []).map((dept) => (
+              {(form.division ? (edlStructure[form.division] ?? []) : []).map((dept, idx) => (
                 <option key={dept} value={dept}>
-                  {dept}
+                  {dept} {idx === 0 && form.role === 'DivisionAdmin' ? '(ຄ່າເລີ່ມຕົ້ນ / Default)' : ''}
                 </option>
               ))}
             </select>
@@ -527,7 +573,7 @@ export function UserFormModal({
             <select
               value={form.role}
               disabled={isRoleDisabled}
-              onChange={(e) => handleChange('role', e.target.value as UserRole)}
+              onChange={(e) => handleRoleChange(e.target.value as UserRole)}
               className={`w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400 ${
                 isRoleDisabled ? 'cursor-not-allowed bg-gray-100 opacity-70' : ''
               }`}
