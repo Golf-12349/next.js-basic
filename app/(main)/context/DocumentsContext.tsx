@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { Document } from '@/types/document'
 import * as categoryService from '@/lib/dms/categoryService'
 import * as documentService from '@/lib/dms/documentService'
@@ -75,6 +75,9 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [categories])
 
+  const isReloadingRef = useRef(false)
+  const pendingReloadRef = useRef(false)
+
   const reload = useCallback(async () => {
     const token = typeof window !== 'undefined'
       ? sessionStorage.getItem('token') || localStorage.getItem('token')
@@ -84,6 +87,13 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
       return
     }
+
+    if (isReloadingRef.current) {
+      pendingReloadRef.current = true
+      return
+    }
+    isReloadingRef.current = true
+
     try {
       const [fetchedCategories, activeDocs, deletedDocs] = await Promise.all([
         categoryService.fetchCategories(),
@@ -114,14 +124,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         setCategories(serverCategories.map((c) => c.name))
       }
       const fetchedDocs = [
-        ...activeDocs.map((d) => {
-          const doc = toFrontendDocument(d)
-          if (doc.status === 'pending') {
-            doc.status = 'approved'
-            void documentService.updateDocumentStatus(doc.id, 'approved').catch(() => {})
-          }
-          return doc
-        }),
+        ...activeDocs.map(toFrontendDocument),
         ...deletedDocs.map(toFrontendDocument),
       ]
       setDocuments(fetchedDocs)
@@ -133,6 +136,11 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       console.error('ໂຫຼດຂໍ້ມູນ DMS ລົ້ມເຫຼວ:', err)
     } finally {
       setLoading(false)
+      isReloadingRef.current = false
+      if (pendingReloadRef.current) {
+        pendingReloadRef.current = false
+        void reload()
+      }
     }
   }, [])
 
@@ -141,19 +149,22 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     void reload()
   }, [reload])
 
-  // Real-time synchronization: reload documents and categories whenever backend broadcasts a change
+  // Real-time synchronization: reload documents and categories whenever backend broadcasts a change (debounced)
   useEffect(() => {
-    const handleDocsChanged = () => {
-      void reload()
+    let timer: NodeJS.Timeout | null = null
+    const debouncedReload = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        void reload()
+      }, 350)
     }
-    const handleCatsChanged = () => {
-      void reload()
-    }
-    window.addEventListener('dms:documents-changed', handleDocsChanged)
-    window.addEventListener('dms:categories-changed', handleCatsChanged)
+
+    window.addEventListener('dms:documents-changed', debouncedReload)
+    window.addEventListener('dms:categories-changed', debouncedReload)
     return () => {
-      window.removeEventListener('dms:documents-changed', handleDocsChanged)
-      window.removeEventListener('dms:categories-changed', handleCatsChanged)
+      if (timer) clearTimeout(timer)
+      window.removeEventListener('dms:documents-changed', debouncedReload)
+      window.removeEventListener('dms:categories-changed', debouncedReload)
     }
   }, [reload])
 
