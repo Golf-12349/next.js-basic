@@ -91,6 +91,7 @@ export type DocumentTransfer = {
   senderId: string;
   reviewerId?: string;
   status: TransferStatus;
+  keepCopy?: boolean;
   note?: string;
   rejectionReason?: string;
   createdAt: string;

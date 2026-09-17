@@ -165,7 +165,7 @@ export async function archiveDocument(id: string): Promise<void> {
 
 export async function transferDocument(
   id: string,
-  payload: { toDivision: string; toDepartment: string; note?: string },
+  payload: { toDivision: string; toDepartment: string; note?: string; keepCopy?: boolean },
 ): Promise<import('@/types/document').DocumentTransfer> {
   const res = await apiClient.post<import('@/types/document').DocumentTransfer>(`/documents/${id}/transfer`, payload)
   return res.data

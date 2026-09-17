@@ -176,6 +176,13 @@ export default function PendingDocumentsPage() {
                                 </span>
                               </div>
                             )}
+                            {t.keepCopy && (
+                              <div className="mt-1">
+                                <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200">
+                                  📑 ຕົ້ນທາງເກັບສຳເນົາໄວ້
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </td>
 

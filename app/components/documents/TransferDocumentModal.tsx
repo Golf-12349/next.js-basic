@@ -27,6 +27,7 @@ export default function TransferDocumentModal({
   const [toDivision, setToDivision] = useState<string>('')
   const [toDepartment, setToDepartment] = useState<string>('')
   const [note, setNote] = useState<string>('')
+  const [keepCopy, setKeepCopy] = useState<boolean>(false)
   const [submitting, setSubmitting] = useState<boolean>(false)
 
   // Initialize or reset form when modal opens or doc changes
@@ -38,6 +39,7 @@ export default function TransferDocumentModal({
       setToDivision(defaultDiv)
       setToDepartment('')
       setNote('')
+      setKeepCopy(false)
     }
   }, [doc, open, isDeptAdmin, currentUser])
 
@@ -88,11 +90,14 @@ export default function TransferDocumentModal({
         toDivision,
         toDepartment,
         note: note.trim() || undefined,
+        keepCopy,
       })
 
       pushToast({
         title: 'ສົ່ງເອກະສານສຳເລັດ',
-        description: `ເອກະສານກຳລັງລໍຖ້າການອະນຸມັດຈາກ ${isCrossDivision ? 'Admin ຝ່າຍ ' + toDivision : 'Admin ພະແນກ ' + toDepartment}`,
+        description: keepCopy
+          ? `ສົ່ງເອກະສານແລ້ວ (ພ້ອມເກັບສຳເນົາໄວ້ກັບພະແນກເຮົາ) ແລະ ກຳລັງລໍຖ້າການອະນຸມັດຈາກ ${isCrossDivision ? 'Admin ຝ່າຍ ' + toDivision : 'Admin ພະແນກ ' + toDepartment}`
+          : `ເອກະສານກຳລັງລໍຖ້າການອະນຸມັດຈາກ ${isCrossDivision ? 'Admin ຝ່າຍ ' + toDivision : 'Admin ພະແນກ ' + toDepartment}`,
       })
       onClose()
       if (onSuccess) onSuccess()
@@ -138,7 +143,7 @@ export default function TransferDocumentModal({
                 <span>ກຳລັງສົ່ງ...</span>
               </>
             ) : (
-              <span>ຢືນຢັນການສົ່ງ</span>
+              <span>{keepCopy ? 'ຢືນຢັນການສົ່ງ (ເກັບສຳເນົາໄວ້)' : 'ຢືນຢັນການສົ່ງ'}</span>
             )}
           </button>
         </div>
@@ -255,6 +260,35 @@ export default function TransferDocumentModal({
             placeholder="ລະບຸລາຍລະອຽດ ຫຼື ຈຸດປະສົງການສົ່ງຕໍ່ເອກະສານ..."
             className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
+        </div>
+
+        {/* Keep copy option */}
+        <div className={`rounded-xl border p-3.5 transition ${
+          keepCopy
+            ? 'border-indigo-300 bg-indigo-50/70 shadow-sm'
+            : 'border-gray-200 bg-gray-50/60 hover:bg-gray-50'
+        }`}>
+          <label className="flex items-start gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={keepCopy}
+              onChange={(e) => setKeepCopy(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            />
+            <div className="text-xs">
+              <div className="font-semibold text-gray-900 flex items-center gap-2">
+                <span>📑 ເກັບສຳເນົາເອກະສານໄວ້ກັບເຮົາ (Keep a copy)</span>
+                {keepCopy && (
+                  <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                    ເປີດໃຊ້ງານ
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-gray-600 leading-relaxed">
+                ຫາກເລືອກຕົວເລືອກນີ້, ເມື່ອປາຍທາງອະນຸມັດຮັບເອກະສານ, ລະບົບຈະຮັກສາສຳເນົາເອກະສານຊຸດນີ້ໄວ້ໃນພະແນກ ແລະ ຕູ້ເດີມຂອງທ່ານ (ເອກະສານຈະບໍ່ຫາຍໄປຈາກພະແນກ).
+              </p>
+            </div>
+          </label>
         </div>
       </form>
     </Modal>

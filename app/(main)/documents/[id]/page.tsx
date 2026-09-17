@@ -170,6 +170,7 @@ export default function DocumentDetailPage() {
               <div className="font-semibold">ເອກະສານນີ້ກຳລັງຢູ່ໃນຂັ້ນຕອນການລໍຖ້າອະນຸມັດການໂອນຍ້າຍ</div>
               <div className="mt-1 text-xs text-amber-800">
                 ສົ່ງຕໍ່ໄປຫາ: <strong>{pendingTransfer.toDepartment}</strong> (ຝ່າຍ <strong>{pendingTransfer.toDivision}</strong>)
+                {pendingTransfer.keepCopy && ' • (ເກັບສຳເນົາຕົ້ນສະບັບໄວ້)'}
                 {pendingTransfer.note && ` • ໝາຍເຫດ: ${pendingTransfer.note}`}
               </div>
             </div>

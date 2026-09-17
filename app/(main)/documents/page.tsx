@@ -358,7 +358,7 @@ export default function DocumentsPage() {
                       {doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending' && (
                         <div className="mt-1">
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-                            🔄 ກຳລັງໂອນຍ້າຍຫາ: {doc.transfers[0].toDepartment}
+                            🔄 ກຳລັງໂອນຍ້າຍຫາ: {doc.transfers[0].toDepartment}{doc.transfers[0].keepCopy && ' (ເກັບສຳເນົາ)'}
                           </span>
                         </div>
                       )}
