@@ -1,4 +1,5 @@
 "use client"
+import { useState, useMemo, useEffect } from 'react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '../../context/DocumentsContext';
 import { useArchive as useDMSArchive } from '../../context/ArchiveContext';
@@ -6,6 +7,7 @@ import { useCurrentUser } from '../../context/CurrentUserContext';
 import {
   CreateWarehouseModal,
   CreateCabinetModal,
+  CreateShelfModal,
   CreateFolderModal,
   ConfirmDeleteModal,
   DocumentPreviewModal,
@@ -13,6 +15,7 @@ import {
 } from '@/app/components/archive/ArchiveModals';
 import WarehouseView from '@/app/components/archive/WarehouseView';
 import CabinetView from '@/app/components/archive/CabinetView';
+import ShelfView from '@/app/components/archive/ShelfView';
 import FolderView from '@/app/components/archive/FolderView';
 import DocumentView, { Breadcrumbs, BackButton } from '@/app/components/archive/DocumentView';
 import { useArchive } from '@/app/components/archive/useArchive';
@@ -23,64 +26,144 @@ export default function ArchivePage() {
   const {
     warehouses,
     cabinets,
+    shelves,
     folders,
     createWarehouse,
     createCabinet,
+    createShelf,
     createFolder,
     deleteWarehouse,
     deleteCabinet,
+    deleteShelf,
     deleteFolder,
     assignDocument,
   } = useDMSArchive();
 
-  // Role permissions: SuperAdmin and DivisionAdmin can manage warehouses/cabinets/shelves
-  // DepartmentAdmin can view cabinets and shelves (read-only for archive structure)
+  // Role permissions:
+  // - SuperAdmin ແລະ DivisionAdmin: ສາມາດສ້າງ ແລະ ຈັດການໂຄງສ້າງ (ຄັງ, ຕູ້, ຊັ້ນວາງ, ແຟ້ມ)
+  // - DepartmentAdmin: ບໍ່ສາມາດສ້າງຄັງ, ຕູ້, ຊັ້ນວາງ, ແຟ້ມໄດ້ (ເບິ່ງໂຄງສ້າງ ແລະ ຈັດເກັບເອກະສານໄດ້ເທົ່ານັ້ນ)
   const isSuperAdmin = user?.role === 'SuperAdmin';
+  const isDivisionAdmin = user?.role === 'DivisionAdmin';
   const isDepartmentAdmin = user?.role === 'DepartmentAdmin';
-  const canManage = !isDepartmentAdmin;
+  const canManage = isSuperAdmin || isDivisionAdmin;
 
   const archive = useArchive(
     warehouses,
     cabinets,
+    shelves,
     folders,
     documents,
     {
       createWarehouse,
       createCabinet,
+      createShelf,
       createFolder,
       deleteWarehouse,
       deleteCabinet,
+      deleteShelf,
       deleteFolder,
       deleteDocument,
     },
     user,
   );
 
+  const [searchQuery, setSearchQuery] = useState('');
 
-
+  // Reset search query when navigating between levels or containers
+  useEffect(() => {
+    setSearchQuery('');
+  }, [archive.view]);
 
   const showCreateInHeader =
     canManage &&
     (archive.view.level === 'warehouses' ||
       archive.view.level === 'cabinets' ||
+      archive.view.level === 'shelves' ||
       archive.view.level === 'folders');
+
+  const showSearchInHeader =
+    archive.view.level === 'warehouses' ||
+    archive.view.level === 'cabinets' ||
+    archive.view.level === 'shelves' ||
+    archive.view.level === 'folders';
 
   const headerCreateLabel =
     archive.view.level === 'warehouses'
-      ? '+ ສ້າງຄັງເອກະສານໃໝ່'
+      ? 'ສ້າງຄັງເອກະສານໃໝ່'
       : archive.view.level === 'cabinets'
-      ? '+ ສ້າງຕູ້ເອກະສານໃໝ່'
-      : '+ ສ້າງຊັ້ນວາງເອກະສານໃໝ່';
+      ? 'ສ້າງຕູ້ເອກະສານໃໝ່'
+      : archive.view.level === 'shelves'
+      ? 'ສ້າງຊັ້ນວາງເອກະສານໃໝ່'
+      : 'ສ້າງແຟ້ມເກັບເອກະສານໃໝ່';
+
+  const searchPlaceholder =
+    archive.view.level === 'warehouses'
+      ? 'ຄົ້ນຫາຄັງເອກະສານ...'
+      : archive.view.level === 'cabinets'
+      ? 'ຄົ້ນຫາຕູ້ເອກະສານ...'
+      : archive.view.level === 'shelves'
+      ? 'ຄົ້ນຫາຊັ້ນວາງເອກະສານ...'
+      : archive.view.level === 'folders'
+      ? 'ຄົ້ນຫາແຟ້ມເກັບເອກະສານ...'
+      : 'ຄົ້ນຫາ...';
 
   const handleHeaderCreate = () => {
     if (archive.view.level === 'warehouses') {
       archive.setWarehouseModalOpen(true);
     } else if (archive.view.level === 'cabinets') {
       archive.setCabinetModalOpen(true);
+    } else if (archive.view.level === 'shelves') {
+      archive.setShelfModalOpen(true);
     } else if (archive.view.level === 'folders') {
       archive.setFolderModalOpen(true);
     }
   };
+
+  // Filtered lists based on search query
+  const filteredWarehouses = useMemo(() => {
+    if (!searchQuery.trim()) return warehouses;
+    const q = searchQuery.toLowerCase().trim();
+    return warehouses.filter(
+      (w) =>
+        w.name.toLowerCase().includes(q) ||
+        (w.division && w.division.toLowerCase().includes(q)) ||
+        (w.description && w.description.toLowerCase().includes(q)),
+    );
+  }, [warehouses, searchQuery]);
+
+  const filteredCabinets = useMemo(() => {
+    const base = archive.warehouseCabinets;
+    if (!searchQuery.trim()) return base;
+    const q = searchQuery.toLowerCase().trim();
+    return base.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.department && c.department.toLowerCase().includes(q)) ||
+        (c.description && c.description.toLowerCase().includes(q)),
+    );
+  }, [archive.warehouseCabinets, searchQuery]);
+
+  const filteredShelves = useMemo(() => {
+    const base = archive.activeCabinet ? archive.cabinetShelves : shelves;
+    if (!searchQuery.trim()) return base;
+    const q = searchQuery.toLowerCase().trim();
+    return base.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.description && s.description.toLowerCase().includes(q)),
+    );
+  }, [archive.activeCabinet, archive.cabinetShelves, shelves, searchQuery]);
+
+  const filteredFolders = useMemo(() => {
+    const base = archive.shelfFolders;
+    if (!searchQuery.trim()) return base;
+    const q = searchQuery.toLowerCase().trim();
+    return base.filter(
+      (f) =>
+        f.name.toLowerCase().includes(q) ||
+        (f.description && f.description.toLowerCase().includes(q)),
+    );
+  }, [archive.shelfFolders, searchQuery]);
 
   return (
     <DashboardLayout title="ຄັງເກັບເອກກະສານ">
@@ -89,9 +172,9 @@ export default function ArchivePage() {
           showCreateButton={showCreateInHeader}
           createButtonLabel={headerCreateLabel}
           onCreate={handleHeaderCreate}
-          showSecondaryButton={canManage && archive.view.level !== 'warehouses'}
-          secondaryButtonLabel="+ ສ້າງຄັງເອກະສານໃໝ່"
-          onSecondaryCreate={() => archive.setWarehouseModalOpen(true)}
+          searchValue={searchQuery}
+          onSearchChange={showSearchInHeader ? setSearchQuery : undefined}
+          searchPlaceholder={searchPlaceholder}
         />
 
         <div className="mb-6">
@@ -100,6 +183,7 @@ export default function ArchivePage() {
               view={archive.view}
               activeWarehouse={archive.activeWarehouse}
               activeCabinet={archive.activeCabinet}
+              activeShelf={archive.activeShelf}
               activeFolder={archive.activeFolder}
               onNavigate={archive.setView}
             />
@@ -108,7 +192,7 @@ export default function ArchivePage() {
 
         {archive.view.level === 'warehouses' && (
           <WarehouseView
-            warehouses={warehouses}
+            warehouses={filteredWarehouses}
             cabinets={archive.visibleCabinets}
             documents={documents}
             canManage={canManage}
@@ -120,14 +204,15 @@ export default function ArchivePage() {
 
         {archive.view.level === 'cabinets' && (
           <CabinetView
-            cabinets={archive.warehouseCabinets}
+            cabinets={filteredCabinets}
+            shelves={shelves}
             folders={folders}
             documents={documents}
             canManage={canManage}
             onCreate={() => archive.setCabinetModalOpen(true)}
             onOpen={(cabinetId) =>
               archive.setView({
-                level: 'folders',
+                level: 'shelves',
                 warehouseId: archive.activeWarehouse?.id,
                 cabinetId,
               })
@@ -136,11 +221,35 @@ export default function ArchivePage() {
           />
         )}
 
+        {archive.view.level === 'shelves' && (
+          <ShelfView
+            cabinet={archive.activeCabinet}
+            cabinets={archive.visibleCabinets}
+            shelves={filteredShelves}
+            folders={folders}
+            documents={documents}
+            canManage={canManage}
+            onCreate={() => archive.setShelfModalOpen(true)}
+            onOpen={(shelfId) => {
+              const sh = shelves.find((s) => s.id === shelfId);
+              archive.setView({
+                level: 'folders',
+                warehouseId: archive.activeWarehouse?.id,
+                cabinetId: sh?.cabinetId || archive.activeCabinet?.id || '',
+                shelfId,
+              });
+            }}
+            onDelete={(shelf) => archive.handleDelete('shelf', shelf.id, shelf.name)}
+          />
+        )}
+
         {archive.view.level === 'folders' && (
           <FolderView
             cabinet={archive.activeCabinet}
             cabinets={archive.visibleCabinets}
-            folders={archive.activeCabinet ? archive.cabinetFolders : folders}
+            shelf={archive.activeShelf}
+            shelves={shelves}
+            folders={filteredFolders}
             documents={documents}
             canManage={canManage}
             onCreate={() => archive.setFolderModalOpen(true)}
@@ -150,6 +259,7 @@ export default function ArchivePage() {
                 level: 'documents',
                 warehouseId: archive.activeWarehouse?.id,
                 cabinetId: fol?.cabinetId || archive.activeCabinet?.id || '',
+                shelfId: fol?.shelfId || archive.activeShelf?.id,
                 folderId,
               });
             }}
@@ -160,9 +270,11 @@ export default function ArchivePage() {
         {archive.view.level === 'documents' && (
           <DocumentView
             cabinet={archive.activeCabinet}
+            shelf={archive.activeShelf}
             folder={archive.activeFolder}
             warehouses={warehouses}
             cabinets={archive.visibleCabinets}
+            shelves={shelves}
             folders={folders}
             documents={
               archive.activeFolder
@@ -175,11 +287,12 @@ export default function ArchivePage() {
                 level: 'documents',
                 warehouseId: archive.activeWarehouse?.id,
                 cabinetId: fol?.cabinetId || archive.activeCabinet?.id || '',
+                shelfId: fol?.shelfId || archive.activeShelf?.id,
                 folderId,
               });
             }}
-            onAssignDocument={async (docId, cabId, folId, whId) => {
-              await assignDocument(docId, cabId, folId, whId);
+            onAssignDocument={async (docId, cabId, folId, whId, shId) => {
+              await assignDocument(docId, cabId, folId, whId, shId);
               await reload();
             }}
             onPreview={archive.setPreviewDoc}
@@ -210,10 +323,24 @@ export default function ArchivePage() {
           onCreate={archive.handleCreateCabinet}
         />
 
+        <CreateShelfModal
+          open={archive.shelfModalOpen}
+          onClose={() => archive.setShelfModalOpen(false)}
+          cabinets={archive.visibleCabinets.length > 0 ? archive.visibleCabinets : cabinets}
+          activeCabinetId={archive.activeCabinet?.id}
+          cabinetName={archive.activeCabinet?.name}
+          onCreate={archive.handleCreateShelf}
+        />
+
         <CreateFolderModal
           open={archive.folderModalOpen}
           onClose={() => archive.setFolderModalOpen(false)}
+          cabinets={archive.visibleCabinets.length > 0 ? archive.visibleCabinets : cabinets}
+          shelves={shelves}
+          activeCabinetId={archive.activeCabinet?.id}
+          activeShelfId={archive.activeShelf?.id}
           cabinetName={archive.activeCabinet?.name}
+          shelfName={archive.activeShelf?.name}
           onCreate={archive.handleCreateFolder}
         />
 

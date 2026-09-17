@@ -734,3 +734,168 @@ export function TemporaryPasswordModal({
     </Modal>
   )
 }
+
+/* ---------------------------------------------------------- */
+/* Reset password modal (SuperAdmin & DivisionAdmin ປ່ຽນໃຫ້)   */
+/* ---------------------------------------------------------- */
+export function ResetPasswordModal({
+  user,
+  open,
+  onClose,
+  onReset,
+}: {
+  user: User | null
+  open: boolean
+  onClose: () => void
+  onReset: (userId: string, newPassword: string) => Promise<void>
+}) {
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setNewPassword('')
+      setConfirmPassword('')
+      setError(null)
+      setShowPassword(false)
+      setLoading(false)
+    }
+  }, [open])
+
+  function handleGeneratePassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*'
+    let pwd = ''
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    setNewPassword(pwd)
+    setConfirmPassword(pwd)
+    setError(null)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!user) return
+
+    if (!newPassword || newPassword.length < 6) {
+      setError('ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຢ່າງໜ້ອຍ 6 ໂຕອັກສອນ')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('ລະຫັດຜ່ານຢືນຢັນບໍ່ຕົງກັນ')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+      await onReset(user.id, newPassword)
+      onClose()
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'ເກີດຂໍ້ຜິດພາດໃນການປ່ຽນລະຫັດຜ່ານ'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="ປ່ຽນລະຫັດຜ່ານຜູ້ໃຊ້ງານ">
+      {user && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-3.5 flex items-center gap-3">
+            <UserAvatar name={user.name} avatarUrl={user.avatarUrl} avatarClassName="h-11 w-11 text-sm font-semibold rounded-full" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-gray-900 truncate text-sm">{user.name}</span>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${roleStyles[user.role]}`}>
+                  {roleLabels[user.role]}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-gray-700">ລະຫັດຜ່ານໃໝ່</label>
+              <button
+                type="button"
+                onClick={handleGeneratePassword}
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                ສຸ່ມລະຫັດຜ່ານ
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value)
+                  if (error) setError(null)
+                }}
+                placeholder="ລະບຸລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 6 ໂຕອັກສອນ)"
+                className="w-full rounded-lg border border-gray-300 py-2 pl-3 pr-10 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-700">ຢືນຢັນລະຫັດຜ່ານໃໝ່</label>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value)
+                if (error) setError(null)
+              }}
+              placeholder="ຢືນຢັນລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ"
+              className="w-full rounded-lg border border-gray-300 py-2 px-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+            >
+              ຍົກເລີກ
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              <KeyRound size={15} />
+              {loading ? 'ກຳລັງບັນທຶກ...' : 'ບັນທຶກລະຫັດຜ່ານ'}
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  )
+}

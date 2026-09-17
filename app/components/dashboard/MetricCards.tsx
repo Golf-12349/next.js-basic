@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { CalendarDays, CheckCircle2, Clock3, TrendingUp } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CheckCircle2, Clock3, TrendingUp } from 'lucide-react';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
 import { addDays, LAO_MONTHS, percentage, toDateKey } from './dashboard-utils';
 
@@ -16,6 +16,13 @@ export function MetricCards() {
     const approved = active.filter((d) => d.status === 'approved').length;
 
     const now = new Date();
+    const today = toDateKey(now);
+    const in7Days = toDateKey(addDays(now, 7));
+    const expired = active.filter((d) => d.status === 'expired' || (Boolean(d.expiresAt) && d.expiresAt! <= today)).length;
+    const expiringSoon = active.filter(
+      (d) => d.status !== 'expired' && Boolean(d.expiresAt) && d.expiresAt! > today && d.expiresAt! <= in7Days,
+    ).length;
+
     const monthPrefix = toDateKey(now).slice(0, 7);
     const monthly = active.filter((d) => d.uploadDate.slice(0, 7) === monthPrefix).length;
 
@@ -29,17 +36,20 @@ export function MetricCards() {
       total,
       pending,
       approved,
+      expired,
+      expiringSoon,
       monthly,
       newThisWeek,
       approvalRate,
       pendingPct: percentage(pending, total),
+      expiredPct: percentage(expired, total),
       monthlyPct: percentage(monthly, total),
       monthLabel: LAO_MONTHS[now.getMonth()],
     };
   }, [documents]);
 
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {/* Card 1 — Primary featured card (pending approvals, indigo/blue gradient) */}
       <Link
         href="/documents/pending"
@@ -132,6 +142,45 @@ export function MetricCards() {
           />
         </div>
       </div>
+
+      {/* Card 4 — Expired & Expiring Soon Documents */}
+      <Link
+        href="/documents"
+        className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-500">ເອກະສານໝົດອາຍຸ</p>
+            <div className="mt-4 flex items-baseline gap-1.5">
+              <span className={`text-4xl font-bold tracking-tight ${stats.expired > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                {stats.expired}
+              </span>
+              <span className="text-sm font-medium text-slate-400">ເອກະສານ</span>
+            </div>
+          </div>
+          <span
+            className={`rounded-2xl p-3 ring-1 transition-transform duration-300 group-hover:scale-110 ${
+              stats.expired > 0
+                ? 'bg-rose-50 text-rose-600 ring-rose-100'
+                : 'bg-slate-50 text-slate-400 ring-slate-100'
+            }`}
+          >
+            <AlertTriangle className="h-5 w-5" />
+          </span>
+        </div>
+
+        <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-amber-600">
+          <Clock3 className="h-3.5 w-3.5" />
+          {stats.expiringSoon} ເອກະສານໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)
+        </div>
+
+        <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-rose-500 transition-all duration-700"
+            style={{ width: `${stats.expiredPct}%` }}
+          />
+        </div>
+      </Link>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   Bell,
   BellOff,
   Building2,
+  CalendarX,
   CheckCheck,
   CheckCircle2,
   ChevronDown,
@@ -20,6 +21,7 @@ import {
   FolderArchive,
   LayoutDashboard,
   Layers,
+  Library,
   LogOut,
   Search,
   Settings,
@@ -40,6 +42,7 @@ import { UserAvatar } from './users/UserModals';
 type DashboardLayoutProps = {
   children: ReactNode;
   title?: string;
+  showSearch?: boolean;
 };
 
 type SubMenuItem = {
@@ -71,7 +74,8 @@ type NotificationType =
   | 'alert'
   | 'transfer_pending'
   | 'transfer_approved'
-  | 'transfer_rejected';
+  | 'transfer_rejected'
+  | 'expired';
 
 function formatNotifTime(dateStr: string): string {
   if (!dateStr) return '';
@@ -114,12 +118,12 @@ const menuSections: MenuSection[] = [
           },
           {
             name: 'ຊັ້ນວາງເອກະສານ',
-            href: '/documents/archive?level=folders',
-            icon: Folder,
+            href: '/documents/archive?level=shelves',
+            icon: Library,
           },
           {
-            name: 'ແຟ້ມເອກະສານ',
-            href: '/documents/archive?level=documents',
+            name: 'ແຟ້ມເກັບເອກະສານ',
+            href: '/documents/archive?level=folders',
             icon: FolderArchive,
           },
         ],
@@ -130,20 +134,42 @@ const menuSections: MenuSection[] = [
     title: 'SYSTEM',
     items: [
       { name: 'ຈັດການຜູ້ໃຊ້ງານ', href: '/users', icon: Users },
+      { name: 'ເອກະສານໝົດອາຍຸ', href: '/documents/expired', icon: CalendarX },
       { name: 'ຖັງຂີ້ເຫຍື້ອ', href: '/documents/trash', icon: Trash2 },
     ],
   },
 ];
 
-export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayoutProps) {
+export function DashboardLayout({ children, title = 'Dashboard', showSearch }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user: currentUser, clearUser } = useCurrentUser();
   const { documents } = useDocuments();
   const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
 
-  // Routes where the global header search is visible
-  const searchAllowedRoutes = ['/dashboard', '/', '/documents', '/documents/archive'];
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const in7DaysStr = useMemo(() => new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10), []);
+
+  const expiredCount = useMemo(() => {
+    return documents.filter(
+      (d) => !d.deleted && (d.status === 'expired' || (Boolean(d.expiresAt) && d.expiresAt! <= todayStr))
+    ).length;
+  }, [documents, todayStr]);
+
+  const expiringSoonCount = useMemo(() => {
+    return documents.filter(
+      (d) =>
+        !d.deleted &&
+        d.status !== 'expired' &&
+        Boolean(d.expiresAt) &&
+        d.expiresAt! > todayStr &&
+        d.expiresAt! <= in7DaysStr
+    ).length;
+  }, [documents, todayStr, in7DaysStr]);
+
+  // Routes where the global header search is visible (only /documents)
+  const searchAllowedRoutes = ['/documents'];
+  const shouldShowSearch = showSearch !== undefined ? showSearch : searchAllowedRoutes.includes(pathname);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -311,6 +337,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
           </div>
         );
       case 'transfer_rejected':
+      case 'expired':
         return (
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
             <AlertCircle className="h-4 w-4" />
@@ -359,7 +386,21 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                         pathname === item.href ||
                         (item.href === '/dashboard' && pathname === '/') ||
                         (hasChildren && pathname.startsWith(item.href));
-                      const itemBadge = item.href === '/documents/pending' && pendingCount > 0 ? String(pendingCount) : item.badge;
+                      let itemBadge: string | undefined = item.badge;
+                      let badgeClass = 'bg-amber-400 text-slate-900';
+
+                      if (item.href === '/documents/pending' && pendingCount > 0) {
+                        itemBadge = String(pendingCount);
+                        badgeClass = 'bg-amber-400 text-slate-900';
+                      } else if (item.href === '/documents/expired') {
+                        if (expiredCount > 0) {
+                          itemBadge = String(expiredCount);
+                          badgeClass = 'bg-rose-500 text-white font-extrabold shadow-sm shadow-rose-900/50';
+                        } else if (expiringSoonCount > 0) {
+                          itemBadge = `${expiringSoonCount} ໃກ້ໝົດ`;
+                          badgeClass = 'bg-amber-500 text-white font-medium';
+                        }
+                      }
 
                       const userRole = currentUser?.role ?? 'DepartmentAdmin';
                       const allowedChildren = hasChildren
@@ -456,7 +497,7 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
                             {item.name}
                           </span>
                           {itemBadge ? (
-                            <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeClass}`}>
                               {itemBadge}
                             </span>
                           ) : null}
@@ -504,8 +545,8 @@ export function DashboardLayout({ children, title = 'Dashboard' }: DashboardLayo
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* Global Search Input in Header (visible only on /dashboard, /, /documents, /documents/archive) */}
-            {searchAllowedRoutes.includes(pathname) && (
+            {/* Global Search Input in Header (visible only when shouldShowSearch is true) */}
+            {shouldShowSearch && (
             <form onSubmit={handleSearchSubmit} className="relative">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input

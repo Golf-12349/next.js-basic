@@ -1,9 +1,9 @@
-export type DocumentStatus = 'draft' | 'pending' | 'approved' | 'archived';
+export type DocumentStatus = 'draft' | 'pending' | 'approved' | 'archived' | 'expired';
 export type DocumentFileType = 'pdf' | 'doc' | 'image';
 /** ທິດທາງເອກະສານ — ແຍກຈາກໝວດໝູ່ ເພື່ອຮອງຮັບເອກະສານທີ່ເປັນທັງຂາເຂົ້າ ແລະ ເປັນສັນຍາພ້ອມກັນ */
 export type DocumentDirection = 'inbound' | 'outbound';
 
-// ── 4-Level Archive types (Warehouse -> Cabinet -> Shelf/Folder -> Document)
+// ── 5-Level Archive types (Warehouse -> Cabinet -> Shelf -> Folder -> Document Storage)
 export type Warehouse = {
   id: string;
   name: string;
@@ -22,18 +22,30 @@ export type Cabinet = {
   department: string;
   description: string;
   createdAt: string;
+  _count?: { shelves?: number; folders?: number; documents?: number };
+};
+
+export type Shelf = {
+  id: string;
+  cabinetId: string;
+  name: string;
+  description?: string | null;
+  createdAt: string;
+  cabinet?: Cabinet;
+  _count?: { folders?: number; documents?: number };
 };
 
 export type Folder = {
   id: string;
   cabinetId: string;
+  shelfId?: string | null;
   name: string;
   description: string;
   createdAt: string;
+  cabinet?: Cabinet;
+  shelf?: Shelf | null;
+  _count?: { documents?: number };
 };
-
-// Shelf is an alias for Folder (ຊັ້ນວາງເອກະສານ)
-export type Shelf = Folder;
 
 export type Document = {
   id: string;
@@ -46,6 +58,7 @@ export type Document = {
   fileType: DocumentFileType;
   fileSize: string;
   uploadDate: string;
+  expiresAt?: string;
   uploadedBy: string;
   fileUrl: string;
   fileName?: string;
@@ -54,11 +67,13 @@ export type Document = {
   direction?: DocumentDirection; // ຂາເຂົ້າ / ຂາອອກ (ໃໝ່ — ແຍກຈາກໝວດໝູ່)
   division?: string; // ຝ່າຍ / ຫ້ອງການ / ສະຖາບັນ
   department?: string; // ພະແນກ / ສູນ
-  // 4-Level archive fields
+  // 5-Level archive fields
   warehouseId?: string;
   warehouseName?: string;
   cabinetId?: string;
   cabinetName?: string;
+  shelfId?: string;
+  shelfName?: string;
   folderId?: string;
   folderName?: string;
   transfers?: DocumentTransfer[];

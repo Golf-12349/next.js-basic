@@ -202,6 +202,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         fileUrl: doc.fileUrl,
         fileName: doc.fileName,
         uploadDate: doc.uploadDate,
+        expiresAt: doc.expiresAt ? new Date(doc.expiresAt).toISOString() : undefined,
         warehouseId: doc.warehouseId,
         cabinetId: doc.cabinetId,
         folderId: doc.folderId,

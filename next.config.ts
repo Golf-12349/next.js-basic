@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  experimental: {
+    cpus: 2,
+  },
 };
 
 // Next.js configuration

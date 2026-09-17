@@ -5,12 +5,13 @@ import { Layers } from 'lucide-react';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
 import { percentage } from './dashboard-utils';
 
-type PhaseKey = 'draft' | 'pending' | 'approved';
+type PhaseKey = 'draft' | 'pending' | 'approved' | 'expired';
 
 const PHASES: { key: PhaseKey; label: string; bar: string; dot: string; pill: string }[] = [
   { key: 'draft', label: 'ຮ່າງ', bar: 'bg-sky-400', dot: 'bg-sky-400', pill: 'bg-sky-50 text-sky-700 ring-sky-100' },
   { key: 'pending', label: 'ລໍຖ້າອະນຸມັດ', bar: 'bg-blue-700', dot: 'bg-blue-700', pill: 'bg-blue-50 text-blue-700 ring-blue-100' },
   { key: 'approved', label: 'ອະນຸມັດແລ້ວ', bar: 'bg-slate-300', dot: 'bg-slate-400', pill: 'bg-slate-50 text-slate-600 ring-slate-200' },
+  { key: 'expired', label: 'ໝົດອາຍຸ', bar: 'bg-rose-500', dot: 'bg-rose-500', pill: 'bg-rose-50 text-rose-700 ring-rose-100' },
 ];
 
 export function StatusBreakdown() {
@@ -57,7 +58,7 @@ export function StatusBreakdown() {
       </div>
 
       {/* Pill counters */}
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {data.counts.map((c) => (
           <div
             key={c.key}

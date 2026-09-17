@@ -43,14 +43,49 @@ function errorMessageOf(err: unknown): string {
  * POST /auth/login — ກັບຄືນ JWT access token ແລະ ຂໍ້ມູນຜູ້ໃຊ້ງານທີ່ເຂົ້າລະບົບ.
  */
 export async function login(payload: Record<string, unknown>): Promise<LoginResult> {
-  const res = await apiClient.post<Record<string, unknown>>('/auth/login', payload)
-  const data = res.data ?? {}
-  const accessToken = tokenOf(data)
-  const user = normalizeAuthUser(unwrapUserPayload(data))
-  if (!accessToken || !user) {
-    throw new Error('ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ')
+  // Render backend has `forbidNonWhitelisted: true` on ValidationPipe and only accepts `email` & `password`.
+  // If `identifier` is sent alongside `email`, Render rejects with 400 "property identifier should not exist".
+  let requestPayload: Record<string, unknown> = { ...payload }
+  if (requestPayload.email && requestPayload.identifier) {
+    const { identifier, ...rest } = requestPayload
+    requestPayload = rest
   }
-  return { accessToken, user }
+
+  try {
+    const res = await apiClient.post<Record<string, unknown>>('/auth/login', requestPayload)
+    const data = res.data ?? {}
+    const accessToken = tokenOf(data)
+    const user = normalizeAuthUser(unwrapUserPayload(data))
+    if (!accessToken || !user) {
+      throw new Error('ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ')
+    }
+    return { accessToken, user }
+  } catch (err: unknown) {
+    // Fallback: If a backend strictly expects `identifier` instead of `email`, retry with identifier
+    if (
+      isAxiosError<{ message?: string | string[] }>(err) &&
+      err.response?.status === 400 &&
+      payload.identifier &&
+      !requestPayload.identifier
+    ) {
+      const msg = JSON.stringify(err.response?.data?.message || '')
+      if (msg.includes('identifier') || msg.includes('email should not exist')) {
+        const fallbackPayload = {
+          identifier: payload.identifier,
+          password: payload.password,
+        }
+        const res = await apiClient.post<Record<string, unknown>>('/auth/login', fallbackPayload)
+        const data = res.data ?? {}
+        const accessToken = tokenOf(data)
+        const user = normalizeAuthUser(unwrapUserPayload(data))
+        if (!accessToken || !user) {
+          throw new Error('ການເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ')
+        }
+        return { accessToken, user }
+      }
+    }
+    throw err
+  }
 }
 
 /**

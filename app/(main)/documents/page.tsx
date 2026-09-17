@@ -11,12 +11,22 @@ import { useCurrentUser } from '../context/CurrentUserContext'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
-import { Settings } from 'lucide-react'
+import {
+  Settings,
+  Eye,
+  Download,
+  RefreshCw,
+  Archive,
+  ArrowRightLeft,
+  Trash2,
+  ChevronDown,
+} from 'lucide-react'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
 import DirectionBadge, { resolveDirection } from '@/app/components/documents/DirectionBadge'
 import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
+import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 
@@ -25,6 +35,7 @@ const statusStyles: Record<DocumentStatus, string> = {
   pending: 'bg-amber-100 text-amber-700',
   approved: 'bg-emerald-100 text-emerald-700',
   archived: 'bg-gray-200 text-gray-700',
+  expired: 'bg-rose-100 text-rose-700 font-semibold',
 }
 
 const statusLabels: Record<DocumentStatus, string> = {
@@ -32,6 +43,7 @@ const statusLabels: Record<DocumentStatus, string> = {
   pending: 'ລໍຖ້າອະນຸມັດ',
   approved: 'ອະນຸມັດ',
   archived: 'ເກັບເຂົ້າຄັງ',
+  expired: '🔴 ໝົດອາຍຸ',
 }
 
 export default function DocumentsPage() {
@@ -57,6 +69,8 @@ export default function DocumentsPage() {
   const { warehouses, cabinets, assignDocument } = useArchive()
   const [transferDoc, setTransferDoc] = useState<Document | null>(null)
   const [storageDoc, setStorageDoc] = useState<Document | null>(null)
+  const [renewDoc, setRenewDoc] = useState<Document | null>(null)
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const visibleCabinets = useMemo(() => {
     if (currentUser?.role === 'DepartmentAdmin' && currentUser.department) {
@@ -110,6 +124,15 @@ export default function DocumentsPage() {
         if (filterStatus === 'ຮ່າງ' && d.status !== 'draft') return false
         if (filterStatus === 'ອະນຸມັດ' && d.status !== 'approved') return false
         if (filterStatus === 'ເກັບເຂົ້າຄັງ' && d.status !== 'archived') return false
+        if (filterStatus === 'ໝົດອາຍຸ') {
+          const isExp = d.status === 'expired' || (Boolean(d.expiresAt) && (d.expiresAt ?? '') <= new Date().toISOString().slice(0, 10))
+          if (!isExp) return false
+        }
+        if (filterStatus === 'ໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)') {
+          if (!d.expiresAt || d.status === 'expired') return false
+          const diff = Math.ceil((new Date(d.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          if (diff < 0 || diff > 7) return false
+        }
       }
       if (filterDirection !== 'ທັງໝົດ' && resolveDirection(d) !== filterDirection) return false
       if (filterDivision !== 'ທັງໝົດ' && d.division !== filterDivision) return false
@@ -260,6 +283,8 @@ export default function DocumentsPage() {
                 <option>ຮ່າງ</option>
                 <option>ອະນຸມັດ</option>
                 <option>ເກັບເຂົ້າຄັງ</option>
+                <option>ໝົດອາຍຸ</option>
+                <option>ໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)</option>
               </select>
             </div>
 
@@ -304,7 +329,7 @@ export default function DocumentsPage() {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-h-[360px]">
             <table className="min-w-full text-left">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
@@ -321,19 +346,26 @@ export default function DocumentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedDocs.map((doc) => (
+                {paginatedDocs.map((doc, idx) => (
                   <tr key={doc.id} className="border-t border-gray-100 align-top">
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-900">{doc.title}</div>
-                      <div className="text-xs text-gray-500">ID: {doc.id}</div>
-                      {(doc.division || doc.department) && (
-                        <div className="text-xs text-gray-500">
-                          🏢 {[doc.division, doc.department].filter(Boolean).join(' • ')}
+                      {(doc.department || doc.division) && (
+                        <div
+                          className="mt-0.5 max-w-xs truncate text-xs text-gray-500"
+                          title={[doc.division, doc.department].filter(Boolean).join(' • ')}
+                        >
+                          🏢 {doc.department || doc.division}
                         </div>
                       )}
-                      {(doc.warehouseName || doc.cabinetName || doc.folderName) && (
-                        <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-                          {doc.warehouseName ? `🏛️ ${doc.warehouseName} > ` : ''}🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+                      {(doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName) && (
+                        <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700">
+                          {[
+                            doc.warehouseName && `🏛️ ${doc.warehouseName}`,
+                            doc.cabinetName && `🗄️ ${doc.cabinetName}`,
+                            doc.shelfName && `🪜 ${doc.shelfName}`,
+                            doc.folderName && `📁 ${doc.folderName}`,
+                          ].filter(Boolean).join(' > ')}
                         </span>
                       )}
                       {doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending' && (
@@ -349,41 +381,149 @@ export default function DocumentsPage() {
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.docNumber}</td>
                     <td className="px-4 py-3 text-sm text-gray-700 uppercase">{doc.fileType}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.fileSize}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadDate}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      <div>{doc.uploadDate}</div>
+                      {doc.expiresAt && (
+                        <div className="mt-1">
+                          {doc.status === 'expired' || doc.expiresAt <= new Date().toISOString().slice(0, 10) ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 whitespace-nowrap">
+                              ໝົດ: {doc.expiresAt}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 whitespace-nowrap">
+                              ໝົດ: {doc.expiresAt}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadedBy}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
                         {statusLabels[doc.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                        <button onClick={() => setPreviewDoc(doc)} className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                    <td className="px-4 py-3 text-center">
+                      <div className="relative inline-flex items-center justify-center gap-1.5">
+                        {/* Quick View Button */}
+                        <button
+                          type="button"
+                          onClick={() => setPreviewDoc(doc)}
+                          className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
+                        >
                           ເບິ່ງ
                         </button>
-                        <button type="button" onClick={() => handleDownload(doc)} className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
-                          ດາວໂຫຼດ
-                        </button>
+
+                        {/* Dropdown Menu Trigger */}
                         <button
                           type="button"
-                          onClick={() => setStorageDoc(doc)}
-                          className="rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
-                          title="ເລືອກບ່ອນຈັດເກັບໃນຄັງ (Warehouse > Cabinet > Shelf)"
+                          onClick={() => setActiveDropdownId(activeDropdownId === doc.id ? null : doc.id)}
+                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition ${
+                            activeDropdownId === doc.id
+                              ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
+                              : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
+                          title="ຈັດການເອກະສານ"
                         >
-                          🗄️ ບ່ອນເກັບ
+                          <span>ຈັດການ</span>
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                              activeDropdownId === doc.id ? 'rotate-180 text-indigo-600' : 'text-gray-400'
+                            }`}
+                          />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setTransferDoc(doc)}
-                          className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100"
-                          title="ສົ່ງເອກະສານຂ້າມພະແນກ / ຂ້າມຝ່າຍ"
-                        >
-                          🔄 ສົ່ງຂ້າມພະແນກ
-                        </button>
-                        <button onClick={() => handleDelete(doc)} type="button" className="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100">
-                          ລົບ
-                        </button>
-                       </div>
+
+                        {/* Dropdown Menu */}
+                        {activeDropdownId === doc.id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-30"
+                              onClick={() => setActiveDropdownId(null)}
+                            />
+                            <div
+                              className={`absolute right-0 ${
+                                idx >= paginatedDocs.length - 2 && paginatedDocs.length > 3
+                                  ? 'bottom-full mb-1.5'
+                                  : 'top-full mt-1.5'
+                              } z-40 w-52 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150 text-left`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null)
+                                  setPreviewDoc(doc)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+                              >
+                                <Eye className="h-4 w-4 text-gray-400" />
+                                <span>ເບິ່ງລາຍລະອຽດ</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null)
+                                  handleDownload(doc)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+                              >
+                                <Download className="h-4 w-4 text-gray-400" />
+                                <span>ດາວໂຫຼດໄຟລ໌</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null)
+                                  setRenewDoc(doc)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-purple-700 hover:bg-purple-50 transition"
+                              >
+                                <RefreshCw className="h-4 w-4 text-purple-500" />
+                                <span>ຕໍ່ອາຍຸເອກະສານ</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null)
+                                  setStorageDoc(doc)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-50 transition"
+                              >
+                                <Archive className="h-4 w-4 text-blue-500" />
+                                <span>ບ່ອນຈັດເກັບໃນຄັງ</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null)
+                                  setTransferDoc(doc)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 transition"
+                              >
+                                <ArrowRightLeft className="h-4 w-4 text-amber-500" />
+                                <span>ສົ່ງຂ້າມພະແນກ</span>
+                              </button>
+
+                              <div className="my-1 border-t border-gray-100" />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null)
+                                  handleDelete(doc)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition"
+                              >
+                                <Trash2 className="h-4 w-4 text-rose-500" />
+                                <span>ລົບເອກະສານ</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -478,9 +618,17 @@ export default function DocumentsPage() {
           onConfirm={async (data) => {
             if (!storageDoc) return
             await assignDocument(storageDoc.id, data.cabinetId || '', data.folderId || '', data.warehouseId)
+            await assignDocument(storageDoc.id, data.cabinetId || '', data.folderId || '', data.warehouseId, data.shelfId)
             pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
             void reload()
           }}
+        />
+
+        <RenewExpiryModal
+          open={Boolean(renewDoc)}
+          document={renewDoc}
+          onClose={() => setRenewDoc(null)}
+          onSuccess={() => void reload()}
         />
       </main>
     </DashboardLayout>

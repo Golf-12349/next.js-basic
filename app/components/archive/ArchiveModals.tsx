@@ -1,14 +1,14 @@
 "use client"
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
-import { Download, Plus } from 'lucide-react'
-import type { Document } from '@/types/document'
+import { Download, Plus, Search, X } from 'lucide-react'
+import type { Cabinet, Document, Shelf } from '@/types/document'
 import { edlStructure } from '@/types/user'
 
 // ── Shared types ─────────────────────────────────────────────
 export type DeleteTarget = {
-  type: 'warehouse' | 'cabinet' | 'folder' | 'document';
+  type: 'warehouse' | 'cabinet' | 'shelf' | 'folder' | 'document';
   id: string;
   name: string;
 };
@@ -39,26 +39,54 @@ interface PageHeaderProps {
   showSecondaryButton?: boolean;
   secondaryButtonLabel?: string;
   onSecondaryCreate?: () => void;
+  searchValue?: string;
+  onSearchChange?: (val: string) => void;
+  searchPlaceholder?: string;
 }
 
 export function PageHeader({
   showCreateButton,
-  createButtonLabel = '+ ສ້າງຕູ້ເອກະສານໃໝ່',
+  createButtonLabel = 'ສ້າງຕູ້ເອກະສານໃໝ່',
   onCreate,
   showSecondaryButton,
-  secondaryButtonLabel = '+ ສ້າງຄັງເອກະສານໃໝ່',
+  secondaryButtonLabel = 'ສ້າງຄັງເອກະສານໃໝ່',
   onSecondaryCreate,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = 'ຄົ້ນຫາ...',
 }: PageHeaderProps) {
   return (
-    <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">ຄັງເກັບເອກກະສານ</h1>
         <p className="mt-1 text-sm text-gray-500">
-          ຈັດລະບຽບເອກະສານແບບ 4 ລະດັບ: ຄັງເອກະສານ ➡️ ຕູ້ເອກະສານ ➡️ ຊັ້ນວາງເອກະສານ ➡️ ເອກະສານ
+          ຈັດລະບຽບເອກະສານ: ຄັງເອກະສານ ➡️ ຕູ້ເອກະສານ ➡️ ຊັ້ນວາງເອກະສານ ➡️ ແຟ້ມເກັບເອກະສານ
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
+        {onSearchChange && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchValue ?? ''}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-48 sm:w-60 rounded-xl border border-gray-200 bg-white py-2 pl-9 pr-8 text-xs sm:text-sm text-gray-800 placeholder-gray-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10"
+            />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => onSearchChange('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         {showSecondaryButton && (
           <button
             onClick={onSecondaryCreate}
@@ -382,31 +410,73 @@ export function CreateCabinetModal({ open, onClose, warehouses = [], defaultWare
   );
 }
 
-// ── Create Folder Modal (ຊັ້ນວາງເອກະສານ) ──────────────────────────────
-interface CreateFolderModalProps {
+// ── Create Shelf Modal (ຊັ້ນວາງເອກະສານ) ─────────────────────────────
+interface CreateShelfModalProps {
   open: boolean;
   onClose: () => void;
+  cabinets?: Cabinet[];
+  activeCabinetId?: string;
   cabinetName?: string;
-  onCreate: (data: { name: string; description: string }) => void;
+  onCreate: (data: { name: string; description?: string; cabinetId?: string }) => void;
 }
 
-export function CreateFolderModal({ open, onClose, cabinetName, onCreate }: CreateFolderModalProps) {
+export function CreateShelfModal({
+  open,
+  onClose,
+  cabinets = [],
+  activeCabinetId,
+  cabinetName,
+  onCreate,
+}: CreateShelfModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [cabinetId, setCabinetId] = useState(activeCabinetId || (cabinets.length > 0 ? cabinets[0].id : ''));
+
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setDescription('');
+      setCabinetId(activeCabinetId || (cabinets.length > 0 ? cabinets[0].id : ''));
+    }
+  }, [open, activeCabinetId, cabinets]);
 
   function handleSubmit() {
     if (!name.trim()) return;
+    const targetCabinetId = activeCabinetId || cabinetId || (cabinets.length > 0 ? cabinets[0].id : '');
     onCreate({
       name: name.trim(),
       description: description.trim() || 'ບໍ່ມີລາຍລະອຽດ',
+      cabinetId: targetCabinetId,
     });
     setName('');
     setDescription('');
   }
 
+  const selectedCab = cabinets.find((c) => c.id === (activeCabinetId || cabinetId));
+  const currentCabName = cabinetName || selectedCab?.name;
+
   return (
-    <Modal open={open} onClose={onClose} title={`ສ້າງຊັ້ນວາງເອກະສານໃໝ່ໃນ 🗄️ ${cabinetName ?? ''}`}>
+    <Modal open={open} onClose={onClose} title={`ສ້າງຊັ້ນວາງເອກະສານໃໝ່ ${currentCabName ? `ໃນ 🗄️ ${currentCabName}` : ''}`}>
       <div className="space-y-4">
+        {!activeCabinetId && cabinets.length > 0 && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              🗄️ ເລືອກຕູ້ເອກະສານ <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={cabinetId || (cabinets.length > 0 ? cabinets[0].id : '')}
+              onChange={(e) => setCabinetId(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+            >
+              {cabinets.map((c) => (
+                <option key={c.id} value={c.id}>
+                  🗄️ {c.name} {c.department ? `(${c.department})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
             ຊື່ຊັ້ນວາງເອກະສານ <span className="text-red-500">*</span>
@@ -414,7 +484,7 @@ export function CreateFolderModal({ open, onClose, cabinetName, onCreate }: Crea
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="ເຊັ່ນ: ຊັ້ນ 1 - ໄບສັ່ງຊື້, ຊັ້ນ 2 - ໄບຮັບເງິນ..."
+            placeholder="ເຊັ່ນ: ຊັ້ນວາງທີ 1, ຊັ້ນວາງ 2, ຊັ້ນວາງ A..."
             className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           />
         </div>
@@ -424,7 +494,7 @@ export function CreateFolderModal({ open, onClose, cabinetName, onCreate }: Crea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            placeholder="ອະທິບາຍເອກະສານທີ່ຈະເກັບໃນຊັ້ນວາງນີ້..."
+            placeholder="ອະທິບາຍເອກະສານທີ່ຈະວາງເທິງຊັ້ນວາງນີ້..."
             className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
           />
         </div>
@@ -437,9 +507,173 @@ export function CreateFolderModal({ open, onClose, cabinetName, onCreate }: Crea
           </button>
           <button
             onClick={handleSubmit}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            disabled={!name.trim() || (!activeCabinetId && !cabinetId)}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
           >
             ສ້າງຊັ້ນວາງ
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Create Folder Modal (ແຟ້ມເກັບເອກະສານ) ──────────────────────────────
+interface CreateFolderModalProps {
+  open: boolean;
+  onClose: () => void;
+  cabinets?: Cabinet[];
+  shelves?: Shelf[];
+  activeCabinetId?: string;
+  activeShelfId?: string;
+  cabinetName?: string;
+  shelfName?: string;
+  onCreate: (data: { name: string; description: string; cabinetId?: string; shelfId?: string }) => void;
+}
+
+export function CreateFolderModal({
+  open,
+  onClose,
+  cabinets = [],
+  shelves = [],
+  activeCabinetId,
+  activeShelfId,
+  cabinetName,
+  shelfName,
+  onCreate,
+}: CreateFolderModalProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [cabinetId, setCabinetId] = useState(activeCabinetId || (cabinets.length > 0 ? cabinets[0].id : ''));
+  const [shelfId, setShelfId] = useState(activeShelfId || '');
+
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setDescription('');
+      const defaultCab = activeCabinetId || (cabinets.length > 0 ? cabinets[0].id : '');
+      setCabinetId(defaultCab);
+      setShelfId(activeShelfId || '');
+    }
+  }, [open, activeCabinetId, activeShelfId, cabinets]);
+
+  // Filter shelves for selected cabinet
+  const effectiveCabinetId = activeCabinetId || cabinetId || (cabinets.length > 0 ? cabinets[0].id : '');
+  const availableShelves = useMemo(() => {
+    if (!effectiveCabinetId) return [];
+    return shelves.filter((s) => s.cabinetId === effectiveCabinetId);
+  }, [shelves, effectiveCabinetId]);
+
+  function handleSubmit() {
+    if (!name.trim()) return;
+    const finalCabinetId = activeCabinetId || cabinetId || (cabinets.length > 0 ? cabinets[0].id : '');
+    const finalShelfId = activeShelfId || shelfId || undefined;
+    onCreate({
+      name: name.trim(),
+      description: description.trim() || 'ບໍ່ມີລາຍລະອຽດ',
+      cabinetId: finalCabinetId,
+      shelfId: finalShelfId,
+    });
+    setName('');
+    setDescription('');
+  }
+
+  const selectedCab = cabinets.find((c) => c.id === effectiveCabinetId);
+  const selectedSh = shelves.find((s) => s.id === (activeShelfId || shelfId));
+  const currentCabName = cabinetName || selectedCab?.name;
+  const currentShName = shelfName || selectedSh?.name;
+
+  const containerTitle = currentShName
+    ? `🪜 ${currentShName}`
+    : currentCabName
+    ? `🗄️ ${currentCabName}`
+    : '';
+
+  return (
+    <Modal open={open} onClose={onClose} title={`ສ້າງແຟ້ມເກັບເອກະສານໃໝ່ ${containerTitle ? `ໃນ ${containerTitle}` : ''}`}>
+      <div className="space-y-4">
+        {!activeCabinetId && cabinets.length > 0 && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              🗄️ ເລືອກຕູ້ເອກະສານ <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={cabinetId || (cabinets.length > 0 ? cabinets[0].id : '')}
+              onChange={(e) => {
+                setCabinetId(e.target.value);
+                setShelfId('');
+              }}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+            >
+              {cabinets.map((c) => (
+                <option key={c.id} value={c.id}>
+                  🗄️ {c.name} {c.department ? `(${c.department})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {!activeCabinetId && cabinets.length === 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+            ⚠️ ຍັງບໍ່ມີຕູ້ເອກະສານໃນລະບົບ. ກະລຸນາສ້າງຕູ້ເອກະສານກ່ອນ ເພື່ອຈັດວາງແຟ້ມນີ້.
+          </div>
+        )}
+
+        {!activeShelfId && availableShelves.length > 0 && (
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              🪜 ເລືອກຊັ້ນວາງເອກະສານ (ເລືອກໄດ້ / ບໍ່ບັງຄັບ)
+            </label>
+            <select
+              value={shelfId}
+              onChange={(e) => setShelfId(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+            >
+              <option value="">-- ບໍ່ກຳນົດຊັ້ນວາງ (ຕັ້ງໃນຕູ້ໂດຍກົງ) --</option>
+              {availableShelves.map((s) => (
+                <option key={s.id} value={s.id}>
+                  🪜 {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            ຊື່ແຟ້ມເກັບເອກະສານ <span className="text-red-500">*</span>
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="ເຊັ່ນ: ແຟ້ມສັນຍາ 2024, ແຟ້ມໄບສັ່ງຊື້..."
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">ລາຍລະອຽດ</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="ອະທິບາຍເອກະສານທີ່ຈະເກັບໃນແຟ້ມນີ້..."
+            className="w-full resize-none rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+          />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+          >
+            ຍົກເລີກ
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!name.trim() || (!activeCabinetId && !cabinetId && cabinets.length > 0)}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            ສ້າງແຟ້ມເອກະສານ
           </button>
         </div>
       </div>
@@ -466,14 +700,17 @@ export function ConfirmDeleteModal({ target, onClose, onConfirm }: ConfirmDelete
                 ? `ຄັງ "${target.name}"`
                 : target.type === 'cabinet'
                 ? `ຕູ້ "${target.name}"`
-                : target.type === 'folder'
+                : target.type === 'shelf'
                 ? `ຊັ້ນວາງ "${target.name}"`
+                : target.type === 'folder'
+                ? `ແຟ້ມ "${target.name}"`
                 : `ເອກະສານ "${target.name}"`}
             </span>{' '}
             ແທ້ບໍ?
             {target.type === 'warehouse' && ' ຕູ້ ແລະ ເອກະສານທັງໝົດໃນຄັງນີ້ຈະຖືກຍ້າຍອອກຈາກການຈັດລະບຽບ.'}
-            {target.type === 'cabinet' && ' ເອກະສານທັງໝົດໃນຕູ້ຈະຖືກຍ້າຍອອກຈາກການຈັດລະບຽບ.'}
-            {target.type === 'folder' && ' ເອກະສານທັງໝົດໃນຊັ້ນວາງນີ້ຈະຖືກຍ້າຍອອກ.'}
+            {target.type === 'cabinet' && ' ຊັ້ນວາງ, ແຟ້ມ ແລະ ເອກະສານທັງໝົດໃນຕູ້ນີ້ຈະຖືກຍ້າຍອອກຈາກການຈັດລະບຽບ.'}
+            {target.type === 'shelf' && ' ແຟ້ມ ແລະ ເອກະສານທັງໝົດໃນຊັ້ນວາງນີ້ຈະຖືກຍ້າຍອອກ.'}
+            {target.type === 'folder' && ' ເອກະສານທັງໝົດໃນແຟ້ມນີ້ຈະຖືກຍ້າຍອອກ.'}
             {target.type === 'document' && ' ເອກະສານຈະເຂົ້າໄປຢູ່ Trash.'}
           </p>
           <div className="flex justify-end gap-2">
@@ -545,7 +782,11 @@ export function DocumentPreviewModal({ doc, onClose, onDownload }: DocumentPrevi
             <div>
               <div className="text-xs text-gray-500">ທີ່ຕັ້ງ</div>
               <div className="text-sm font-semibold">
-                {doc.warehouseName ? `🏛️ ${doc.warehouseName} > ` : ''}🗄️ {doc.cabinetName ?? '—'} {'>'} 📁 {doc.folderName ?? '—'}
+                {[
+                  doc.warehouseName && `🏛️ ${doc.warehouseName}`,
+                  doc.cabinetName && `🗄️ ${doc.cabinetName}`,
+                  doc.folderName && `📁 ${doc.folderName}`,
+                ].filter(Boolean).join(' > ') || '—'}
               </div>
             </div>
           </div>

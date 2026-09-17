@@ -9,11 +9,13 @@ import { useCurrentUser } from '../context/CurrentUserContext'
 import { normalizeCurrentUser } from '@/types/user'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { User, UserRole, UserStatus } from '@/types/user'
+import { adminResetPassword } from '@/lib/dms/userService'
 import {
   UserDetailModal,
   UserFormModal,
   DeleteUserModal,
   TemporaryPasswordModal,
+  ResetPasswordModal,
   roleStyles,
   roleLabels,
   statusStyles,
@@ -21,7 +23,7 @@ import {
   UserAvatar,
   type UserFormValues,
 } from '@/app/components/users/UserModals'
-import { Search, Users as UsersIcon, ShieldCheck, UserCheck, Eye, Pencil, Lock, Unlock, Trash2 } from 'lucide-react'
+import { Search, Users as UsersIcon, ShieldCheck, UserCheck, Eye, Pencil, Lock, Unlock, Trash2, KeyRound, ChevronDown } from 'lucide-react'
 
 const ALL = 'ທັງໝົດ'
 
@@ -42,6 +44,8 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [temporaryPasswordUser, setTemporaryPasswordUser] = useState<{ name: string; email: string; password: string } | null>(null)
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<User | null>(null)
+  const [activeDropdownUserId, setActiveDropdownUserId] = useState<string | null>(null)
 
   const departments = useMemo(() => {
     const set = new Set(users.map((u) => u.department).filter(Boolean))
@@ -189,6 +193,25 @@ export default function UsersPage() {
     setDeleteTarget(null)
   }
 
+  async function handleResetPassword(userId: string, newPassword: string) {
+    try {
+      await adminResetPassword(userId, newPassword)
+      pushToast({
+        title: 'ສຳເລັດ',
+        description: 'ປ່ຽນລະຫັດຜ່ານຜູ້ໃຊ້ງານຮຽບຮ້ອຍແລ້ວ',
+      })
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'ບໍ່ສາມາດປ່ຽນລະຫັດຜ່ານໄດ້'
+      pushToast({
+        title: 'ເກີດຂໍ້ຜິດພາດ',
+        description: msg,
+      })
+      throw err
+    }
+  }
+
   return (
     <DashboardLayout title="ຈັດການຜູ້ໃຊ້ງານ">
       <main className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -307,16 +330,16 @@ export default function UsersPage() {
 
         {/* Table */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-h-[360px]">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-4 py-3">ຜູ້ໃຊ້ງານ</th>
-                  <th className="px-4 py-3">ພະແນກ</th>
-                  <th className="px-4 py-3">ສິດນຳໃຊ້</th>
-                  <th className="px-4 py-3">ສະຖານະ</th>
-                  <th className="px-4 py-3">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
-                  <th className="px-4 py-3 text-center">ຈັດການ</th>
+                  <th className="px-4 py-3 min-w-[220px]">ຜູ້ໃຊ້ງານ</th>
+                  <th className="px-4 py-3 min-w-[140px]">ພະແນກ</th>
+                  <th className="px-4 py-3 w-40 min-w-[140px] whitespace-nowrap">ສິດນຳໃຊ້</th>
+                  <th className="px-4 py-3 w-36 min-w-[130px] whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-4 py-3 w-44 min-w-[150px] whitespace-nowrap">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
+                  <th className="px-4 py-3 text-center w-28 min-w-[100px] whitespace-nowrap">ຈັດການ</th>
                 </tr>
               </thead>
               <tbody>
@@ -327,9 +350,15 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 ) : (
-                    paginatedUsers.map((u) => {
+                    paginatedUsers.map((u, idx) => {
                       const isPrivilegedRow = u.role === 'SuperAdmin' || u.role === 'DivisionAdmin'
                       const canManageUser = currentUserRole === 'SuperAdmin' || !isPrivilegedRow
+                      const canResetPassword =
+                        (currentUserRole === 'SuperAdmin' && u.id !== currentUser?.id) ||
+                        (currentUserRole === 'DivisionAdmin' &&
+                          u.role === 'DepartmentAdmin' &&
+                          u.id !== currentUser?.id &&
+                          (!currentUser?.division || !u.division || currentUser.division === u.division))
 
                       return (
                         <tr key={u.id} className="border-t border-gray-100 align-top">
@@ -354,50 +383,133 @@ export default function UsersPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{u.department}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${roleStyles[u.role]}`}>
+                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{u.department}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center justify-center min-w-[110px] rounded-full px-2.5 py-1 text-xs font-medium text-center ${roleStyles[u.role]}`}>
                               {roleLabels[u.role]}
                             </span>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[u.status]}`}>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center justify-center min-w-[100px] rounded-full px-2.5 py-1 text-xs font-medium text-center ${statusStyles[u.status]}`}>
                               {statusLabels[u.status]}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{u.lastActive || '-'}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-2">
+                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{u.lastActive || '-'}</td>
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <div className="relative inline-flex items-center justify-center">
+                              {/* Dropdown Menu Trigger */}
                               <button
-                                onClick={() => setDetailUser(u)}
-                                title="ເບິ່ງລາຍລະອຽດ"
-                                className="rounded-md border border-gray-200 p-1.5 text-gray-600 hover:bg-gray-50"
+                                type="button"
+                                onClick={() => setActiveDropdownUserId(activeDropdownUserId === u.id ? null : u.id)}
+                                className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition ${
+                                  activeDropdownUserId === u.id
+                                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
+                                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                                }`}
+                                title="ຈັດການຜູ້ໃຊ້ງານ"
                               >
-                                <Eye size={15} />
+                                <span>ຈັດການ</span>
+                                <ChevronDown
+                                  className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                                    activeDropdownUserId === u.id ? 'rotate-180 text-indigo-600' : 'text-gray-400'
+                                  }`}
+                                />
                               </button>
-                              {canManageUser && (
+
+                              {/* Dropdown Menu */}
+                              {activeDropdownUserId === u.id && (
                                 <>
-                                  <button
-                                    onClick={() => openEditForm(u)}
-                                    title="ແກ້ໄຂ"
-                                    className="rounded-md border border-indigo-200 bg-indigo-50 p-1.5 text-indigo-700 hover:bg-indigo-100"
+                                  <div
+                                    className="fixed inset-0 z-30"
+                                    onClick={() => setActiveDropdownUserId(null)}
+                                  />
+                                  <div
+                                    className={`absolute right-0 ${
+                                      idx >= paginatedUsers.length - 2 && paginatedUsers.length > 3
+                                        ? 'bottom-full mb-1.5'
+                                        : 'top-full mt-1.5'
+                                    } z-40 w-48 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150 text-left`}
                                   >
-                                    <Pencil size={15} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleToggleStatus(u)}
-                                    title={u.status === 'active' ? 'ປິດການໃຊ້ງານ' : 'ເປີດການໃຊ້ງານ'}
-                                    className="rounded-md border border-amber-200 bg-amber-50 p-1.5 text-amber-700 hover:bg-amber-100"
-                                  >
-                                    {u.status === 'active' ? <Lock size={15} /> : <Unlock size={15} />}
-                                  </button>
-                                  <button
-                                    onClick={() => setDeleteTarget(u)}
-                                    title="ລຶບ"
-                                    className="rounded-md border border-rose-200 bg-rose-50 p-1.5 text-rose-700 hover:bg-rose-100"
-                                  >
-                                    <Trash2 size={15} />
-                                  </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveDropdownUserId(null)
+                                        setDetailUser(u)
+                                      }}
+                                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
+                                    >
+                                      <Eye className="h-4 w-4 text-gray-400" />
+                                      <span>ເບິ່ງລາຍລະອຽດ</span>
+                                    </button>
+
+                                    {canResetPassword && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveDropdownUserId(null)
+                                          setResetPasswordTarget(u)
+                                        }}
+                                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-violet-700 hover:bg-violet-50 transition"
+                                      >
+                                        <KeyRound className="h-4 w-4 text-violet-500" />
+                                        <span>ປ່ຽນລະຫັດຜ່ານ</span>
+                                      </button>
+                                    )}
+
+                                    {canManageUser && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveDropdownUserId(null)
+                                          openEditForm(u)
+                                        }}
+                                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50 transition"
+                                      >
+                                        <Pencil className="h-4 w-4 text-indigo-500" />
+                                        <span>ແກ້ໄຂຂໍ້ມູນ</span>
+                                      </button>
+                                    )}
+
+                                    {canManageUser && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveDropdownUserId(null)
+                                          handleToggleStatus(u)
+                                        }}
+                                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 transition"
+                                      >
+                                        {u.status === 'active' ? (
+                                          <>
+                                            <Lock className="h-4 w-4 text-amber-500" />
+                                            <span>ປິດການໃຊ້ງານ</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Unlock className="h-4 w-4 text-emerald-500" />
+                                            <span>ເປີດການໃຊ້ງານ</span>
+                                          </>
+                                        )}
+                                      </button>
+                                    )}
+
+                                    {canManageUser && (
+                                      <>
+                                        <div className="my-1 border-t border-gray-100" />
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveDropdownUserId(null)
+                                            setDeleteTarget(u)
+                                          }}
+                                          className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition"
+                                        >
+                                          <Trash2 className="h-4 w-4 text-rose-500" />
+                                          <span>ລຶບຜູ້ໃຊ້ງານ</span>
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
                                 </>
                               )}
                             </div>
@@ -443,6 +555,13 @@ export default function UsersPage() {
           user={temporaryPasswordUser}
           open={!!temporaryPasswordUser}
           onClose={() => setTemporaryPasswordUser(null)}
+        />
+
+        <ResetPasswordModal
+          user={resetPasswordTarget}
+          open={!!resetPasswordTarget}
+          onClose={() => setResetPasswordTarget(null)}
+          onReset={handleResetPassword}
         />
       </main>
     </DashboardLayout>

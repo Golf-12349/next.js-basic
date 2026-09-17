@@ -87,6 +87,7 @@ export default function PendingDocumentsPage() {
   async function handleConfirmTransferStorage(data: {
     warehouseId?: string
     cabinetId?: string
+    shelfId?: string
     folderId?: string
     note?: string
   }) {
@@ -232,14 +233,13 @@ export default function PendingDocumentsPage() {
                               <span className="text-sm font-semibold text-gray-900">
                                 {docItem?.title || 'ເອກະສານບໍ່ລະບຸຊື່'}
                               </span>
-                              <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-500">
-                                <span>ID: {t.documentId}</span>
-                                {docItem?.docNumber && (
-                                  <span className="rounded bg-gray-100 px-1.5 py-0.5 font-medium text-gray-700">
+                              {docItem?.docNumber && (
+                                <div className="mt-0.5">
+                                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-700">
                                     {docItem.docNumber}
                                   </span>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           </td>
 

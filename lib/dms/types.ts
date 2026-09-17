@@ -40,15 +40,27 @@ export type ApiCabinet = {
   department: string
   description: string
   createdAt: string
+  shelves?: ApiShelf[]
+  folders?: ApiFolder[]
+}
+
+export type ApiShelf = {
+  id: string
+  cabinetId: string
+  name: string
+  description?: string | null
+  createdAt: string
   folders?: ApiFolder[]
 }
 
 export type ApiFolder = {
   id: string
   cabinetId: string
+  shelfId?: string | null
   name: string
   description: string
   createdAt: string
+  shelf?: ApiShelf | null
 }
 
 export type ApiDocument = {
@@ -68,11 +80,14 @@ export type ApiDocument = {
   uploadedById: string | null
   uploadedBy: { id: string; name: string } | null
   uploadDate: string
+  expiresAt: string | null
   deleted: boolean
   warehouseId?: string | null
   warehouse?: ApiWarehouse | null
   cabinetId: string | null
   cabinet: ApiCabinet | null
+  shelfId?: string | null
+  shelf?: ApiShelf | null
   folderId: string | null
   folder: ApiFolder | null
   transfers?: Document['transfers']
@@ -80,7 +95,7 @@ export type ApiDocument = {
 
 export type ApiNotification = {
   id: string
-  type: 'pending' | 'approved' | 'user' | 'alert' | 'transfer_pending' | 'transfer_approved' | 'transfer_rejected'
+  type: 'pending' | 'approved' | 'user' | 'alert' | 'transfer_pending' | 'transfer_approved' | 'transfer_rejected' | 'expired'
   title: string
   detail: string | null
   link: string | null
@@ -119,6 +134,7 @@ export function toFrontendDocument(doc: ApiDocument): Document {
     fileType: doc.fileType,
     fileSize: doc.fileSize ?? '-',
     uploadDate: doc.uploadDate.slice(0, 10),
+    expiresAt: doc.expiresAt ? doc.expiresAt.slice(0, 10) : undefined,
     uploadedBy: doc.uploadedBy?.name ?? '-',
     fileUrl: doc.fileUrl ?? '#',
     fileName: doc.fileName ?? undefined,
@@ -127,6 +143,8 @@ export function toFrontendDocument(doc: ApiDocument): Document {
     warehouseName: doc.warehouse?.name,
     cabinetId: doc.cabinetId ?? undefined,
     cabinetName: doc.cabinet?.name,
+    shelfId: doc.shelfId ?? undefined,
+    shelfName: doc.shelf?.name,
     folderId: doc.folderId ?? undefined,
     folderName: doc.folder?.name,
     transfers: doc.transfers,
