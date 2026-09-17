@@ -38,7 +38,6 @@ export default function SelectStorageLocationModal({
 }: SelectStorageLocationModalProps) {
   const { warehouses, cabinets, shelves, folders } = useArchive()
 
-  const [warehouseId, setWarehouseId] = useState<string>('')
   const [cabinetId, setCabinetId] = useState<string>('')
   const [shelfId, setShelfId] = useState<string>('')
   const [folderId, setFolderId] = useState<string>('')
@@ -48,33 +47,22 @@ export default function SelectStorageLocationModal({
   // Reset and prefill selections when modal opens
   useEffect(() => {
     if (open) {
-      setWarehouseId(initialWarehouseId || (warehouses[0]?.id ?? ''))
       setCabinetId(initialCabinetId || '')
       setShelfId(initialShelfId || '')
       setFolderId(initialFolderId || '')
       setNote('')
     }
-  }, [open, initialWarehouseId, initialCabinetId, initialShelfId, initialFolderId, warehouses])
   }, [open, initialCabinetId, initialShelfId, initialFolderId])
 
-  // Filter cabinets based on selected warehouse AND department (if given)
   // Filter cabinets based on department (if given)
   const availableCabinets = useMemo(() => {
-    let list: Cabinet[] = cabinets
-    if (warehouseId) {
-      list = list.filter((c: Cabinet) => !c.warehouseId || c.warehouseId === warehouseId)
-    }
     if (department) {
       const deptNormalized = department.trim().toLowerCase()
-      const deptMatched = list.filter((c: Cabinet) => c.department && c.department.trim().toLowerCase() === deptNormalized)
-      if (deptMatched.length > 0) list = deptMatched
       const deptMatched = cabinets.filter(
         (c: Cabinet) => c.department && c.department.trim().toLowerCase() === deptNormalized,
       )
       if (deptMatched.length > 0) return deptMatched
     }
-    return list
-  }, [cabinets, warehouseId, department])
     return cabinets
   }, [cabinets, department])
 
@@ -116,9 +104,9 @@ export default function SelectStorageLocationModal({
   const availableFolders = useMemo(() => {
     if (!cabinetId) return []
     if (shelfId) {
-      return folders.filter((f: Folder) => f.cabinetId === cabinetId && f.shelfId === shelfId)
+      return folders.filter((f) => f.cabinetId === cabinetId && f.shelfId === shelfId)
     }
-    return folders.filter((f: Folder) => f.cabinetId === cabinetId)
+    return folders.filter((f) => f.cabinetId === cabinetId)
   }, [folders, cabinetId, shelfId])
 
   // Reset folder selection if cabinet or shelf changes
@@ -137,7 +125,6 @@ export default function SelectStorageLocationModal({
     setSubmitting(true)
     try {
       await onConfirm({
-        warehouseId: warehouseId || undefined,
         warehouseId: selectedWarehouse?.id || initialWarehouseId || undefined,
         cabinetId: cabinetId || undefined,
         shelfId: shelfId || undefined,
@@ -190,12 +177,8 @@ export default function SelectStorageLocationModal({
           </div>
         )}
 
-        {/* 1. Warehouse */}
         {/* 1. Cabinet */}
         <div>
-          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-            🏛️ 1. ຄັງເອກະສານ
-          </label>
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
               🗄️ 1. ຕູ້ເອກະສານ
@@ -206,30 +189,6 @@ export default function SelectStorageLocationModal({
               </span>
             )}
           </div>
-          <select
-            value={warehouseId}
-            onChange={(e) => {
-              setWarehouseId(e.target.value)
-              setCabinetId('')
-              setShelfId('')
-              setFolderId('')
-            }}
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="">— ບໍ່ລະບຸຄັງເອກະສານ —</option>
-            {warehouses.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name} {w.division ? `[${w.division}]` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* 2. Cabinet */}
-        <div>
-          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-            🗄️ 2. ຕູ້ເອກະສານ
-          </label>
           <select
             value={cabinetId}
             onChange={(e) => {
@@ -248,17 +207,14 @@ export default function SelectStorageLocationModal({
           </select>
           {availableCabinets.length === 0 && (
             <p className="mt-1 text-xs text-amber-600">
-              ຍັງບໍ່ພົບຕູ້ເອກະສານໃນຄັງນີ້ (ສາມາດສ້າງຕູ້ໃໝ່ໄດ້ທີ່ເມນູຄັງເອກະສານ)
               ຍັງບໍ່ພົບຕູ້ເອກະສານ{department ? `ຂອງພະແນກ ${department}` : ''} (ສາມາດສ້າງຕູ້ໃໝ່ໄດ້ທີ່ເມນູຄັງເອກະສານ)
             </p>
           )}
         </div>
 
-        {/* 3. Shelf (ຊັ້ນວາງເອກະສານ) */}
         {/* 2. Shelf (ຊັ້ນວາງເອກະສານ) */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-            🪜 3. ຊັ້ນວາງເອກະສານ (Shelf - ທາງເລືອກ)
             🪜 2. ຊັ້ນວາງເອກະສານ (Shelf - ທາງເລືອກ)
           </label>
           <select
@@ -282,11 +238,9 @@ export default function SelectStorageLocationModal({
           )}
         </div>
 
-        {/* 4. Folder (ແຟ້ມເກັບເອກະສານ) */}
         {/* 3. Folder (ແຟ້ມເກັບເອກະສານ) */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-            📁 4. ແຟ້ມເກັບເອກະສານ (Folder)
             📁 3. ແຟ້ມເກັບເອກະສານ (Folder)
           </label>
           <select
