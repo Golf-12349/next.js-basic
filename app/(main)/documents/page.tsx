@@ -23,7 +23,6 @@ import {
 } from 'lucide-react'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
-import DirectionBadge, { resolveDirection } from '@/app/components/documents/DirectionBadge'
 import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
@@ -96,7 +95,6 @@ export default function DocumentsPage() {
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
-  const [filterDirection, setFilterDirection] = useState('ທັງໝົດ')
   const [filterDivision, setFilterDivision] = useState('ທັງໝົດ')
   const [filterDepartment, setFilterDepartment] = useState('ທັງໝົດ')
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
@@ -109,7 +107,7 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDirection, filterDivision, filterDepartment])
+  }, [debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDivision, filterDepartment])
 
   const visible = useMemo(() => {
     return documents.filter((d) => !d.deleted && d.status !== 'pending').filter((d) => {
@@ -134,12 +132,11 @@ export default function DocumentsPage() {
           if (diff < 0 || diff > 7) return false
         }
       }
-      if (filterDirection !== 'ທັງໝົດ' && resolveDirection(d) !== filterDirection) return false
       if (filterDivision !== 'ທັງໝົດ' && d.division !== filterDivision) return false
       if (filterDepartment !== 'ທັງໝົດ' && d.department !== filterDepartment) return false
       return true
     })
-  }, [documents, debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDirection, filterDivision, filterDepartment])
+  }, [documents, debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDivision, filterDepartment])
 
   const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1
   const paginatedDocs = useMemo(() => {
@@ -289,15 +286,6 @@ export default function DocumentsPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">ທິດທາງ</label>
-              <select value={filterDirection} onChange={(e) => setFilterDirection(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
-                <option>ທັງໝົດ</option>
-                <option value="inbound">📥 ຂາເຂົ້າ</option>
-                <option value="outbound">📤 ຂາອອກ</option>
-              </select>
-            </div>
-
-            <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">ຝ່າຍ</label>
               <select
                 value={filterDivision}
@@ -335,7 +323,6 @@ export default function DocumentsPage() {
                 <tr>
                   <th className="px-4 py-3">ເອກະສານ</th>
                   <th className="px-4 py-3">ໝວດໝູ່</th>
-                  <th className="px-4 py-3">ທິດທາງ</th>
                   <th className="px-4 py-3">ເລກທີ</th>
                   <th className="px-4 py-3">ຮູບແບບ</th>
                   <th className="px-4 py-3">ຂະໜາດ</th>
@@ -377,7 +364,6 @@ export default function DocumentsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3"><CategoryBadge category={doc.category} /></td>
-                    <td className="px-4 py-3"><DirectionBadge direction={doc.direction} category={doc.category} /></td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.docNumber}</td>
                     <td className="px-4 py-3 text-sm text-gray-700 uppercase">{doc.fileType}</td>
                     <td className="px-4 py-3 text-sm text-gray-700">{doc.fileSize}</td>
@@ -565,10 +551,6 @@ export default function DocumentsPage() {
                 <div>
                   <div className="text-sm text-gray-500">ໝວດໝູ່</div>
                   <div className="font-semibold">{previewDoc.category}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">ທິດທາງ</div>
-                  <DirectionBadge direction={previewDoc.direction} category={previewDoc.category} />
                 </div>
               </div>
               {/* PDF/image viewer fills the remaining space and scrolls independently inside the modal body */}

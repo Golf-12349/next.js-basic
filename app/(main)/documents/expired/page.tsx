@@ -12,7 +12,6 @@ import { edlStructure } from '@/types/user'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
-import DirectionBadge from '@/app/components/documents/DirectionBadge'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import Pagination from '@/app/components/ui/Pagination'
@@ -453,7 +452,6 @@ export default function ExpiredDocumentsPage() {
                 <tr>
                   <th className="px-4 py-3.5">ເອກະສານ</th>
                   <th className="px-4 py-3.5">ໝວດໝູ່</th>
-                  <th className="px-4 py-3.5">ທິດທາງ</th>
                   <th className="px-4 py-3.5">ເລກທີ</th>
                   <th className="px-4 py-3.5">ວັນທີໝົດອາຍຸ</th>
                   <th className="px-4 py-3.5">ຜູ້ອັບໂຫຼດ</th>
@@ -464,7 +462,7 @@ export default function ExpiredDocumentsPage() {
               <tbody className="divide-y divide-gray-100 text-sm">
                 {paginatedDocs.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center">
+                    <td colSpan={7} className="py-16 text-center">
                       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                         <CheckCircle2 className="h-8 w-8" />
                       </div>
@@ -515,11 +513,6 @@ export default function ExpiredDocumentsPage() {
                         {/* Category */}
                         <td className="px-4 py-3.5">
                           <CategoryBadge category={doc.category} />
-                        </td>
-
-                        {/* Direction */}
-                        <td className="px-4 py-3.5">
-                          <DirectionBadge direction={doc.direction} category={doc.category} />
                         </td>
 
                         {/* Doc Number */}
