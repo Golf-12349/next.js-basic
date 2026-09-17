@@ -133,6 +133,34 @@ export default function UploadDocumentModal({
     return folders.filter((f) => f.cabinetId === cabinetId)
   }, [cabinetId, shelfId, folders])
 
+  const selectedCabinet = useMemo(
+    () => (cabinetId ? cabinets.find((c) => c.id === cabinetId) : undefined),
+    [cabinetId, cabinets],
+  )
+
+  const selectedWarehouse = useMemo(
+    () =>
+      selectedCabinet?.warehouseId
+        ? warehouses.find((w) => w.id === selectedCabinet.warehouseId)
+        : undefined,
+    [selectedCabinet, warehouses],
+  )
+
+  // ຖ້າມີການເລືອກຕູ້ (ຫຼື ສ້າງຢູ່ໃນຕູ້) -> ດຶງຂໍ້ມູນພະແນກ ແລະ ຝ່າຍ ຕາມຕູ້ເອກະສານນັ້ນ
+  // ຖ້າບໍ່ໄດ້ເລືອກຕູ້ (ສ້າງຢູ່ໜ້າເອກະສານທັງໝົດ) -> ດຶງຕາມ user ປັດຈຸບັນ
+  const effectiveDepartment = useMemo(() => {
+    return selectedCabinet?.department || currentUser?.department || ''
+  }, [selectedCabinet, currentUser])
+
+  const effectiveDivision = useMemo(() => {
+    return (
+      selectedCabinet?.division ||
+      selectedWarehouse?.division ||
+      currentUser?.division ||
+      ''
+    )
+  }, [selectedCabinet, selectedWarehouse, currentUser])
+
   // ໝາຍເຫດ: ສະຖານະຟໍຣົມທັງໝົດ ຖືກຣີເຊັດອັດຕະໂນມັດ ເມື່ອ remount (key ປ່ຽນທຸກໆເປີດ) —
   // ບໍ່ຕ້ອງ useEffect + setState ເພື່ອບໍ່ລົ່ວ lint rule `react-hooks/set-state-in-effect`
 
@@ -198,15 +226,8 @@ export default function UploadDocumentModal({
   async function handleSubmit(status: DocumentStatus) {
     if (!validateForm() || !selectedFile) return
 
-    const selectedCabinet = cabinets.find((c) => c.id === cabinetId)
     const selectedShelf = shelves.find((s) => s.id === shelfId)
     const selectedFolder = folders.find((f) => f.id === folderId)
-    const selectedWarehouse = selectedCabinet?.warehouseId
-      ? warehouses.find((w) => w.id === selectedCabinet.warehouseId)
-      : undefined
-
-    const effectiveDivision = currentUser?.division || selectedCabinet?.division || undefined
-    const effectiveDepartment = currentUser?.department || selectedCabinet?.department || undefined
 
     setIsSubmitting(true)
     setUploadStep('uploading')
@@ -519,17 +540,28 @@ export default function UploadDocumentModal({
                     <p className="mt-1 text-xs text-amber-400">ຕູ້ນີ້ຍັງບໍ່ມີແຟ້ມ — ສາມາດສ້າງແຟ້ມໄດ້ທີ່ໜ້າ ຄັງເກັບເອກະສານ</p>
                   )}
                 </div>
-                {/* ຂໍ້ມູນພະແນກ ແລະ ຝ່າຍ (ກຳນົດອັດຕະໂນມັດຈາກຜູ້ໃຊ້) */}
+                {/* ຂໍ້ມູນພະແນກ ແລະ ຝ່າຍ (ດຶງຕາມຕູ້ເອກະສານ ຖ້າມີການເລືອກຕູ້, ຖ້າບໍ່ມີໃຫ້ດຶງຕາມຜູ້ໃຊ້) */}
                 <div className="rounded-lg border border-slate-700/80 bg-slate-800/60 p-3 text-xs text-slate-300">
-                  <div className="flex items-center gap-1.5 font-medium text-slate-200">
-                    <span>🏢 ພະແນກ:</span>
-                    <span className="text-indigo-400 font-semibold">{currentUser?.department || '—'}</span>
-                  </div>
-                  {currentUser?.division && (
-                    <div className="mt-1 text-slate-400">
-                      <span>ຝ່າຍ:</span> {currentUser.division}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 font-medium text-slate-200">
+                      <span>🏢 ພະແນກ:</span>
+                      <span className="text-indigo-400 font-semibold">{effectiveDepartment || '—'}</span>
                     </div>
-                  )}
+                    {selectedCabinet ? (
+                      <span className="rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400 border border-indigo-500/20">
+                        ຕາມຕູ້: {selectedCabinet.name}
+                      </span>
+                    ) : (
+                      <span className="rounded bg-slate-700/50 px-1.5 py-0.5 text-[10px] text-slate-400">
+                        ຕາມຂໍ້ມູນຜູ້ໃຊ້
+                      </span>
+                    )}
+                  </div>
+                  {effectiveDivision ? (
+                    <div className="mt-1 text-slate-400">
+                      <span>ຝ່າຍ:</span> {effectiveDivision}
+                    </div>
+                  ) : null}
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">ປະເພດເອກະສານ</label>

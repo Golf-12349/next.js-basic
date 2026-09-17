@@ -11,6 +11,7 @@ import {
   Plus,
   Trash2,
   Filter,
+  ArrowRightLeft,
 } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import type { ViewState } from './useArchive'
@@ -18,6 +19,9 @@ import Modal from '@/app/components/ui/Modal'
 import { pushToast } from '@/app/components/ui/Toast'
 import Pagination from '@/app/components/ui/Pagination'
 import { useUploadModal } from '@/app/(main)/context/UploadModalContext'
+import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
+import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
+import { useDocuments } from '@/app/(main)/context/DocumentsContext'
 
 // ── Breadcrumbs ──────────────────────────────────────────────
 interface BreadcrumbsProps {
@@ -177,6 +181,7 @@ interface DocumentRowProps {
   onDownload: (doc: Document) => void;
   onDelete: (doc: Document) => void;
   onMoveShelf?: (doc: Document) => void;
+  onTransfer?: (doc: Document) => void;
 }
 
 function formatDate(dateStr?: string): string {
@@ -196,6 +201,7 @@ function DocumentRow({
   onDownload,
   onDelete,
   onMoveShelf,
+  onTransfer,
 }: DocumentRowProps) {
   const currentFolder = folders.find((f) => f.id === doc.folderId);
   const currentShelf = shelves.find((s) => s.id === doc.shelfId || (currentFolder && s.id === currentFolder.shelfId));
@@ -229,6 +235,11 @@ function DocumentRow({
 
           {/* Hierarchy Badges: Warehouse > Cabinet > Shelf > Folder */}
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+            {doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending' && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800 border border-amber-300">
+                🔄 ກຳລັງໂອນຍ້າຍຫາ: {doc.transfers[0].toDepartment}
+              </span>
+            )}
             {folderName ? (
               <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
                 📁 ແຟ້ມ: {folderName}
@@ -279,6 +290,16 @@ function DocumentRow({
         >
           <Download size={14} /> ດາວໂຫຼດ
         </button>
+        {onTransfer && (
+          <button
+            type="button"
+            onClick={() => onTransfer(doc)}
+            className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 transition hover:bg-amber-100"
+            title="ສົ່ງເອກະສານຂ້າມພະແນກ"
+          >
+            <ArrowRightLeft size={14} /> ສົ່ງຂ້າມ
+          </button>
+        )}
         {onMoveShelf && (
           <button
             onClick={() => onMoveShelf(doc)}
@@ -311,6 +332,7 @@ interface DocumentListProps {
   onDownload: (doc: Document) => void;
   onDelete: (doc: Document) => void;
   onMoveShelf?: (doc: Document) => void;
+  onTransfer?: (doc: Document) => void;
   emptyMessage?: string;
   emptySubMessage?: string;
   showPagination?: boolean;
@@ -328,6 +350,7 @@ function DocumentList({
   onDownload,
   onDelete,
   onMoveShelf,
+  onTransfer,
   emptyMessage = 'ຍັງບໍ່ມີເອກະສານ',
   emptySubMessage = 'ອັບໂຫຼດເອກະສານໃໝ່ເພື່ອເລີ່ມຕົ້ນຈັດເກັບ',
   showPagination = true,
@@ -380,6 +403,7 @@ function DocumentList({
             onDownload={onDownload}
             onDelete={onDelete}
             onMoveShelf={onMoveShelf}
+            onTransfer={onTransfer}
           />
         ))}
       </div>
@@ -595,7 +619,10 @@ export default function DocumentView({
   onDelete,
 }: DocumentViewProps) {
   const { openUpload } = useUploadModal();
+  const { user: currentUser } = useCurrentUser();
+  const { reload } = useDocuments();
   const [moveDoc, setMoveDoc] = useState<Document | null>(null);
+  const [transferDoc, setTransferDoc] = useState<Document | null>(null);
   const [filterCabinetId, setFilterCabinetId] = useState<string>('all');
   const [filterShelfId, setFilterShelfId] = useState<string>('all');
   const [filterFolderId, setFilterFolderId] = useState<string>('all');
@@ -663,6 +690,7 @@ export default function DocumentView({
           onDownload={onDownload}
           onDelete={onDelete}
           onMoveShelf={(doc) => setMoveDoc(doc)}
+          onTransfer={(doc) => setTransferDoc(doc)}
           emptyMessage={`ຍັງບໍ່ມີເອກະສານໃນແຟ້ມ "${folder.name}"`}
           emptySubMessage="ເອກະສານຂອງແຟ້ມນີ້ຈະສະແດງສະເພາະຢູ່ທີ່ນີ້ເທົ່ານັ້ນ"
           actionLabel="ອັບໂຫຼດເອກະສານເຂົ້າແຟ້ມນີ້"
@@ -680,6 +708,17 @@ export default function DocumentView({
           onConfirm={async (docId, cabId, folId, whId, shId) => {
             await onAssignDocument?.(docId, cabId, folId, whId, shId);
             setMoveDoc(null);
+          }}
+        />
+
+        <TransferDocumentModal
+          open={Boolean(transferDoc)}
+          doc={transferDoc}
+          currentUser={currentUser}
+          onClose={() => setTransferDoc(null)}
+          onSuccess={() => {
+            setTransferDoc(null);
+            void reload();
           }}
         />
       </>
@@ -810,6 +849,7 @@ export default function DocumentView({
         onDownload={onDownload}
         onDelete={onDelete}
         onMoveShelf={(doc) => setMoveDoc(doc)}
+        onTransfer={(doc) => setTransferDoc(doc)}
         emptyMessage="ບໍ່ພົບເອກະສານໃນບ່ອນເກັບນີ້"
         emptySubMessage="ເລືອກຕູ້, ຊັ້ນວາງ ຫຼື ແຟ້ມອື່ນ ເພື່ອເບິ່ງເອກະສານ"
       />
@@ -825,6 +865,17 @@ export default function DocumentView({
         onConfirm={async (docId, cabId, folId, whId, shId) => {
           await onAssignDocument?.(docId, cabId, folId, whId, shId);
           setMoveDoc(null);
+        }}
+      />
+
+      <TransferDocumentModal
+        open={Boolean(transferDoc)}
+        doc={transferDoc}
+        currentUser={currentUser}
+        onClose={() => setTransferDoc(null)}
+        onSuccess={() => {
+          setTransferDoc(null);
+          void reload();
         }}
       />
     </>

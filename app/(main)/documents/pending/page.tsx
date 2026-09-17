@@ -276,6 +276,7 @@ export default function PendingDocumentsPage() {
         <SelectStorageLocationModal
           open={!!transferToApprove}
           title="🗄️ ຮັບເອກະສານ ແລະ ເລືອກບ່ອນຈັດເກັບໃນຄັງ"
+          title="🗄️ ຮັບເອກະສານ ແລະ ເລືອກບ່ອນຈັດເກັບ"
           docTitle={transferToApprove?.document?.title}
           docNumber={transferToApprove?.document?.docNumber}
           department={transferToApprove?.toDepartment}

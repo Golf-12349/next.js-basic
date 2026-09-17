@@ -55,8 +55,10 @@ export default function SelectStorageLocationModal({
       setNote('')
     }
   }, [open, initialWarehouseId, initialCabinetId, initialShelfId, initialFolderId, warehouses])
+  }, [open, initialCabinetId, initialShelfId, initialFolderId])
 
   // Filter cabinets based on selected warehouse AND department (if given)
+  // Filter cabinets based on department (if given)
   const availableCabinets = useMemo(() => {
     let list: Cabinet[] = cabinets
     if (warehouseId) {
@@ -66,9 +68,15 @@ export default function SelectStorageLocationModal({
       const deptNormalized = department.trim().toLowerCase()
       const deptMatched = list.filter((c: Cabinet) => c.department && c.department.trim().toLowerCase() === deptNormalized)
       if (deptMatched.length > 0) list = deptMatched
+      const deptMatched = cabinets.filter(
+        (c: Cabinet) => c.department && c.department.trim().toLowerCase() === deptNormalized,
+      )
+      if (deptMatched.length > 0) return deptMatched
     }
     return list
   }, [cabinets, warehouseId, department])
+    return cabinets
+  }, [cabinets, department])
 
   // Automatically select first cabinet if available and current selection is empty or not in list
   useEffect(() => {
@@ -78,6 +86,18 @@ export default function SelectStorageLocationModal({
       setCabinetId('')
     }
   }, [availableCabinets, cabinetId])
+
+  const selectedCabinet = useMemo(
+    () => cabinets.find((c: Cabinet) => c.id === cabinetId),
+    [cabinets, cabinetId],
+  )
+  const selectedWarehouse = useMemo(
+    () =>
+      selectedCabinet?.warehouseId
+        ? warehouses.find((w) => w.id === selectedCabinet.warehouseId)
+        : warehouses.find((w) => w.id === initialWarehouseId),
+    [selectedCabinet, warehouses, initialWarehouseId],
+  )
 
   // Filter shelves based on selected cabinet
   const availableShelves = useMemo(() => {
@@ -118,6 +138,7 @@ export default function SelectStorageLocationModal({
     try {
       await onConfirm({
         warehouseId: warehouseId || undefined,
+        warehouseId: selectedWarehouse?.id || initialWarehouseId || undefined,
         cabinetId: cabinetId || undefined,
         shelfId: shelfId || undefined,
         folderId: folderId || undefined,
@@ -170,10 +191,21 @@ export default function SelectStorageLocationModal({
         )}
 
         {/* 1. Warehouse */}
+        {/* 1. Cabinet */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
             🏛️ 1. ຄັງເອກະສານ
           </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+              🗄️ 1. ຕູ້ເອກະສານ
+            </label>
+            {selectedWarehouse && (
+              <span className="text-[11px] text-gray-500">
+                🏛️ ຄັງ: <span className="font-medium text-gray-700">{selectedWarehouse.name}</span>
+              </span>
+            )}
+          </div>
           <select
             value={warehouseId}
             onChange={(e) => {
@@ -217,14 +249,17 @@ export default function SelectStorageLocationModal({
           {availableCabinets.length === 0 && (
             <p className="mt-1 text-xs text-amber-600">
               ຍັງບໍ່ພົບຕູ້ເອກະສານໃນຄັງນີ້ (ສາມາດສ້າງຕູ້ໃໝ່ໄດ້ທີ່ເມນູຄັງເອກະສານ)
+              ຍັງບໍ່ພົບຕູ້ເອກະສານ{department ? `ຂອງພະແນກ ${department}` : ''} (ສາມາດສ້າງຕູ້ໃໝ່ໄດ້ທີ່ເມນູຄັງເອກະສານ)
             </p>
           )}
         </div>
 
         {/* 3. Shelf (ຊັ້ນວາງເອກະສານ) */}
+        {/* 2. Shelf (ຊັ້ນວາງເອກະສານ) */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
             🪜 3. ຊັ້ນວາງເອກະສານ (Shelf - ທາງເລືອກ)
+            🪜 2. ຊັ້ນວາງເອກະສານ (Shelf - ທາງເລືອກ)
           </label>
           <select
             value={shelfId}
@@ -248,9 +283,11 @@ export default function SelectStorageLocationModal({
         </div>
 
         {/* 4. Folder (ແຟ້ມເກັບເອກະສານ) */}
+        {/* 3. Folder (ແຟ້ມເກັບເອກະສານ) */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
             📁 4. ແຟ້ມເກັບເອກະສານ (Folder)
+            📁 3. ແຟ້ມເກັບເອກະສານ (Folder)
           </label>
           <select
             value={folderId}
