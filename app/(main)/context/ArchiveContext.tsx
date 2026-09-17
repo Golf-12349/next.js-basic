@@ -334,22 +334,22 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
   }, [setDocuments])
 
   const assignDocument = useCallback(async (docId: string, cabinetId: string, folderId: string, warehouseId?: string, shelfId?: string): Promise<void> => {
-    const folder = folders.find((f) => f.id === folderId)
+    const folder = folderId ? folders.find((f) => f.id === folderId) : undefined
     const effectiveShelfId = shelfId || folder?.shelfId || undefined
     const shelf = effectiveShelfId ? shelves.find((s) => s.id === effectiveShelfId) : undefined
-    const effectiveCabinetId = cabinetId || folder?.cabinetId || shelf?.cabinetId || ''
-    const cabinet = cabinets.find((c) => c.id === effectiveCabinetId)
+    const effectiveCabinetId = cabinetId || folder?.cabinetId || shelf?.cabinetId || undefined
+    const cabinet = effectiveCabinetId ? cabinets.find((c) => c.id === effectiveCabinetId) : undefined
     const effectiveWarehouseId = warehouseId || cabinet?.warehouseId || undefined
     const warehouse = effectiveWarehouseId ? warehouses.find((w) => w.id === effectiveWarehouseId) : undefined
 
     await updateDocument(docId, {
-      warehouseId: effectiveWarehouseId,
+      warehouseId: effectiveWarehouseId || undefined,
       warehouseName: warehouse?.name,
-      cabinetId: effectiveCabinetId,
+      cabinetId: effectiveCabinetId || undefined,
       cabinetName: cabinet?.name,
-      shelfId: effectiveShelfId,
+      shelfId: effectiveShelfId || undefined,
       shelfName: shelf?.name,
-      folderId,
+      folderId: folderId || undefined,
       folderName: folder?.name,
     })
   }, [cabinets, shelves, folders, warehouses, updateDocument])

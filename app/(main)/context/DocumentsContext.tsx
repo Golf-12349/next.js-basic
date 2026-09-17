@@ -232,16 +232,27 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       if (patch.status) {
         await documentService.updateDocumentStatus(id, patch.status)
       }
-      const { status: _status, category, cabinetName: _cabinetName, folderName: _folderName, ...rest } = patch
+      const {
+        status: _status,
+        category,
+        warehouseName: _whName,
+        cabinetName: _cabName,
+        shelfName: _shelfName,
+        folderName: _folderName,
+        ...rest
+      } = patch
       void _status
-      void _cabinetName
+      void _whName
+      void _cabName
+      void _shelfName
       void _folderName
       const categoryId = category ? categoryList.find((c) => c.name === category)?.id : undefined
       if (Object.keys(rest).length > 0 || categoryId) {
         await documentService.patchDocument(id, { ...rest, categoryId })
       }
     } catch (err) {
-      console.warn('Backend updateDocument error, updating local state:', err)
+      console.error('Backend updateDocument error:', err)
+      throw err
     }
     setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)))
   }, [categoryList])

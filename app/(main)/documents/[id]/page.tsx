@@ -356,14 +356,15 @@ export default function DocumentDetailPage() {
           division={doc.division}
           initialWarehouseId={doc.warehouseId}
           initialCabinetId={doc.cabinetId}
+          initialShelfId={doc.shelfId}
           initialFolderId={doc.folderId}
           confirmLabel="ບັນທຶກບ່ອນຈັດເກັບ"
           onClose={() => setStorageOpen(false)}
           onConfirm={async (data) => {
-            await assignDocument(doc.id, data.cabinetId || '', data.folderId || '', data.warehouseId)
             await assignDocument(doc.id, data.cabinetId || '', data.folderId || '', data.warehouseId, data.shelfId)
-            pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
-            void reload()
+            pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ', description: doc.title })
+            setStorageOpen(false)
+            await reload()
           }}
         />
 

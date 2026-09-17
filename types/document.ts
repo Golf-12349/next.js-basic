@@ -31,7 +31,7 @@ export type Shelf = {
   name: string;
   description?: string | null;
   createdAt: string;
-  cabinet?: Cabinet;
+  cabinet?: Cabinet | null;
   _count?: { folders?: number; documents?: number };
 };
 
@@ -42,7 +42,7 @@ export type Folder = {
   name: string;
   description: string;
   createdAt: string;
-  cabinet?: Cabinet;
+  cabinet?: Cabinet | null;
   shelf?: Shelf | null;
   _count?: { documents?: number };
 };

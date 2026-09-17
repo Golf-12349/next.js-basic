@@ -722,16 +722,16 @@ export default function ExpiredDocumentsPage() {
           division={storageDoc?.division}
           initialWarehouseId={storageDoc?.warehouseId}
           initialCabinetId={storageDoc?.cabinetId}
+          initialShelfId={storageDoc?.shelfId}
           initialFolderId={storageDoc?.folderId}
           confirmLabel="ບັນທຶກບ່ອນຈັດເກັບ"
           onClose={() => setStorageDoc(null)}
           onConfirm={async (data) => {
             if (!storageDoc) return
-            await assignDocument(storageDoc.id, data.cabinetId || '', data.folderId || '', data.warehouseId)
             await assignDocument(storageDoc.id, data.cabinetId || '', data.folderId || '', data.warehouseId, data.shelfId)
-            pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
+            pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ', description: storageDoc.title })
             setStorageDoc(null)
-            void reload()
+            await reload()
           }}
         />
 
