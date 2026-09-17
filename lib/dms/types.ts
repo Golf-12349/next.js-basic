@@ -40,15 +40,27 @@ export type ApiCabinet = {
   department: string
   description: string
   createdAt: string
+  shelves?: ApiShelf[]
+  folders?: ApiFolder[]
+}
+
+export type ApiShelf = {
+  id: string
+  cabinetId: string
+  name: string
+  description?: string | null
+  createdAt: string
   folders?: ApiFolder[]
 }
 
 export type ApiFolder = {
   id: string
   cabinetId: string
+  shelfId?: string | null
   name: string
   description: string
   createdAt: string
+  shelf?: ApiShelf | null
 }
 
 export type ApiDocument = {
@@ -74,6 +86,8 @@ export type ApiDocument = {
   warehouse?: ApiWarehouse | null
   cabinetId: string | null
   cabinet: ApiCabinet | null
+  shelfId?: string | null
+  shelf?: ApiShelf | null
   folderId: string | null
   folder: ApiFolder | null
   transfers?: Document['transfers']
@@ -129,6 +143,8 @@ export function toFrontendDocument(doc: ApiDocument): Document {
     warehouseName: doc.warehouse?.name,
     cabinetId: doc.cabinetId ?? undefined,
     cabinetName: doc.cabinet?.name,
+    shelfId: doc.shelfId ?? undefined,
+    shelfName: doc.shelf?.name,
     folderId: doc.folderId ?? undefined,
     folderName: doc.folder?.name,
     transfers: doc.transfers,

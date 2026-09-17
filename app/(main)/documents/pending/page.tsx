@@ -87,6 +87,7 @@ export default function PendingDocumentsPage() {
   async function handleConfirmTransferStorage(data: {
     warehouseId?: string
     cabinetId?: string
+    shelfId?: string
     folderId?: string
     note?: string
   }) {

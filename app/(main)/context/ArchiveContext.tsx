@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { Cabinet, Folder, Warehouse } from '@/types/document'
+import type { Cabinet, Folder, Shelf, Warehouse } from '@/types/document'
 import * as archiveService from '@/lib/dms/archiveService'
 import * as warehouseService from '@/lib/dms/warehouseService'
 import { useDocuments } from './DocumentsContext'
@@ -11,22 +11,27 @@ export interface ArchiveContextValue {
   setWarehouses: React.Dispatch<React.SetStateAction<Warehouse[]>>
   cabinets: Cabinet[]
   setCabinets: React.Dispatch<React.SetStateAction<Cabinet[]>>
+  shelves: Shelf[]
+  setShelves: React.Dispatch<React.SetStateAction<Shelf[]>>
   folders: Folder[]
   setFolders: React.Dispatch<React.SetStateAction<Folder[]>>
   createWarehouse: (data: { name: string; division?: string; description?: string; color?: string }) => Promise<void>
   updateWarehouse: (id: string, data: Partial<{ name: string; division?: string; description?: string; color?: string }>) => Promise<void>
   deleteWarehouse: (id: string) => Promise<void>
   createCabinet: (data: archiveService.CreateCabinetPayload) => Promise<void>
+  createShelf: (data: archiveService.CreateShelfPayload) => Promise<void>
   createFolder: (data: archiveService.CreateFolderPayload) => Promise<void>
   deleteCabinet: (id: string) => Promise<void>
+  deleteShelf: (id: string) => Promise<void>
   deleteFolder: (id: string) => Promise<void>
-  assignDocument: (docId: string, cabinetId: string, folderId: string, warehouseId?: string) => Promise<void>
+  assignDocument: (docId: string, cabinetId: string, folderId: string, warehouseId?: string, shelfId?: string) => Promise<void>
 }
 
 const ArchiveContext = createContext<ArchiveContextValue | undefined>(undefined)
 
 const WAREHOUSES_STORAGE_KEY = 'dms_warehouses'
 const CABINETS_STORAGE_KEY = 'dms_cabinets'
+const SHELVES_STORAGE_KEY = 'dms_shelves'
 const FOLDERS_STORAGE_KEY = 'dms_folders'
 
 export const DEFAULT_WAREHOUSES: Warehouse[] = [
@@ -63,6 +68,7 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
   const { setDocuments, updateDocument } = useDocuments()
   const [warehouses, setWarehouses] = useState<Warehouse[]>(() => loadFromStorage<Warehouse>(WAREHOUSES_STORAGE_KEY, DEFAULT_WAREHOUSES))
   const [cabinets, setCabinets] = useState<Cabinet[]>(() => loadFromStorage<Cabinet>(CABINETS_STORAGE_KEY))
+  const [shelves, setShelves] = useState<Shelf[]>(() => loadFromStorage<Shelf>(SHELVES_STORAGE_KEY))
   const [folders, setFolders] = useState<Folder[]>(() => loadFromStorage<Folder>(FOLDERS_STORAGE_KEY))
 
   const reloadArchive = useCallback(async () => {
@@ -71,11 +77,10 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       : null
     if (!token) return
 
-    // Fetch endpoints independently using Promise.allSettled so a 404 on warehouses
-    // (e.g. before backend PR is merged on Render) does not prevent cabinets & folders from loading
-    const [whResult, cabResult, folderResult] = await Promise.allSettled([
+    const [whResult, cabResult, shelfResult, folderResult] = await Promise.allSettled([
       warehouseService.fetchWarehouses(),
       archiveService.fetchCabinets(),
+      archiveService.fetchShelves(),
       archiveService.fetchFolders(),
     ])
 
@@ -87,22 +92,40 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (cabResult.status === 'fulfilled' && Array.isArray(cabResult.value)) {
-      setCabinets(cabResult.value)
-      saveToStorage(CABINETS_STORAGE_KEY, cabResult.value)
+      setCabinets((prev) => {
+        const serverIds = new Set(cabResult.value.map((c: Cabinet) => c.id))
+        const localOnly = prev.filter((c) => !serverIds.has(c.id) && c.id.startsWith('cab-'))
+        const merged = [...cabResult.value, ...localOnly]
+        saveToStorage(CABINETS_STORAGE_KEY, merged)
+        return merged
+      })
+    }
+
+    if (shelfResult.status === 'fulfilled' && Array.isArray(shelfResult.value)) {
+      setShelves((prev) => {
+        const serverIds = new Set(shelfResult.value.map((s: Shelf) => s.id))
+        const localOnly = prev.filter((s) => !serverIds.has(s.id) && s.id.startsWith('shelf-'))
+        const merged = [...shelfResult.value, ...localOnly]
+        saveToStorage(SHELVES_STORAGE_KEY, merged)
+        return merged
+      })
     }
 
     if (folderResult.status === 'fulfilled' && Array.isArray(folderResult.value)) {
-      setFolders(folderResult.value)
-      saveToStorage(FOLDERS_STORAGE_KEY, folderResult.value)
+      setFolders((prev) => {
+        const serverIds = new Set(folderResult.value.map((f: Folder) => f.id))
+        const localOnly = prev.filter((f) => !serverIds.has(f.id) && f.id.startsWith('fol-'))
+        const merged = [...folderResult.value, ...localOnly]
+        saveToStorage(FOLDERS_STORAGE_KEY, merged)
+        return merged
+      })
     }
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional initial data load on mount; updates happen inside the async loader
     void reloadArchive()
   }, [reloadArchive])
 
-  // Real-time synchronization: reload cabinets and folders whenever backend broadcasts a change
   useEffect(() => {
     const handleArchiveChanged = () => {
       void reloadArchive()
@@ -139,12 +162,12 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
     try {
       const updated = await warehouseService.updateWarehouse(id, data)
       setWarehouses((prev) => {
-        const next = prev.map((w) => (w.id === id ? { ...w, ...updated } : w))
+        const next = prev.map((w) => (w.id === id ? updated : w))
         saveToStorage(WAREHOUSES_STORAGE_KEY, next)
         return next
       })
     } catch (err) {
-      console.warn('Server updateWarehouse failed (using local update):', err)
+      console.warn('Server updateWarehouse failed (updating locally):', err)
       setWarehouses((prev) => {
         const next = prev.map((w) => (w.id === id ? { ...w, ...data } : w))
         saveToStorage(WAREHOUSES_STORAGE_KEY, next)
@@ -169,7 +192,12 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       saveToStorage(CABINETS_STORAGE_KEY, updated)
       return updated
     })
-  }, [])
+    setDocuments((prev) => prev.map((d) =>
+      d.warehouseId === id
+        ? { ...d, warehouseId: undefined, warehouseName: undefined }
+        : d
+    ))
+  }, [setDocuments])
 
   const createCabinet = useCallback(async (data: archiveService.CreateCabinetPayload): Promise<void> => {
     let created: Cabinet
@@ -179,18 +207,39 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       console.warn('Server createCabinet failed (using local fallback):', err)
       created = {
         id: `cab-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        warehouseId: data.warehouseId || null,
         name: data.name,
         color: data.color,
+        division: data.division,
         department: data.department,
         description: data.description,
-        warehouseId: data.warehouseId || undefined,
-        division: data.division || undefined,
         createdAt: new Date().toISOString(),
       }
     }
     setCabinets((prev) => {
       const updated = [created, ...prev.filter((c) => c.id !== created.id)]
       saveToStorage(CABINETS_STORAGE_KEY, updated)
+      return updated
+    })
+  }, [])
+
+  const createShelf = useCallback(async (data: archiveService.CreateShelfPayload): Promise<void> => {
+    let created: Shelf
+    try {
+      created = await archiveService.createShelf(data)
+    } catch (err) {
+      console.warn('Server createShelf failed (using local fallback):', err)
+      created = {
+        id: `shelf-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        cabinetId: data.cabinetId,
+        name: data.name,
+        description: data.description,
+        createdAt: new Date().toISOString(),
+      }
+    }
+    setShelves((prev) => {
+      const updated = [created, ...prev.filter((s) => s.id !== created.id)]
+      saveToStorage(SHELVES_STORAGE_KEY, updated)
       return updated
     })
   }, [])
@@ -204,6 +253,7 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       created = {
         id: `fol-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         cabinetId: data.cabinetId,
+        shelfId: data.shelfId || null,
         name: data.name,
         description: data.description,
         createdAt: new Date().toISOString(),
@@ -227,15 +277,42 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       saveToStorage(CABINETS_STORAGE_KEY, updated)
       return updated
     })
+    setShelves((prev) => {
+      const updated = prev.filter((s) => s.cabinetId !== id)
+      saveToStorage(SHELVES_STORAGE_KEY, updated)
+      return updated
+    })
     setFolders((prev) => {
       const updated = prev.filter((f) => f.cabinetId !== id)
       saveToStorage(FOLDERS_STORAGE_KEY, updated)
       return updated
     })
-    // Detach documents that lived in this cabinet (soft-unlinked, not deleted)
     setDocuments((prev) => prev.map((d) =>
       d.cabinetId === id
-        ? { ...d, cabinetId: undefined, cabinetName: undefined, folderId: undefined, folderName: undefined }
+        ? { ...d, cabinetId: undefined, cabinetName: undefined, shelfId: undefined, shelfName: undefined, folderId: undefined, folderName: undefined }
+        : d
+    ))
+  }, [setDocuments])
+
+  const deleteShelf = useCallback(async (id: string): Promise<void> => {
+    try {
+      await archiveService.deleteShelf(id)
+    } catch (err) {
+      console.warn('Server deleteShelf failed (removing locally):', err)
+    }
+    setShelves((prev) => {
+      const updated = prev.filter((s) => s.id !== id)
+      saveToStorage(SHELVES_STORAGE_KEY, updated)
+      return updated
+    })
+    setFolders((prev) => {
+      const updated = prev.filter((f) => f.shelfId !== id)
+      saveToStorage(FOLDERS_STORAGE_KEY, updated)
+      return updated
+    })
+    setDocuments((prev) => prev.map((d) =>
+      d.shelfId === id
+        ? { ...d, shelfId: undefined, shelfName: undefined, folderId: undefined, folderName: undefined }
         : d
     ))
   }, [setDocuments])
@@ -256,19 +333,26 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
     ))
   }, [setDocuments])
 
-  const assignDocument = useCallback(async (docId: string, cabinetId: string, folderId: string, warehouseId?: string): Promise<void> => {
-    const cabinet = cabinets.find((c) => c.id === cabinetId)
+  const assignDocument = useCallback(async (docId: string, cabinetId: string, folderId: string, warehouseId?: string, shelfId?: string): Promise<void> => {
     const folder = folders.find((f) => f.id === folderId)
-    const warehouse = warehouseId ? warehouses.find((w) => w.id === warehouseId) : undefined
+    const effectiveShelfId = shelfId || folder?.shelfId || undefined
+    const shelf = effectiveShelfId ? shelves.find((s) => s.id === effectiveShelfId) : undefined
+    const effectiveCabinetId = cabinetId || folder?.cabinetId || shelf?.cabinetId || ''
+    const cabinet = cabinets.find((c) => c.id === effectiveCabinetId)
+    const effectiveWarehouseId = warehouseId || cabinet?.warehouseId || undefined
+    const warehouse = effectiveWarehouseId ? warehouses.find((w) => w.id === effectiveWarehouseId) : undefined
+
     await updateDocument(docId, {
-      warehouseId,
+      warehouseId: effectiveWarehouseId,
       warehouseName: warehouse?.name,
-      cabinetId,
+      cabinetId: effectiveCabinetId,
       cabinetName: cabinet?.name,
+      shelfId: effectiveShelfId,
+      shelfName: shelf?.name,
       folderId,
       folderName: folder?.name,
     })
-  }, [cabinets, folders, warehouses, updateDocument])
+  }, [cabinets, shelves, folders, warehouses, updateDocument])
 
   const value = useMemo<ArchiveContextValue>(
     () => ({
@@ -276,27 +360,34 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       setWarehouses,
       cabinets,
       setCabinets,
+      shelves,
+      setShelves,
       folders,
       setFolders,
       createWarehouse,
       updateWarehouse,
       deleteWarehouse,
       createCabinet,
+      createShelf,
       createFolder,
       deleteCabinet,
+      deleteShelf,
       deleteFolder,
       assignDocument,
     }),
     [
       warehouses,
       cabinets,
+      shelves,
       folders,
       createWarehouse,
       updateWarehouse,
       deleteWarehouse,
       createCabinet,
+      createShelf,
       createFolder,
       deleteCabinet,
+      deleteShelf,
       deleteFolder,
       assignDocument,
     ],

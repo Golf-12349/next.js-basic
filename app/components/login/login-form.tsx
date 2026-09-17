@@ -121,8 +121,30 @@ export default function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(true);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [slowServerHint, setSlowServerHint] = useState(false);
+
+  // ປຸກ Render Server ໃຫ້ຕື່ນລ່ວງໜ້າໃນພື້ນຫຼັງ (Pre-warm) ທັນທີທີ່ເປີດໜ້າ login
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://dms-backend-yrap.onrender.com/api';
+    fetch(`${apiUrl}/categories`, {
+      method: 'GET',
+      mode: 'cors',
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isSubmitting) {
+      timer = setTimeout(() => {
+        setSlowServerHint(true);
+      }, 3500);
+    } else {
+      setSlowServerHint(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isSubmitting]);
 
   useEffect(() => {
     if (cooldownSeconds === 0) return;
@@ -502,7 +524,7 @@ export default function LoginForm() {
                 ) : isSubmitting ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    <span>ກຳລັງເຂົ້າສູ່ລະບົບ...</span>
+                    <span>{slowServerHint ? "ກຳລັງປຸກເຊີເວີ Cloud (Render)..." : "ກຳລັງເຂົ້າສູ່ລະບົບ..."}</span>
                   </>
                 ) : (
                   <>
@@ -511,6 +533,13 @@ export default function LoginForm() {
                   </>
                 )}
               </button>
+
+              {/* Cold-start notification */}
+              {isSubmitting && slowServerHint && (
+                <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50/90 py-2 px-3 text-center text-[11px] font-medium text-amber-700 animate-pulse">
+                  <span>⚡ ເຊີເວີຟຣີ Render ກຳລັງບູດເຄື່ອງ (Cold Start ປະມານ 20-40 ວິນາທີ)...</span>
+                </div>
+              )}
             </form>
 
             {/* Card Footer */}

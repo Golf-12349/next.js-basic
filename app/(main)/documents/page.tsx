@@ -358,11 +358,12 @@ export default function DocumentsPage() {
                           🏢 {doc.department || doc.division}
                         </div>
                       )}
-                      {(doc.warehouseName || doc.cabinetName || doc.folderName) && (
+                      {(doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName) && (
                         <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700">
                           {[
                             doc.warehouseName && `🏛️ ${doc.warehouseName}`,
                             doc.cabinetName && `🗄️ ${doc.cabinetName}`,
+                            doc.shelfName && `🪜 ${doc.shelfName}`,
                             doc.folderName && `📁 ${doc.folderName}`,
                           ].filter(Boolean).join(' > ')}
                         </span>
@@ -617,6 +618,7 @@ export default function DocumentsPage() {
           onConfirm={async (data) => {
             if (!storageDoc) return
             await assignDocument(storageDoc.id, data.cabinetId || '', data.folderId || '', data.warehouseId)
+            await assignDocument(storageDoc.id, data.cabinetId || '', data.folderId || '', data.warehouseId, data.shelfId)
             pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
             void reload()
           }}

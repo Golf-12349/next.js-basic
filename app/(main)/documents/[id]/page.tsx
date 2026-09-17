@@ -315,11 +315,14 @@ export default function DocumentDetailPage() {
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ບ່ອນຈັດເກັບໃນຄັງ</dt>
                   <dd className="text-right text-gray-900">
-                    {doc.warehouseName || doc.cabinetName || doc.folderName ? (
+                    {doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName ? (
                       <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700">
-                        {doc.warehouseName ? `${doc.warehouseName} > ` : ''}
-                        {doc.cabinetName ? `🗄️ ${doc.cabinetName}` : ''}
-                        {doc.folderName ? ` > 📁 ${doc.folderName}` : ''}
+                        {[
+                          doc.warehouseName && `🏛️ ${doc.warehouseName}`,
+                          doc.cabinetName && `🗄️ ${doc.cabinetName}`,
+                          doc.shelfName && `🪜 ${doc.shelfName}`,
+                          doc.folderName && `📁 ${doc.folderName}`,
+                        ].filter(Boolean).join(' > ')}
                       </span>
                     ) : (
                       <span className="text-gray-400">ຍັງບໍ່ໄດ້ກຳນົດບ່ອນເກັບ</span>
@@ -358,6 +361,7 @@ export default function DocumentDetailPage() {
           onClose={() => setStorageOpen(false)}
           onConfirm={async (data) => {
             await assignDocument(doc.id, data.cabinetId || '', data.folderId || '', data.warehouseId)
+            await assignDocument(doc.id, data.cabinetId || '', data.folderId || '', data.warehouseId, data.shelfId)
             pushToast({ title: 'ອັບເດດບ່ອນຈັດເກັບສຳເລັດ' })
             void reload()
           }}

@@ -25,6 +25,7 @@ export interface CreateDocumentPayload {
   expiresAt?: string
   warehouseId?: string
   cabinetId?: string
+  shelfId?: string
   folderId?: string
 }
 
@@ -42,9 +43,10 @@ export async function fetchDocuments(params?: { limit?: number; deleted?: string
 
 export async function createDocument(payload: CreateDocumentPayload): Promise<ApiDocument> {
   const cleaned: Record<string, unknown> = { ...payload }
-  if (!cleaned.cabinetId) delete cleaned.cabinetId
-  if (!cleaned.folderId) delete cleaned.folderId
   if (!cleaned.warehouseId) delete cleaned.warehouseId
+  if (!cleaned.cabinetId) delete cleaned.cabinetId
+  if (!cleaned.shelfId) delete cleaned.shelfId
+  if (!cleaned.folderId) delete cleaned.folderId
   if (!cleaned.categoryId) delete cleaned.categoryId
   if (!cleaned.expiresAt) delete cleaned.expiresAt
 
@@ -110,7 +112,7 @@ export async function fetchIncomingTransfers(): Promise<import('@/types/document
 
 export async function approveTransfer(
   transferId: string,
-  payload: { warehouseId?: string; cabinetId?: string; folderId?: string; note?: string },
+  payload: { warehouseId?: string; cabinetId?: string; shelfId?: string; folderId?: string; note?: string },
 ): Promise<{ transfer: import('@/types/document').DocumentTransfer; document: import('@/types/document').Document }> {
   const res = await apiClient.post<{ transfer: import('@/types/document').DocumentTransfer; document: import('@/types/document').Document }>(
     `/documents/transfers/${transferId}/approve`,

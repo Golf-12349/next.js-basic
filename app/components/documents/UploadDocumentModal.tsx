@@ -47,12 +47,44 @@ function addYears(years: number): string {
 interface UploadDocumentModalProps {
   open: boolean
   onClose: () => void
+  initialCabinetId?: string
+  initialShelfId?: string
+  initialFolderId?: string
 }
 
-export default function UploadDocumentModal({ open, onClose }: UploadDocumentModalProps) {
+export default function UploadDocumentModal({
+  open,
+  onClose,
+  initialCabinetId,
+  initialShelfId,
+  initialFolderId,
+}: UploadDocumentModalProps) {
   const { user: currentUser } = useCurrentUser()
   const { addDocument, uploadFile, categories, loading, reload } = useDocuments()
-  const { cabinets, folders } = useArchive()
+  const { warehouses, cabinets, shelves, folders } = useArchive()
+
+  // ດຶງຄ່າ cabinet ແລະ shelf ອັດຕະໂນມັດ ຖ້າມີການສົ່ງ folderId ເຂົ້າມາ
+  const resolvedCabinetId = useMemo(() => {
+    if (initialCabinetId) return initialCabinetId
+    if (initialFolderId) {
+      const f = folders.find((item) => item.id === initialFolderId)
+      if (f?.cabinetId) return f.cabinetId
+    }
+    if (initialShelfId) {
+      const s = shelves.find((item) => item.id === initialShelfId)
+      if (s?.cabinetId) return s.cabinetId
+    }
+    return ''
+  }, [initialCabinetId, initialFolderId, initialShelfId, folders, shelves])
+
+  const resolvedShelfId = useMemo(() => {
+    if (initialShelfId) return initialShelfId
+    if (initialFolderId) {
+      const f = folders.find((item) => item.id === initialFolderId)
+      if (f?.shelfId) return f.shelfId
+    }
+    return ''
+  }, [initialShelfId, initialFolderId, folders])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'saving'>('idle')
@@ -68,8 +100,9 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
   const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
   const [pdfLoading, setPdfLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [cabinetId, setCabinetId] = useState('')
-  const [folderId, setFolderId] = useState('')
+  const [cabinetId, setCabinetId] = useState(resolvedCabinetId)
+  const [shelfId, setShelfId] = useState(resolvedShelfId)
+  const [folderId, setFolderId] = useState(initialFolderId || '')
   const [dragActive, setDragActive] = useState(false)
 
   // ໝວດໝູ່ ເລືອກໄດ້ — ຕັດ ຂາເຂົ້າ/ຂາອອກ (ທິດທາງ) ອອກຈາກປະເພດເອກະສານ
@@ -92,8 +125,19 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
     return cabinets;
   }, [cabinets, currentUser]);
 
-  // 3-Level archive: folder ຂອງຕູ້ທີເລືອກ
-  const visibleFolders = cabinetId ? folders.filter((f) => f.cabinetId === cabinetId) : []
+  // Shelf ຂອງຕູ້ທີເລືອກ
+  const visibleShelves = useMemo(() => {
+    return cabinetId ? shelves.filter((s) => s.cabinetId === cabinetId) : []
+  }, [cabinetId, shelves])
+
+  // Folder ຂອງຕູ້/ຊັ້ນທີເລືອກ
+  const visibleFolders = useMemo(() => {
+    if (!cabinetId) return []
+    if (shelfId) {
+      return folders.filter((f) => f.cabinetId === cabinetId && f.shelfId === shelfId)
+    }
+    return folders.filter((f) => f.cabinetId === cabinetId)
+  }, [cabinetId, shelfId, folders])
 
   // ໝາຍເຫດ: ສະຖານະຟໍຣົມທັງໝົດ ຖືກຣີເຊັດອັດຕະໂນມັດ ເມື່ອ remount (key ປ່ຽນທຸກໆເປີດ) —
   // ບໍ່ຕ້ອງ useEffect + setState ເພື່ອບໍ່ລົ່ວ lint rule `react-hooks/set-state-in-effect`
@@ -130,7 +174,14 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
   function handleCabinetChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value
     setCabinetId(value)
-    setFolderId('') // ຣີເຊັດແຟ້ມເມື່ອປ່ຽນຕູ້
+    setShelfId('')
+    setFolderId('')
+  }
+
+  function handleShelfChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value
+    setShelfId(value)
+    setFolderId('')
   }
 
   function handleDivisionChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -169,7 +220,11 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
     if (!validateForm() || !selectedFile) return
 
     const selectedCabinet = cabinets.find((c) => c.id === cabinetId)
+    const selectedShelf = shelves.find((s) => s.id === shelfId)
     const selectedFolder = folders.find((f) => f.id === folderId)
+    const selectedWarehouse = selectedCabinet?.warehouseId
+      ? warehouses.find((w) => w.id === selectedCabinet.warehouseId)
+      : undefined
 
     setIsSubmitting(true)
     setUploadStep('uploading')
@@ -194,9 +249,13 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
         uploadedBy: currentUser?.name || 'ຜູ້ໃຊ້ງານ',
         fileUrl: uploaded.fileUrl,
         fileName: uploaded.fileName,
-        // 3-Level archive: save cabinet + folder
+        // 5-Level archive: save warehouse + cabinet + shelf + folder
+        warehouseId: selectedWarehouse?.id || undefined,
+        warehouseName: selectedWarehouse?.name,
         cabinetId: cabinetId || undefined,
         cabinetName: selectedCabinet?.name,
+        shelfId: shelfId || undefined,
+        shelfName: selectedShelf?.name,
         folderId: folderId || undefined,
         folderName: selectedFolder?.name,
       })
@@ -428,7 +487,7 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                   </p>
                 </div>
 
-                {/* 3-Level archive: Cabinet + Folder dropdowns */}
+                {/* 5-Level archive: Cabinet + Shelf + Folder dropdowns */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">
                     ຕູ້ເອກະສານ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
@@ -446,7 +505,23 @@ export default function UploadDocumentModal({ open, onClose }: UploadDocumentMod
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">
-                    ແຟ້ມ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
+                    ຊັ້ນວາງເອກະສານ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
+                  </label>
+                  <select
+                    value={shelfId}
+                    onChange={handleShelfChange}
+                    disabled={!cabinetId}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400 disabled:cursor-not-allowed disabled:bg-slate-800/40 disabled:text-slate-500"
+                  >
+                    <option value="">{cabinetId ? '— ທຸກຊັ້ນວາງ / ບໍ່ລະບຸ —' : '— ກະລຸນາເລືອກຕູ້ກ່ອນ —'}</option>
+                    {visibleShelves.map((s) => (
+                      <option key={s.id} value={s.id}>🪜 {s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">
+                    ແຟ້ມເກັບເອກະສານ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
                   </label>
                   <select
                     value={folderId}

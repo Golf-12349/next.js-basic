@@ -1,12 +1,13 @@
 "use client"
 import { useState, useMemo } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
-import type { Cabinet, Document, Folder } from '@/types/document'
+import type { Cabinet, Document, Folder, Shelf } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
 
 // ── Cabinet Card ─────────────────────────────────────────────
 interface CabinetCardProps {
   cabinet: Cabinet;
+  shelfCount: number;
   folderCount: number;
   docCount: number;
   canManage?: boolean;
@@ -21,7 +22,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function CabinetCard({ cabinet, folderCount, docCount, canManage = true, onOpen, onDelete }: CabinetCardProps) {
+function CabinetCard({ cabinet, shelfCount, folderCount, docCount, canManage = true, onOpen, onDelete }: CabinetCardProps) {
   return (
     <div
       onClick={onOpen}
@@ -33,7 +34,7 @@ function CabinetCard({ cabinet, folderCount, docCount, canManage = true, onOpen,
             🗄️
           </div>
           <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-            {folderCount} ຊັ້ນວາງ
+            {shelfCount} ຊັ້ນວາງ
           </span>
         </div>
         <h2 className="mt-4 text-xl font-bold text-white">{cabinet.name}</h2>
@@ -46,6 +47,9 @@ function CabinetCard({ cabinet, folderCount, docCount, canManage = true, onOpen,
         <div className="mt-4 flex items-center justify-between">
           <span className="text-xs text-gray-400">ສ້າງເມື່ອ {formatDate(cabinet.createdAt)}</span>
           <div className="flex items-center gap-2">
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+              {folderCount} ແຟ້ມ
+            </span>
             <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
               {docCount} ເອກະສານ
             </span>
@@ -79,23 +83,21 @@ interface EmptyStateProps {
 }
 
 function EmptyState({ icon, message, subMessage, actionLabel, onAction, href }: EmptyStateProps) {
-  const actionButton = actionLabel && (
-    onAction ? (
-      <button
-        onClick={onAction}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-      >
-        <Plus size={16} /> {actionLabel}
-      </button>
-    ) : href ? (
-      <a
-        href={href}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-      >
-        <Plus size={16} /> {actionLabel}
-      </a>
-    ) : null
-  );
+  const actionButton = onAction ? (
+    <button
+      onClick={onAction}
+      className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+    >
+      <Plus size={16} /> {actionLabel}
+    </button>
+  ) : href ? (
+    <a
+      href={href}
+      className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+    >
+      <Plus size={16} /> {actionLabel}
+    </a>
+  ) : null;
 
   return (
     <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center">
@@ -112,15 +114,25 @@ function EmptyState({ icon, message, subMessage, actionLabel, onAction, href }: 
 // ── Cabinet View ─────────────────────────────────────────────
 interface CabinetViewProps {
   cabinets: Cabinet[];
-  folders: Folder[];
-  documents: Document[];
+  shelves?: Shelf[];
+  folders?: Folder[];
+  documents?: Document[];
   canManage?: boolean;
   onCreate: () => void;
   onOpen: (cabinetId: string) => void;
   onDelete: (cabinet: Cabinet) => void;
 }
 
-export default function CabinetView({ cabinets = [], folders = [], documents = [], canManage = true, onCreate, onOpen, onDelete }: CabinetViewProps) {
+export default function CabinetView({
+  cabinets = [],
+  shelves = [],
+  folders = [],
+  documents = [],
+  canManage = true,
+  onCreate,
+  onOpen,
+  onDelete,
+}: CabinetViewProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 30;
 
@@ -135,7 +147,8 @@ export default function CabinetView({ cabinets = [], folders = [], documents = [
       <EmptyState
         icon="🗄️"
         message="ຍັງບໍ່ມີຕູ້ເອກະສານ"
-        actionLabel={canManage ? "ສ້າງຕູ້ເອກະສານໄໝ່" : undefined}
+        subMessage="ສ້າງຕູ້ເອກະສານເພື່ອຈັດແບ່ງຊັ້ນວາງ ແລະ ແຟ້ມເກັບເອກະສານ"
+        actionLabel={canManage ? "ສ້າງຕູ້ເອກະສານໃໝ່" : undefined}
         onAction={canManage ? onCreate : undefined}
       />
     );
@@ -144,24 +157,29 @@ export default function CabinetView({ cabinets = [], folders = [], documents = [
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {paginatedCabinets.map((cabinet) => (
-          <CabinetCard
-            key={cabinet.id}
-            cabinet={cabinet}
-            folderCount={folders.filter((f) => f.cabinetId === cabinet.id).length}
-            docCount={
-              documents.filter(
-                (d) =>
-                  !d.deleted &&
-                  (d.cabinetId === cabinet.id ||
-                    folders.some((f) => f.cabinetId === cabinet.id && (f.id === d.folderId || (f.name && d.folderName === f.name))))
-              ).length
-            }
-            canManage={canManage}
-            onOpen={() => onOpen(cabinet.id)}
-            onDelete={() => onDelete(cabinet)}
-          />
-        ))}
+        {paginatedCabinets.map((cabinet) => {
+          const cabShelves = shelves.filter((s) => s.cabinetId === cabinet.id);
+          const cabFolders = folders.filter((f) => f.cabinetId === cabinet.id);
+          const docCount = documents.filter(
+            (d) =>
+              !d.deleted &&
+              (d.cabinetId === cabinet.id ||
+                cabFolders.some((f) => f.id === d.folderId || (f.name && d.folderName === f.name)))
+          ).length;
+
+          return (
+            <CabinetCard
+              key={cabinet.id}
+              cabinet={cabinet}
+              shelfCount={cabShelves.length}
+              folderCount={cabFolders.length}
+              docCount={docCount}
+              canManage={canManage}
+              onOpen={() => onOpen(cabinet.id)}
+              onDelete={() => onDelete(cabinet)}
+            />
+          );
+        })}
       </div>
       <Pagination
         currentPage={currentPage}

@@ -118,7 +118,7 @@ export default function WarehouseView({
           🏛️
         </div>
         <p className="text-gray-500">ຍັງບໍ່ມີຄັງເອກະສານ</p>
-        <p className="mt-1 text-xs text-gray-400">ສ້າງຄັງເອກະສານເພື່ອຈັດແບ່ງຕູ້ ແລະ ຊັ້ນວາງເອກະສານ</p>
+        <p className="mt-1 text-xs text-gray-400">ສ້າງຄັງເອກະສານເພື່ອຈັດແບ່ງຕູ້, ຊັ້ນວາງ ແລະ ແຟ້ມເກັບເອກະສານ</p>
         {canManage && (
           <button
             onClick={onCreate}

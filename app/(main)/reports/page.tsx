@@ -9,6 +9,7 @@ const statusStyles: Record<string, string> = {
   'ລໍຖ້າອະນຸມັດ': 'bg-amber-100 text-amber-700',
   'ເກັບເຂົ້າຄັງ': 'bg-gray-200 text-gray-700',
   'ຮ່າງ': 'bg-slate-100 text-slate-700',
+  'ໝົດອາຍຸ': 'bg-rose-100 text-rose-700',
 };
 
 const statusLabelMap: Record<string, string> = {
@@ -16,6 +17,7 @@ const statusLabelMap: Record<string, string> = {
   pending: 'ລໍຖ້າອະນຸມັດ',
   approved: 'ອະນຸມັດ',
   archived: 'ເກັບເຂົ້າຄັງ',
+  expired: 'ໝົດອາຍຸ',
 };
 
 export default function ReportsPage() {

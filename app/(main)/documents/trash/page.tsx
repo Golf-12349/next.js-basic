@@ -106,9 +106,10 @@ export default function TrashPage() {
     pushToast({ title: 'ການກູ້ຄືນສຳເລັດ', description: `"${doc.title}" ຖືກກູ້ຄືນກັບບ່ອນເດີມ` })
   }
 
-  function handleRestoreAll() {
-    trash.forEach((d) => restoreDocument(d.id))
+  async function handleRestoreAll() {
+    await Promise.all(trash.map((d) => restoreDocument(d.id)))
     pushToast({ title: 'ກູ້ຄືນທັງໝົດສຳເລັດ', description: `ກູ້ຄືນ ${trash.length} ເອກະສານ` })
+    void reload()
   }
 
   function handlePermDelete() {
@@ -118,10 +119,11 @@ export default function TrashPage() {
     setConfirmDelete(null)
   }
 
-  function handleEmptyTrash() {
-    trash.forEach((d) => permDeleteDocument(d.id))
+  async function handleEmptyTrash() {
+    await Promise.all(trash.map((d) => permDeleteDocument(d.id)))
     pushToast({ title: 'ລ້າງຖັງຂີ້ເຫຍື້ອສຳເລັດ', description: `ລຶບ ${trash.length} ເອກະສານຢ່າງຖາວອນ` })
     setConfirmEmpty(false)
+    void reload()
   }
 
   return (
@@ -288,15 +290,20 @@ export default function TrashPage() {
                           <span className="mb-1 inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
                             {doc.category}
                           </span>
-                          {(doc.cabinetName || doc.folderName) && (
+                          {(doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName) && (
                             <div className="mt-1.5 flex items-center gap-1 text-xs text-gray-500">
                               <FolderOpen size={13} className="shrink-0 text-amber-500" />
                               <span className="truncate">
-                                🗄️ {doc.cabinetName ?? '—'} <span className="text-gray-400">{'>'}</span> 📁 {doc.folderName ?? '—'}
+                                {[
+                                  doc.warehouseName && `🏛️ ${doc.warehouseName}`,
+                                  doc.cabinetName && `🗄️ ${doc.cabinetName}`,
+                                  doc.shelfName && `🪜 ${doc.shelfName}`,
+                                  doc.folderName && `📁 ${doc.folderName}`,
+                                ].filter(Boolean).join(' > ')}
                               </span>
                             </div>
                           )}
-                          {!doc.cabinetName && !doc.folderName && (
+                          {!doc.warehouseName && !doc.cabinetName && !doc.shelfName && !doc.folderName && (
                             <div className="mt-1.5 text-xs text-gray-400">— ບໍ່ໄດ້ຈັດເຂົ້າຄັງເກັບ —</div>
                           )}
                         </td>
@@ -394,7 +401,12 @@ export default function TrashPage() {
                 <div>
                   <div className="text-xs text-gray-500">ທີ່ຕັ້ງເດີມ</div>
                   <div className="text-sm font-semibold">
-                    🗄️ {previewDoc.cabinetName ?? '—'} {'>'} 📁 {previewDoc.folderName ?? '—'}
+                    {[
+                      previewDoc.warehouseName && `🏛️ ${previewDoc.warehouseName}`,
+                      previewDoc.cabinetName && `🗄️ ${previewDoc.cabinetName}`,
+                      previewDoc.shelfName && `🪜 ${previewDoc.shelfName}`,
+                      previewDoc.folderName && `📁 ${previewDoc.folderName}`,
+                    ].filter(Boolean).join(' > ') || '—'}
                   </div>
                 </div>
               </div>
