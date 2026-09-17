@@ -158,6 +158,26 @@ export default function WarehouseView({
 
   return (
     <>
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl text-white">
+            🏛️
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">ຄັງເອກະສານທັງໝົດ</h2>
+            <p className="text-xs text-gray-500">ສູນລວມການຈັດເກັບເອກະສານ • ລວມ {filteredWarehouses.length} ຄັງ</p>
+          </div>
+        </div>
+        {canManage && (
+          <button
+            onClick={onCreate}
+            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 active:scale-95"
+          >
+            <Plus size={16} /> ສ້າງຄັງເອກະສານໃໝ່
+          </button>
+        )}
+      </div>
+
       {/* Filter Toolbar */}
       <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">

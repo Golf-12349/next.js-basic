@@ -149,6 +149,7 @@ function EmptyState({ icon, message, subMessage, actionLabel, onAction, href }: 
 
 // ── Cabinet View ─────────────────────────────────────────────
 interface CabinetViewProps {
+  warehouse?: Warehouse;
   warehouses?: Warehouse[];
   cabinets: Cabinet[];
   shelves?: Shelf[];
@@ -161,6 +162,7 @@ interface CabinetViewProps {
 }
 
 export default function CabinetView({
+  warehouse,
   warehouses = [],
   cabinets = [],
   shelves = [],
@@ -251,8 +253,33 @@ export default function CabinetView({
     return filteredCabinets.slice(start, start + PAGE_SIZE);
   }, [filteredCabinets, currentPage]);
 
+  const viewTitle = warehouse ? `ຕູ້ເອກະສານໃນ ${warehouse.name}` : 'ຕູ້ເອກະສານທັງໝົດ';
+  const viewSubtitle = warehouse
+    ? `ຄັງ: ${warehouse.name} • ລວມ ${filteredCabinets.length} ຕູ້`
+    : `ລວມທັງໝົດ ${filteredCabinets.length} ຕູ້`;
+
   return (
     <>
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-600 text-xl text-white">
+            🗄️
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">{viewTitle}</h2>
+            <p className="text-xs text-gray-500">{viewSubtitle}</p>
+          </div>
+        </div>
+        {canManage && (
+          <button
+            onClick={onCreate}
+            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 active:scale-95"
+          >
+            <Plus size={16} /> ສ້າງຕູ້ເອກະສານໃໝ່
+          </button>
+        )}
+      </div>
+
       {/* Filter Toolbar */}
       <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -68,8 +68,6 @@ export default function ArchivePage() {
     user,
   );
 
-  const [searchQuery, setSearchQuery] = useState('');
-
   const unassignedDocsCount = useMemo(() => {
     return documents.filter(
       (d) =>
@@ -88,112 +86,12 @@ export default function ArchivePage() {
     ).length;
   }, [documents]);
 
-  // Reset search query when navigating between levels or containers
-  useEffect(() => {
-    setSearchQuery('');
-  }, [archive.view]);
-
-  const showCreateInHeader =
-    canManage &&
-    (archive.view.level === 'warehouses' ||
-      archive.view.level === 'cabinets' ||
-      archive.view.level === 'shelves' ||
-      archive.view.level === 'folders');
-
-  const showSearchInHeader =
-    archive.view.level === 'warehouses' ||
-    archive.view.level === 'cabinets' ||
-    archive.view.level === 'shelves' ||
-    archive.view.level === 'folders';
-
-  const headerCreateLabel =
-    archive.view.level === 'warehouses'
-      ? 'ສ້າງຄັງເອກະສານໃໝ່'
-      : archive.view.level === 'cabinets'
-      ? 'ສ້າງຕູ້ເອກະສານໃໝ່'
-      : archive.view.level === 'shelves'
-      ? 'ສ້າງຊັ້ນວາງເອກະສານໃໝ່'
-      : 'ສ້າງແຟ້ມເກັບເອກະສານໃໝ່';
-
-  const searchPlaceholder =
-    archive.view.level === 'warehouses'
-      ? 'ຄົ້ນຫາຄັງເອກະສານ...'
-      : archive.view.level === 'cabinets'
-      ? 'ຄົ້ນຫາຕູ້ເອກະສານ...'
-      : archive.view.level === 'shelves'
-      ? 'ຄົ້ນຫາຊັ້ນວາງເອກະສານ...'
-      : archive.view.level === 'folders'
-      ? 'ຄົ້ນຫາແຟ້ມເກັບເອກະສານ...'
-      : 'ຄົ້ນຫາ...';
-
-  const handleHeaderCreate = () => {
-    if (archive.view.level === 'warehouses') {
-      archive.setWarehouseModalOpen(true);
-    } else if (archive.view.level === 'cabinets') {
-      archive.setCabinetModalOpen(true);
-    } else if (archive.view.level === 'shelves') {
-      archive.setShelfModalOpen(true);
-    } else if (archive.view.level === 'folders') {
-      archive.setFolderModalOpen(true);
-    }
-  };
-
-  // Filtered lists based on search query
-  const filteredWarehouses = useMemo(() => {
-    if (!searchQuery.trim()) return warehouses;
-    const q = searchQuery.toLowerCase().trim();
-    return warehouses.filter(
-      (w) =>
-        w.name.toLowerCase().includes(q) ||
-        (w.division && w.division.toLowerCase().includes(q)) ||
-        (w.description && w.description.toLowerCase().includes(q)),
-    );
-  }, [warehouses, searchQuery]);
-
-  const filteredCabinets = useMemo(() => {
-    const base = archive.warehouseCabinets;
-    if (!searchQuery.trim()) return base;
-    const q = searchQuery.toLowerCase().trim();
-    return base.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.department && c.department.toLowerCase().includes(q)) ||
-        (c.description && c.description.toLowerCase().includes(q)),
-    );
-  }, [archive.warehouseCabinets, searchQuery]);
-
-  const filteredShelves = useMemo(() => {
-    const base = archive.activeCabinet ? archive.cabinetShelves : shelves;
-    if (!searchQuery.trim()) return base;
-    const q = searchQuery.toLowerCase().trim();
-    return base.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        (s.description && s.description.toLowerCase().includes(q)),
-    );
-  }, [archive.activeCabinet, archive.cabinetShelves, shelves, searchQuery]);
-
-  const filteredFolders = useMemo(() => {
-    const base = archive.shelfFolders;
-    if (!searchQuery.trim()) return base;
-    const q = searchQuery.toLowerCase().trim();
-    return base.filter(
-      (f) =>
-        f.name.toLowerCase().includes(q) ||
-        (f.description && f.description.toLowerCase().includes(q)),
-    );
-  }, [archive.shelfFolders, searchQuery]);
-
   return (
     <DashboardLayout title="ຄັງເກັບເອກກະສານ">
       <main className="flex-1 overflow-y-auto p-6">
         <PageHeader
-          showCreateButton={showCreateInHeader}
-          createButtonLabel={headerCreateLabel}
-          onCreate={handleHeaderCreate}
-          searchValue={searchQuery}
-          onSearchChange={showSearchInHeader ? setSearchQuery : undefined}
-          searchPlaceholder={searchPlaceholder}
+          showCreateButton={false}
+          onSearchChange={undefined}
         />
 
         {unassignedDocsCount > 0 && (
@@ -235,7 +133,7 @@ export default function ArchivePage() {
 
         {archive.view.level === 'warehouses' && (
           <WarehouseView
-            warehouses={filteredWarehouses}
+            warehouses={warehouses}
             cabinets={archive.visibleCabinets}
             documents={documents}
             canManage={canManage}
@@ -247,8 +145,9 @@ export default function ArchivePage() {
 
         {archive.view.level === 'cabinets' && (
           <CabinetView
+            warehouse={archive.activeWarehouse}
             warehouses={warehouses}
-            cabinets={filteredCabinets}
+            cabinets={archive.warehouseCabinets}
             shelves={shelves}
             folders={folders}
             documents={documents}
@@ -270,7 +169,7 @@ export default function ArchivePage() {
             cabinet={archive.activeCabinet}
             cabinets={archive.visibleCabinets}
             warehouses={warehouses}
-            shelves={filteredShelves}
+            shelves={archive.activeCabinet ? archive.cabinetShelves : shelves}
             folders={folders}
             documents={documents}
             canManage={canManage}
@@ -295,7 +194,7 @@ export default function ArchivePage() {
             shelf={archive.activeShelf}
             shelves={shelves}
             warehouses={warehouses}
-            folders={filteredFolders}
+            folders={archive.shelfFolders}
             documents={documents}
             canManage={canManage}
             onCreate={() => archive.setFolderModalOpen(true)}
