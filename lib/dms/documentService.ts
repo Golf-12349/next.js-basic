@@ -1,6 +1,6 @@
 import apiClient from '@/config/axiosClient'
 import { isAxiosError } from 'axios'
-import type { Document, DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
+import type { Document, DocumentDirection, DocumentFileType, DocumentStatus, DocumentTransfer } from '@/types/document'
 import { toFrontendDocument, type ApiDocument } from './types'
 
 export interface UploadFileResult {
@@ -171,12 +171,12 @@ export async function archiveDocument(id: string): Promise<void> {
 export async function transferDocument(
   id: string,
   payload: { toDivision: string; toDepartment: string; note?: string; keepCopy?: boolean },
-): Promise<import('@/types/document').DocumentTransfer> {
-  const res = await apiClient.post<import('@/types/document').DocumentTransfer>(`/documents/${id}/transfer`, payload)
+): Promise<DocumentTransfer> {
+  const res = await apiClient.post<DocumentTransfer>(`/documents/${id}/transfer`, payload)
   return res.data
 }
 
-export async function fetchIncomingTransfers(): Promise<import('@/types/document').DocumentTransfer[]> {
+export async function fetchIncomingTransfers(): Promise<DocumentTransfer[]> {
   const res = await apiClient.get<any[]>('/documents/transfers/incoming')
   return (res.data || []).map((t) => ({
     ...t,
@@ -187,7 +187,7 @@ export async function fetchIncomingTransfers(): Promise<import('@/types/document
 export async function approveTransfer(
   transferId: string,
   payload: { warehouseId?: string; cabinetId?: string; shelfId?: string; folderId?: string; note?: string },
-): Promise<{ transfer: import('@/types/document').DocumentTransfer; document: import('@/types/document').Document }> {
+): Promise<{ transfer: DocumentTransfer; document: Document }> {
   const res = await apiClient.post<any>(
     `/documents/transfers/${transferId}/approve`,
     payload,
@@ -201,21 +201,21 @@ export async function approveTransfer(
 export async function rejectTransfer(
   transferId: string,
   reason?: string,
-): Promise<import('@/types/document').DocumentTransfer> {
-  const res = await apiClient.post<import('@/types/document').DocumentTransfer>(`/documents/transfers/${transferId}/reject`, { reason })
+): Promise<DocumentTransfer> {
+  const res = await apiClient.post<DocumentTransfer>(`/documents/transfers/${transferId}/reject`, { reason })
   return res.data
 }
 
 export async function cancelTransfer(
   transferId: string,
-): Promise<import('@/types/document').DocumentTransfer> {
-  const res = await apiClient.post<import('@/types/document').DocumentTransfer>(`/documents/transfers/${transferId}/cancel`)
+): Promise<DocumentTransfer> {
+  const res = await apiClient.post<DocumentTransfer>(`/documents/transfers/${transferId}/cancel`)
   return res.data
 }
 
 export async function fetchDocumentTransfers(
   documentId: string,
-): Promise<import('@/types/document').DocumentTransfer[]> {
+): Promise<DocumentTransfer[]> {
   const res = await apiClient.get<any[]>(`/documents/${documentId}/transfers`)
   return (res.data || []).map((t) => ({
     ...t,
