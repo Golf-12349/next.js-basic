@@ -247,6 +247,7 @@ export default function ArchivePage() {
 
         {archive.view.level === 'cabinets' && (
           <CabinetView
+            warehouses={warehouses}
             cabinets={filteredCabinets}
             shelves={shelves}
             folders={folders}
@@ -268,6 +269,7 @@ export default function ArchivePage() {
           <ShelfView
             cabinet={archive.activeCabinet}
             cabinets={archive.visibleCabinets}
+            warehouses={warehouses}
             shelves={filteredShelves}
             folders={folders}
             documents={documents}
@@ -292,6 +294,7 @@ export default function ArchivePage() {
             cabinets={archive.visibleCabinets}
             shelf={archive.activeShelf}
             shelves={shelves}
+            warehouses={warehouses}
             folders={filteredFolders}
             documents={documents}
             canManage={canManage}
