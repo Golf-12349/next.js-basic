@@ -152,6 +152,11 @@ export function toFrontendDocument(doc: any): Document {
       typeof doc.uploadedBy === 'object' && doc.uploadedBy !== null
         ? (doc.uploadedBy.name ?? '-')
         : (typeof doc.uploadedBy === 'string' ? doc.uploadedBy : '-'),
+    uploadedById:
+      doc.uploadedById ??
+      (typeof doc.uploadedBy === 'object' && doc.uploadedBy !== null ? doc.uploadedBy.id : undefined),
+    // ເກັບ timestamp ເຕັມໄວ້ຕ່າງຫາກ — uploadDate ຂ້າງເທິງຖືກຕັດເຫຼືອແຕ່ 10 ຕົວ (ວັນທີ)
+    uploadedAt: doc.uploadDate ? String(doc.uploadDate) : undefined,
     fileUrl: doc.fileUrl ?? '#',
     fileName: doc.fileName ?? undefined,
     deleted: Boolean(doc.deleted),

@@ -60,6 +60,8 @@ export type Document = {
   uploadDate: string;
   expiresAt?: string;
   uploadedBy: string;
+  uploadedById?: string; // id ຂອງຜູ້ອັບໂຫຼດ (ຈາກ backend) — ໃຊ້ຈັບຄູ່ "ເອກະສານຂອງຂ້ອຍ" ໃຫ້ແມ່ນຍຳ
+  uploadedAt?: string; // timestamp ເຕັມຂອງການອັບໂຫຼດ (ຖ້າ backend ສົ່ງມາ) — uploadDate ຖືກຕັດເຫຼືອແຕ່ວັນທີ
   fileUrl: string;
   fileName?: string;
   pdfUrl?: string;

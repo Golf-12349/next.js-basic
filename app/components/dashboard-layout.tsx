@@ -20,6 +20,7 @@ import {
   FileText,
   Folder,
   FolderArchive,
+  History,
   LayoutDashboard,
   Layers,
   Library,
@@ -101,6 +102,7 @@ const menuSections: MenuSection[] = [
     title: 'DOCUMENTS',
     items: [
       { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
+      { name: 'ປະຫວັດການອັບໂຫຼດ', href: '/documents/upload-history', icon: History },
       { name: 'ເອກະສານສົ່ງຂ້າມ', href: '/documents/pending', icon: ArrowRightLeft },
       {
         name: 'ຄັງເກັບເອກກະສານ',
