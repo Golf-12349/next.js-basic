@@ -83,6 +83,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
   const isReloadingRef = useRef(false)
   const pendingReloadRef = useRef(false)
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- reload is intentionally memoized to keep a stable identity for effect dependencies
   const reload = useCallback(async () => {
     const token = typeof window !== 'undefined'
       ? sessionStorage.getItem('token') || localStorage.getItem('token')
@@ -150,7 +151,6 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional initial data load on mount; updates happen inside the async loader
     void reload()
   }, [reload])
 

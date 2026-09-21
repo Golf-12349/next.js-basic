@@ -16,9 +16,7 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock,
-  Clock3,
   FileText,
-  Folder,
   FolderArchive,
   History,
   LayoutDashboard,
@@ -154,7 +152,6 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const router = useRouter();
   const { user: currentUser, clearUser } = useCurrentUser();
   const { documents } = useDocuments();
-  const pendingCount = documents.filter((d) => d.status === 'pending' && !d.deleted).length;
   const [incomingTransferCount, setIncomingTransferCount] = useState<number>(0);
 
   useEffect(() => {
@@ -170,6 +167,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   }, [pathname]);
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // eslint-disable-next-line react-hooks/purity -- sidebar expiry window derived from the current date
   const in7DaysStr = useMemo(() => new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10), []);
 
   const expiredCount = useMemo(() => {

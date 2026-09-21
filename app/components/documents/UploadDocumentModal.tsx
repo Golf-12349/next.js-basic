@@ -5,7 +5,7 @@ import { useDocuments } from '@/app/(main)/context/DocumentsContext'
 import { useArchive } from '@/app/(main)/context/ArchiveContext'
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
 import { pushToast } from '@/app/components/ui/Toast'
-import type { DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
+import type { DocumentFileType, DocumentStatus } from '@/types/document'
 import { CheckCircle2, FileText, Loader2, Lock, RefreshCw, Trash2, Upload, X } from 'lucide-react'
 import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
 

@@ -141,6 +141,7 @@ export default function LoginForm() {
         setSlowServerHint(true);
       }, 3500);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset cooldown state when the login screen mounts
       setSlowServerHint(false);
     }
     return () => clearTimeout(timer);

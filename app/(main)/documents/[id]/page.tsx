@@ -55,6 +55,7 @@ export default function DocumentDetailPage() {
 
   useEffect(() => {
     if (!contextDoc && id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the page state with the requested document id
       setLoadingDoc(true)
       fetchDocumentById(id)
         .then((d) => setFetchedDoc(d))
@@ -124,6 +125,7 @@ export default function DocumentDetailPage() {
   const todayStr = new Date().toISOString().slice(0, 10)
   const isExpired = doc.status === 'expired' || (Boolean(doc.expiresAt) && (doc.expiresAt ?? '') <= todayStr)
   const daysUntilExpiry = doc.expiresAt
+    // eslint-disable-next-line react-hooks/purity -- expiry countdown derived from the current date on this detail view
     ? Math.ceil((new Date(doc.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : null
   const isExpiringSoon = !isExpired && daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 7
@@ -196,6 +198,7 @@ export default function DocumentDetailPage() {
             <div>
               <div className="font-semibold">ເອກະສານນີ້ກຳລັງຢູ່ໃນຂັ້ນຕອນການລໍຖ້າອະນຸມັດການໂອນຍ້າຍ</div>
               <div className="mt-1 text-xs text-amber-800">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings */}
                 ສົ່ງຕໍ່ໄປຫາ: <strong>{typeof pendingTransfer.toDepartment === 'object' && pendingTransfer.toDepartment !== null ? (pendingTransfer.toDepartment as any).name : (pendingTransfer.toDepartment || '—')}</strong> (ຝ່າຍ <strong>{typeof pendingTransfer.toDivision === 'object' && pendingTransfer.toDivision !== null ? (pendingTransfer.toDivision as any).name : (pendingTransfer.toDivision || '—')}</strong>)
                 {pendingTransfer.keepCopy && ' • (ເກັບສຳເນົາຕົ້ນສະບັບໄວ້)'}
                 {pendingTransfer.note && ` • ໝາຍເຫດ: ${pendingTransfer.note}`}
@@ -233,6 +236,7 @@ export default function DocumentDetailPage() {
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <div className="text-xs uppercase tracking-wide text-indigo-600">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings */}
                   {typeof doc.category === 'object' && doc.category !== null ? (doc.category as any).name : (doc.category || '—')}
                 </div>
                 <h2 className="mt-2 text-2xl font-bold text-gray-900">{doc.title}</h2>
@@ -260,6 +264,7 @@ export default function DocumentDetailPage() {
               <div className="rounded-xl bg-gray-50 p-4">
                 <div className="text-xs uppercase tracking-wide text-gray-500">ຜູ້ອັບໂຫຼດ</div>
                 <div className="mt-2 font-semibold text-gray-900">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings */}
                   {typeof doc.uploadedBy === 'object' && doc.uploadedBy !== null ? (doc.uploadedBy as any).name : (doc.uploadedBy || '—')}
                 </div>
               </div>
@@ -383,18 +388,21 @@ export default function DocumentDetailPage() {
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ໝວດໝູ່</dt>
                   <dd className="text-right text-gray-900">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings */}
                     {typeof doc.category === 'object' && doc.category !== null ? (doc.category as any).name : (doc.category || '—')}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ຝ່າຍ / ຫ້ອງການ</dt>
                   <dd className="text-right font-medium text-gray-900">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings */}
                     {typeof doc.division === 'object' && doc.division !== null ? (doc.division as any).name : (doc.division || '—')}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ພະແນກ / ສູນ</dt>
                   <dd className="text-right font-medium text-gray-900">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings */}
                     {typeof doc.department === 'object' && doc.department !== null ? (doc.department as any).name : (doc.department || '—')}
                   </dd>
                 </div>

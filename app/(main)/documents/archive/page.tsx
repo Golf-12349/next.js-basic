@@ -1,6 +1,6 @@
 "use client"
 import Link from 'next/link';
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '../../context/DocumentsContext';
 import { useArchive as useDMSArchive } from '../../context/ArchiveContext';

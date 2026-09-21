@@ -66,6 +66,7 @@ export default function UsersPage() {
   const PAGE_SIZE = 30
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the users table with the current role scope
     setCurrentPage(1)
   }, [debouncedQuery, filterRole, filterDepartment, filterStatus])
 

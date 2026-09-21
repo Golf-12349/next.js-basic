@@ -177,6 +177,7 @@ export async function transferDocument(
 }
 
 export async function fetchIncomingTransfers(): Promise<DocumentTransfer[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy untyped transfer payloads from the backend
   const res = await apiClient.get<any[]>('/documents/transfers/incoming')
   return (res.data || []).map((t) => ({
     ...t,
@@ -188,6 +189,7 @@ export async function approveTransfer(
   transferId: string,
   payload: { warehouseId?: string; cabinetId?: string; shelfId?: string; folderId?: string; note?: string },
 ): Promise<{ transfer: DocumentTransfer; document: Document }> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy untyped transfer payloads from the backend
   const res = await apiClient.post<any>(
     `/documents/transfers/${transferId}/approve`,
     payload,
@@ -216,6 +218,7 @@ export async function cancelTransfer(
 export async function fetchDocumentTransfers(
   documentId: string,
 ): Promise<DocumentTransfer[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy untyped transfer payloads from the backend
   const res = await apiClient.get<any[]>(`/documents/${documentId}/transfers`)
   return (res.data || []).map((t) => ({
     ...t,

@@ -122,6 +122,7 @@ export function toFrontendUser(user: ApiUser): User {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- backend document payload is untyped at this mapping boundary
 export function toFrontendDocument(doc: any): Document {
   return {
     id: doc.id,

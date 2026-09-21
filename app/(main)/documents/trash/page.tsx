@@ -89,6 +89,7 @@ export default function TrashPage() {
   const PAGE_SIZE = 30
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load trashed documents on mount
     setCurrentPage(1)
   }, [debouncedQuery, filterCategory])
 

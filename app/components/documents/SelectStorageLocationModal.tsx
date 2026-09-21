@@ -47,6 +47,7 @@ export default function SelectStorageLocationModal({
   // Reset and prefill selections when modal opens
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- cascade the warehouse/cabinet/shelf/folder pickers
       setCabinetId(initialCabinetId || '')
       setShelfId(initialShelfId || '')
       setFolderId(initialFolderId || '')
@@ -69,6 +70,7 @@ export default function SelectStorageLocationModal({
   // Automatically select first cabinet if available and current selection is empty or not in list
   useEffect(() => {
     if (availableCabinets.length > 0 && (!cabinetId || !availableCabinets.some((c: Cabinet) => c.id === cabinetId))) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- cascade the warehouse/cabinet/shelf/folder pickers
       setCabinetId(availableCabinets[0].id)
     } else if (availableCabinets.length === 0) {
       setCabinetId('')
@@ -96,6 +98,7 @@ export default function SelectStorageLocationModal({
   // Reset shelf selection if cabinet changes
   useEffect(() => {
     if (availableShelves.length > 0 && shelfId && !availableShelves.some((s: Shelf) => s.id === shelfId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- cascade the warehouse/cabinet/shelf/folder pickers
       setShelfId('')
     }
   }, [availableShelves, shelfId])
@@ -112,6 +115,7 @@ export default function SelectStorageLocationModal({
   // Reset folder selection if cabinet or shelf changes
   useEffect(() => {
     if (availableFolders.length > 0 && (!folderId || !availableFolders.some((f: Folder) => f.id === folderId))) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- cascade the warehouse/cabinet/shelf/folder pickers
       setFolderId(availableFolders[0].id)
     } else if (availableFolders.length === 0) {
       setFolderId('')

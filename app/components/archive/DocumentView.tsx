@@ -448,6 +448,7 @@ function MoveToFolderModal({
 
   useEffect(() => {
     if (doc) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the selected storage location when the target document changes
       setSelectedCabinetId(doc.cabinetId || (cabinets[0]?.id ?? ''));
       setSelectedShelfId(doc.shelfId || '');
       setSelectedFolderId(doc.folderId || '');
@@ -612,7 +613,6 @@ export default function DocumentView({
   shelves = [],
   folders = [],
   documents = [],
-  onSelectFolder,
   onAssignDocument,
   onPreview,
   onDownload,

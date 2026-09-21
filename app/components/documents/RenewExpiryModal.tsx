@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Calendar, RefreshCw, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
+import { X, RefreshCw, AlertTriangle, CheckCircle2, Clock } from 'lucide-react'
 import type { Document } from '@/types/document'
 import { renewDocumentExpiry } from '@/lib/dms/documentService'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -42,6 +42,7 @@ export default function RenewExpiryModal({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the renew form when the selected document changes
       setNewExpiryDate(addYears(1))
       setNote('')
       setError(null)
@@ -76,6 +77,7 @@ export default function RenewExpiryModal({
 
       if (onSuccess) onSuccess()
       onClose()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- axios error shape is untyped
     } catch (err: any) {
       const msg = err.response?.data?.message || 'ບໍ່ສາມາດຕໍ່ອາຍຸເອກະສານໄດ້ ກະລຸນາລອງໃໝ່'
       setError(msg)

@@ -434,6 +434,7 @@ export function CreateShelfModal({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the modal form each time it opens
       setName('');
       setDescription('');
       setCabinetId(activeCabinetId || (cabinets.length > 0 ? cabinets[0].id : ''));
@@ -549,6 +550,7 @@ export function CreateFolderModal({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the modal form each time it opens
       setName('');
       setDescription('');
       const defaultCab = activeCabinetId || (cabinets.length > 0 ? cabinets[0].id : '');

@@ -42,6 +42,7 @@ export default function PendingDocumentsPage() {
 
   useEffect(() => {
     void reload()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load pending transfers on mount
     void loadTransfers()
   }, [reload, loadTransfers])
 
@@ -380,6 +381,7 @@ export default function PendingDocumentsPage() {
                   <div className="text-sm text-gray-500">ໝວດໝູ່</div>
                   <div className="font-semibold">
                     {typeof previewDoc.category === 'object' && previewDoc.category !== null
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy category field may arrive as an object
                       ? ((previewDoc.category as any).name || '—')
                       : (previewDoc.category || '—')}
                   </div>

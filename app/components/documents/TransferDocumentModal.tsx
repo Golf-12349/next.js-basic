@@ -36,6 +36,7 @@ export default function TransferDocumentModal({
       const defaultDiv = isDeptAdmin
         ? currentUser?.division || doc.division || Object.keys(edlStructure)[0]
         : doc.division || currentUser?.division || Object.keys(edlStructure)[0]
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the transfer form when the modal opens
       setToDivision(defaultDiv)
       setToDepartment('')
       setNote('')

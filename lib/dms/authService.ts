@@ -47,7 +47,8 @@ export async function login(payload: Record<string, unknown>): Promise<LoginResu
   // If `identifier` is sent alongside `email`, Render rejects with 400 "property identifier should not exist".
   let requestPayload: Record<string, unknown> = { ...payload }
   if (requestPayload.email && requestPayload.identifier) {
-    const { identifier, ...rest } = requestPayload
+    const rest = { ...requestPayload }
+    delete rest.identifier
     requestPayload = rest
   }
 

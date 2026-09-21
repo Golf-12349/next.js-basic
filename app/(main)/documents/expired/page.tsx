@@ -1,11 +1,9 @@
 'use client'
 
 import { useMemo, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../../context/DocumentsContext'
 import { useArchive } from '../../context/ArchiveContext'
-import { useCurrentUser } from '../../context/CurrentUserContext'
 import { useDebounce } from '@/hooks/useDebounce'
 import type { Document } from '@/types/document'
 import { edlStructure } from '@/types/user'
@@ -29,10 +27,7 @@ import {
   ChevronDown,
   Calendar,
   Layers,
-  ArrowRightLeft,
   CheckCircle2,
-  Building2,
-  Sparkles,
 } from 'lucide-react'
 
 type TabType = 'all' | 'expired' | '7days' | '30days'
@@ -48,10 +43,8 @@ function getDayDifference(dateStr?: string): number | null {
 }
 
 export default function ExpiredDocumentsPage() {
-  const router = useRouter()
   const { documents, reload, deleteDocument, archiveDocument } = useDocuments()
-  const { warehouses, cabinets, assignDocument } = useArchive()
-  const { user: currentUser } = useCurrentUser()
+  const { assignDocument } = useArchive()
 
   const [activeTab, setActiveTab] = useState<TabType>('all')
   const [query, setQuery] = useState('')
@@ -142,6 +135,7 @@ export default function ExpiredDocumentsPage() {
 
   // Reset pagination on filter changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the active tab when the filter scope changes
     setCurrentPage(1)
   }, [activeTab, debouncedQuery, filterCategory, filterDivision, filterDepartment])
 
@@ -773,7 +767,7 @@ export default function ExpiredDocumentsPage() {
               </div>
               <p className="text-xs text-gray-600">
                 ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຍ້າຍເອກະສານ{' '}
-                <span className="font-semibold text-gray-900">"{confirmDelete.title}"</span>{' '}
+                <span className="font-semibold text-gray-900">&quot;{confirmDelete.title}&quot;</span>{' '}
                 ໄປຍັງຖັງຂີ້ເຫຍື້ອ (Trash)?
               </p>
               <div className="flex items-center justify-end gap-2 pt-2">

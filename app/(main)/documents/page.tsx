@@ -125,6 +125,7 @@ export default function DocumentsPage() {
   }, [documents])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pagination when filters change
     setCurrentPage(1)
   }, [debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDivision, filterDepartment])
 
@@ -163,6 +164,7 @@ export default function DocumentsPage() {
         }
         if (filterStatus === 'ໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)') {
           if (!d.expiresAt || d.status === 'expired') return false
+          // eslint-disable-next-line react-hooks/purity -- expiry window derived from the current date for the filter
           const diff = Math.ceil((new Date(d.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
           if (diff < 0 || diff > 7) return false
         }
@@ -628,6 +630,7 @@ export default function DocumentsPage() {
                   <div className="text-sm text-gray-500">ໝວດໝູ່</div>
                   <div className="font-semibold">
                     {typeof previewDoc.category === 'object' && previewDoc.category !== null
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy category field may arrive as an object
                       ? ((previewDoc.category as any).name || '—')
                       : (previewDoc.category || '—')}
                   </div>

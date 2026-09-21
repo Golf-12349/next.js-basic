@@ -803,6 +803,7 @@ export function ResetPasswordModal({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset password fields each time the modal opens
       setNewPassword('')
       setConfirmPassword('')
       setError(null)
