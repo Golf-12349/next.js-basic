@@ -236,7 +236,7 @@ export default function UploadHistoryPage() {
 
   return (
     <DashboardLayout title="ປະຫວັດການອັບໂຫຼດເອກະສານ">
-      <main className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <main className="w-full flex-1 space-y-6 overflow-y-auto p-4 sm:p-6 lg:p-8">
         {/* ── Header + scope tabs ─────────────────────────────── */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3.5">
@@ -295,7 +295,7 @@ export default function UploadHistoryPage() {
         </div>
 
         {/* ── Metric cards ────────────────────────────────────── */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {/* Card 1 — ອັບໂຫຼດທັງໝົດ */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-500 p-6 text-white shadow-lg shadow-indigo-200/50">
             <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
@@ -371,7 +371,7 @@ export default function UploadHistoryPage() {
         </div>
 
         {/* ── Filters bar ─────────────────────────────────────── */}
-        <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <div className="w-full rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {/* Search by title / doc number */}
             <div className="sm:col-span-2 xl:col-span-1">
@@ -452,8 +452,8 @@ export default function UploadHistoryPage() {
         </div>
 
         {/* ── History table ───────────────────────────────────── */}
-        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-          <div className="overflow-x-auto">
+        <div className="w-full overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+          <div className="w-full overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-100 text-sm">
               <thead className="bg-slate-50/80">
                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
