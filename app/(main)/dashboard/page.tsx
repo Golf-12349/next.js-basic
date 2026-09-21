@@ -10,7 +10,7 @@ import { TrafficChart } from '@/app/components/dashboard/TrafficChart';
 export default function DashboardPage() {
   return (
     <DashboardLayout title="ໜ້າຫຼັກ">
-      <main className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <main className="w-full space-y-6 p-4 sm:p-6 lg:p-8">
         <GreetingHeader />
         <MetricCards />
 
