@@ -568,7 +568,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
         <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
           <div className="flex min-w-0 items-center gap-3">

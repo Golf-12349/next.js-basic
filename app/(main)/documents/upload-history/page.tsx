@@ -236,7 +236,7 @@ export default function UploadHistoryPage() {
 
   return (
     <DashboardLayout title="ປະຫວັດການອັບໂຫຼດເອກະສານ">
-      <main className="w-full flex-1 space-y-6 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <main className="w-full min-w-0 flex-1 space-y-6 overflow-y-auto p-4 sm:p-6 lg:p-8">
         {/* ── Header + scope tabs ─────────────────────────────── */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3.5">
