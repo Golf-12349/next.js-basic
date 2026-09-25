@@ -25,6 +25,7 @@ import {
   LogOut,
   Search,
   Settings,
+  Tag,
   Trash2,
   UserCog,
   UserPlus,
@@ -102,6 +103,7 @@ const menuSections: MenuSection[] = [
       { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
       { name: 'ປະຫວັດການອັບໂຫຼດ', href: '/documents/upload-history', icon: History },
       { name: 'ເອກະສານສົ່ງຂ້າມ', href: '/documents/pending', icon: ArrowRightLeft },
+      { name: 'ປະຫວັດການສົ່ງຂ້າມ', href: '/documents/transfers', icon: ArrowRightLeft },
       {
         name: 'ຄັງເກັບເອກກະສານ',
         href: '/documents/archive',
@@ -130,11 +132,17 @@ const menuSections: MenuSection[] = [
           },
         ],
       },
+      { name: 'ຍ້າຍຕູ້ເອກະສານ', href: '/documents/relocate/cabinet', icon: Layers },
+      { name: 'ຍ້າຍຊັ້ນວາງ', href: '/documents/relocate/shelf', icon: Library },
+      { name: 'ຍ້າຍແຟ້ມເອກະສານ', href: '/documents/relocate/folder', icon: FolderArchive },
     ],
   },
   {
     title: 'SYSTEM',
     items: [
+      { name: 'ປະເພດເອກະສານ', href: '/master-data/categories', icon: Tag, roles: ['SuperAdmin', 'DivisionAdmin'] },
+      { name: 'ຈັດການຝ່າຍ', href: '/master-data/divisions', icon: Building2, roles: ['SuperAdmin', 'DivisionAdmin'] },
+      { name: 'ຈັດການພະແນກ', href: '/master-data/departments', icon: Users, roles: ['SuperAdmin', 'DivisionAdmin'] },
       { name: 'ຈັດການຜູ້ໃຊ້ງານ', href: '/users', icon: Users },
       { name: 'ເອກະສານໝົດອາຍຸ', href: '/documents/expired', icon: CalendarX },
       {
@@ -485,8 +493,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                   const ChildIcon = child.icon;
                                   const childLevel = child.href.includes('level=') ? child.href.split('level=')[1] : '';
                                   const isChildActive =
-                                    pathname === '/documents/archive' &&
-                                    activeArchiveLevel === childLevel;
+                                    pathname === '/documents/archive' && activeArchiveLevel === childLevel;
 
                                   return (
                                     <Link

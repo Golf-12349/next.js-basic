@@ -24,6 +24,9 @@ export interface ArchiveContextValue {
   deleteCabinet: (id: string) => Promise<void>
   deleteShelf: (id: string) => Promise<void>
   deleteFolder: (id: string) => Promise<void>
+  moveCabinet: (cabinetId: string, targetWarehouseId: string, division?: string, department?: string) => Promise<void>
+  moveShelf: (shelfId: string, targetCabinetId: string) => Promise<void>
+  moveFolder: (folderId: string, targetCabinetId: string, targetShelfId?: string | null) => Promise<void>
   assignDocument: (docId: string, cabinetId: string, folderId: string, warehouseId?: string, shelfId?: string) => Promise<void>
 }
 
@@ -334,6 +337,120 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
     ))
   }, [setDocuments])
 
+  const moveCabinet = useCallback(
+    async (cabinetId: string, targetWarehouseId: string, division?: string, department?: string): Promise<void> => {
+      const targetWarehouse = warehouses.find((w) => w.id === targetWarehouseId)
+      setCabinets((prev) => {
+        const updated = prev.map((c) => {
+          if (c.id === cabinetId) {
+            return {
+              ...c,
+              warehouseId: targetWarehouseId,
+              division: division !== undefined ? division : c.division,
+              department: department !== undefined ? department : c.department,
+            }
+          }
+          return c
+        })
+        saveToStorage(CABINETS_STORAGE_KEY, updated)
+        return updated
+      })
+
+      // Update documents in this cabinet with new warehouse info (and division/dept if supplied)
+      setDocuments((prev) =>
+        prev.map((d) => {
+          if (d.cabinetId === cabinetId) {
+            return {
+              ...d,
+              warehouseId: targetWarehouseId,
+              warehouseName: targetWarehouse?.name || d.warehouseName,
+              division: division || d.division,
+              department: department || d.department,
+            }
+          }
+          return d
+        })
+      )
+    },
+    [warehouses, setDocuments]
+  )
+
+  const moveShelf = useCallback(
+    async (shelfId: string, targetCabinetId: string): Promise<void> => {
+      const targetCabinet = cabinets.find((c) => c.id === targetCabinetId)
+      const targetWarehouse = targetCabinet?.warehouseId
+        ? warehouses.find((w) => w.id === targetCabinet.warehouseId)
+        : undefined
+
+      setShelves((prev) => {
+        const updated = prev.map((s) => (s.id === shelfId ? { ...s, cabinetId: targetCabinetId } : s))
+        saveToStorage(SHELVES_STORAGE_KEY, updated)
+        return updated
+      })
+
+      // Update folders in this shelf to target cabinet
+      setFolders((prev) => {
+        const updated = prev.map((f) => (f.shelfId === shelfId ? { ...f, cabinetId: targetCabinetId } : f))
+        saveToStorage(FOLDERS_STORAGE_KEY, updated)
+        return updated
+      })
+
+      // Update documents in this shelf
+      setDocuments((prev) =>
+        prev.map((d) => {
+          if (d.shelfId === shelfId) {
+            return {
+              ...d,
+              cabinetId: targetCabinetId,
+              cabinetName: targetCabinet?.name || d.cabinetName,
+              warehouseId: targetCabinet?.warehouseId || d.warehouseId,
+              warehouseName: targetWarehouse?.name || d.warehouseName,
+            }
+          }
+          return d
+        })
+      )
+    },
+    [cabinets, warehouses, setDocuments]
+  )
+
+  const moveFolder = useCallback(
+    async (folderId: string, targetCabinetId: string, targetShelfId?: string | null): Promise<void> => {
+      const targetCabinet = cabinets.find((c) => c.id === targetCabinetId)
+      const targetWarehouse = targetCabinet?.warehouseId
+        ? warehouses.find((w) => w.id === targetCabinet.warehouseId)
+        : undefined
+      const targetShelf = targetShelfId ? shelves.find((s) => s.id === targetShelfId) : undefined
+
+      setFolders((prev) => {
+        const updated = prev.map((f) =>
+          f.id === folderId ? { ...f, cabinetId: targetCabinetId, shelfId: targetShelfId || null } : f
+        )
+        saveToStorage(FOLDERS_STORAGE_KEY, updated)
+        return updated
+      })
+
+      // Update documents in this folder
+      setDocuments((prev) =>
+        prev.map((d) => {
+          if (d.folderId === folderId) {
+            return {
+              ...d,
+              cabinetId: targetCabinetId,
+              cabinetName: targetCabinet?.name || d.cabinetName,
+              shelfId: targetShelfId || undefined,
+              shelfName: targetShelf?.name || undefined,
+              warehouseId: targetCabinet?.warehouseId || d.warehouseId,
+              warehouseName: targetWarehouse?.name || d.warehouseName,
+            }
+          }
+          return d
+        })
+      )
+    },
+    [cabinets, shelves, warehouses, setDocuments]
+  )
+
   const assignDocument = useCallback(async (docId: string, cabinetId: string, folderId: string, warehouseId?: string, shelfId?: string): Promise<void> => {
     const folder = folderId ? folders.find((f) => f.id === folderId) : undefined
     const effectiveShelfId = shelfId || folder?.shelfId || undefined
@@ -374,6 +491,9 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       deleteCabinet,
       deleteShelf,
       deleteFolder,
+      moveCabinet,
+      moveShelf,
+      moveFolder,
       assignDocument,
     }),
     [
@@ -390,6 +510,9 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
       deleteCabinet,
       deleteShelf,
       deleteFolder,
+      moveCabinet,
+      moveShelf,
+      moveFolder,
       assignDocument,
     ],
   )
