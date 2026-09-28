@@ -92,6 +92,25 @@ export async function createFolder(data: CreateFolderPayload): Promise<ApiFolder
   }
 }
 
+export async function updateCabinet(id: string, data: Partial<CreateCabinetPayload>): Promise<ApiCabinet> {
+  const res = await apiClient.patch<ApiCabinet>(`/cabinets/${id}`, data)
+  return res.data
+}
+
+export async function updateShelf(id: string, data: Partial<CreateShelfPayload>): Promise<ApiShelf> {
+  const res = await apiClient.patch<ApiShelf>(`/shelves/${id}`, data)
+  return res.data
+}
+
+export async function updateFolder(id: string, data: Partial<CreateFolderPayload>): Promise<ApiFolder> {
+  const payload: Record<string, unknown> = { ...data }
+  if (data.shelfId === null || data.shelfId === '') {
+    payload.shelfId = null
+  }
+  const res = await apiClient.patch<ApiFolder>(`/folders/${id}`, payload)
+  return res.data
+}
+
 export async function deleteCabinet(id: string): Promise<void> {
   await apiClient.delete(`/cabinets/${id}`)
 }

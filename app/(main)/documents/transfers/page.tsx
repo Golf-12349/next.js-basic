@@ -11,7 +11,7 @@ import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import Pagination from '@/app/components/ui/Pagination'
 import { pushToast } from '@/app/components/ui/Toast'
-import { cancelTransfer, fetchIncomingTransfers } from '@/lib/dms/documentService'
+import { cancelTransfer, fetchIncomingTransfers, fetchTransferHistory } from '@/lib/dms/documentService'
 import {
   ArrowRightLeft,
   CheckCircle2,
@@ -80,13 +80,21 @@ export default function TransferHistoryPage() {
 
   const debouncedQuery = useDebounce(query, 250)
 
-  // Load incoming transfers
+  const [historyTransfers, setHistoryTransfers] = useState<DocumentTransfer[]>([])
+
+  // Load incoming and history transfers
   const loadIncoming = async () => {
     setLoadingTransfers(true)
     try {
-      const list = await fetchIncomingTransfers()
-      if (Array.isArray(list)) {
-        setIncomingTransfers(list)
+      const [incRes, histRes] = await Promise.allSettled([
+        fetchIncomingTransfers(),
+        fetchTransferHistory(),
+      ])
+      if (incRes.status === 'fulfilled' && Array.isArray(incRes.value)) {
+        setIncomingTransfers(incRes.value)
+      }
+      if (histRes.status === 'fulfilled' && Array.isArray(histRes.value)) {
+        setHistoryTransfers(histRes.value)
       }
     } catch {
       // silent
@@ -101,7 +109,7 @@ export default function TransferHistoryPage() {
     void loadIncoming()
   }, [reload])
 
-  // Aggregate all transfers from documents and incomingTransfers
+  // Aggregate all transfers from documents, incomingTransfers, and historyTransfers
   const allTransfers = useMemo(() => {
     const map = new Map<string, EnrichedTransfer>()
     const docMap = new Map<string, Document>()
@@ -127,8 +135,19 @@ export default function TransferHistoryPage() {
       })
     }
 
+    // Direct transfer history from backend
+    for (const t of historyTransfers) {
+      const matchedDoc = docMap.get(t.documentId)
+      const existing = map.get(t.id)
+      map.set(t.id, {
+        ...existing,
+        ...t,
+        document: matchedDoc || t.document || existing?.document,
+      })
+    }
+
     return Array.from(map.values())
-  }, [documents, incomingTransfers])
+  }, [documents, incomingTransfers, historyTransfers])
 
   // Current user's department & division
   const userDept = currentUser?.department?.trim().toLowerCase()

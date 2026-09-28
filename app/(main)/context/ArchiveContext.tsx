@@ -339,6 +339,16 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
 
   const moveCabinet = useCallback(
     async (cabinetId: string, targetWarehouseId: string, division?: string, department?: string): Promise<void> => {
+      try {
+        await archiveService.updateCabinet(cabinetId, {
+          warehouseId: targetWarehouseId,
+          division: division || undefined,
+          department: department || undefined,
+        })
+      } catch (err) {
+        console.warn('Server moveCabinet failed (using local optimistic update):', err)
+      }
+
       const targetWarehouse = warehouses.find((w) => w.id === targetWarehouseId)
       setCabinets((prev) => {
         const updated = prev.map((c) => {
@@ -377,6 +387,14 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
 
   const moveShelf = useCallback(
     async (shelfId: string, targetCabinetId: string): Promise<void> => {
+      try {
+        await archiveService.updateShelf(shelfId, {
+          cabinetId: targetCabinetId,
+        })
+      } catch (err) {
+        console.warn('Server moveShelf failed (using local optimistic update):', err)
+      }
+
       const targetCabinet = cabinets.find((c) => c.id === targetCabinetId)
       const targetWarehouse = targetCabinet?.warehouseId
         ? warehouses.find((w) => w.id === targetCabinet.warehouseId)
@@ -416,6 +434,15 @@ export function ArchiveProvider({ children }: { children: React.ReactNode }) {
 
   const moveFolder = useCallback(
     async (folderId: string, targetCabinetId: string, targetShelfId?: string | null): Promise<void> => {
+      try {
+        await archiveService.updateFolder(folderId, {
+          cabinetId: targetCabinetId,
+          shelfId: targetShelfId || null,
+        })
+      } catch (err) {
+        console.warn('Server moveFolder failed (using local optimistic update):', err)
+      }
+
       const targetCabinet = cabinets.find((c) => c.id === targetCabinetId)
       const targetWarehouse = targetCabinet?.warehouseId
         ? warehouses.find((w) => w.id === targetCabinet.warehouseId)

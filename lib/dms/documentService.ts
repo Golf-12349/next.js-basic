@@ -185,6 +185,15 @@ export async function fetchIncomingTransfers(): Promise<DocumentTransfer[]> {
   }))
 }
 
+export async function fetchTransferHistory(): Promise<DocumentTransfer[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy untyped transfer payloads from the backend
+  const res = await apiClient.get<any[]>('/documents/transfers/history')
+  return (res.data || []).map((t) => ({
+    ...t,
+    document: t.document ? toFrontendDocument(t.document) : undefined,
+  }))
+}
+
 export async function approveTransfer(
   transferId: string,
   payload: { warehouseId?: string; cabinetId?: string; shelfId?: string; folderId?: string; note?: string },
