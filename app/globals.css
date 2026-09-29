@@ -1,8 +1,53 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────
+   DMS Theme — navy sidebar + indigo/violet accent + cool neutrals
+   NOTE: this only re-maps colour tokens; no utilities/layout change.
+   ────────────────────────────────────────────────────────────── */
+@theme {
+  /* Primary accent — indigo / violet */
+  --color-indigo-50: #eef0ff;
+  --color-indigo-100: #e0e3ff;
+  --color-indigo-200: #c6caff;
+  --color-indigo-300: #a5a8fd;
+  --color-indigo-400: #8384f8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #5453e8;
+  --color-indigo-700: #4642c8;
+  --color-indigo-800: #3a36a2;
+  --color-indigo-900: #33317f;
+  --color-indigo-950: #1f1d4d;
+
+  /* Cool neutral ramp — used for slate-* */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #151d2e;
+
+  /* gray-* shares the exact same ramp so both families match */
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1e293b;
+  --color-gray-900: #0f172a;
+  --color-gray-950: #151d2e;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 @theme inline {
@@ -12,12 +57,6 @@
   --font-mono: var(--font-noto-sans), sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 html {
   font-family: var(--font-noto-sans), var(--font-noto-sans-lao), sans-serif;
