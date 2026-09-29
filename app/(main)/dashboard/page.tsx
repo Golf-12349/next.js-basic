@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { GreetingHeader } from '@/app/components/dashboard/GreetingHeader';
 import { MetricCards } from '@/app/components/dashboard/MetricCards';
+import { ReportsSection } from '@/app/components/dashboard/ReportsSection';
 import { SchedulePanel } from '@/app/components/dashboard/SchedulePanel';
 import { StatusBreakdown } from '@/app/components/dashboard/StatusBreakdown';
 import { TrafficChart } from '@/app/components/dashboard/TrafficChart';
@@ -21,6 +22,8 @@ export default function DashboardPage() {
           </div>
           <SchedulePanel />
         </div>
+
+        <ReportsSection />
       </main>
     </DashboardLayout>
   );

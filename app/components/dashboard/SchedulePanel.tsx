@@ -26,7 +26,7 @@ const STATIC_TASKS: Task[] = [
     title: 'ກອງປະຊຸມພະແນກ (ອອນລາຍ)',
     detail: 'ທົບທວນຄວາມຄືບໜ້າວຽກງານປະຈຳອາທິດ',
     type: 'meeting',
-    href: '/reports',
+    href: '/dashboard',
   },
   {
     id: 'static-review',
@@ -191,7 +191,7 @@ export function SchedulePanel() {
       </ol>
 
       <Link
-        href="/reports"
+        href="/dashboard"
         className="mt-5 flex items-center justify-center gap-1 rounded-2xl bg-slate-50 py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
       >
         ເບິ່ງກຳນົດເວລາທັງໝົດ

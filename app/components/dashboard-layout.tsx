@@ -7,7 +7,6 @@ import {
   AlertCircle,
   Archive,
   ArrowRightLeft,
-  BarChart3,
   Bell,
   BellOff,
   Building2,
@@ -94,7 +93,6 @@ const menuSections: MenuSection[] = [
     title: 'MAIN',
     items: [
       { name: 'ໜ້າຫຼັກ', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'ລາຍງານ & ສະຖິຕິ', href: '/reports', icon: BarChart3 },
     ],
   },
   {
@@ -454,8 +452,8 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                               onClick={() => toggleExpand(item.href)}
                               className={`group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all select-none ${
                                 isParentActive
-                                  ? 'bg-slate-900 text-white font-semibold'
-                                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                  ? 'bg-indigo-600 text-white font-semibold shadow-sm'
+                                  : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                               }`}
                             >
                               <Link
@@ -466,7 +464,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                 }}
                                 className="flex flex-1 items-center gap-3"
                               >
-                                <Icon className={`h-4 w-4 shrink-0 ${isParentActive ? 'text-indigo-400' : 'text-slate-400 group-hover:text-white'}`} />
+                                <Icon className={`h-4 w-4 shrink-0 ${isParentActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
                                 <span>{item.name}</span>
                               </Link>
                               <button
@@ -528,7 +526,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                           className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                             isParentActive
                               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-700/30'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                              : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                           }`}
                         >
                           <span className="flex items-center gap-3">
