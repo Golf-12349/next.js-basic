@@ -29,12 +29,34 @@ export interface CreateDocumentPayload {
   folderId?: string
 }
 
-export async function uploadFile(file: File): Promise<UploadFileResult> {
+export async function uploadFile(
+  file: File,
+  onProgress?: (percent: number) => void,
+): Promise<UploadFileResult> {
   const formData = new FormData()
   formData.append('file', file)
-  const res = await apiClient.post<UploadFileResult>('/documents/upload-file', formData)
+  const res = await apiClient.post<UploadFileResult>('/documents/upload-file', formData, {
+    onUploadProgress: (progressEvent) => {
+      if (progressEvent.total) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        onProgress?.(percent)
+      }
+    },
+  })
   return res.data
 }
+
+export async function deleteUploadedFile(filePath: string): Promise<boolean> {
+  try {
+    const res = await apiClient.delete<{ success: boolean }>(
+      `/documents/upload-file/${encodeURIComponent(filePath)}`,
+    )
+    return res.data?.success ?? true
+  } catch {
+    return false
+  }
+}
+
 
 export async function fetchDocuments(params?: { limit?: number; deleted?: string }): Promise<ApiDocument[]> {
   const res = await apiClient.get<{ data: ApiDocument[] }>('/documents', { params })

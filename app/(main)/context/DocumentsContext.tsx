@@ -13,7 +13,7 @@ export interface DocumentsContextValue {
   categories: string[]
   setCategories: React.Dispatch<React.SetStateAction<string[]>>
   loading: boolean
-  uploadFile: (file: File) => Promise<documentService.UploadFileResult>
+  uploadFile: (file: File, onProgress?: (percent: number) => void) => Promise<documentService.UploadFileResult>
   addDocument: (doc: Omit<Document, 'id' | 'deleted'>) => Promise<Document>
   updateDocument: (id: string, patch: Partial<Document>) => Promise<void>
   deleteDocument: (id: string) => Promise<void>
@@ -174,7 +174,8 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
   }, [reload])
 
   const uploadFile = useCallback(
-    (file: File) => documentService.uploadFile(file),
+    (file: File, onProgress?: (percent: number) => void) =>
+      documentService.uploadFile(file, onProgress),
     [],
   )
 

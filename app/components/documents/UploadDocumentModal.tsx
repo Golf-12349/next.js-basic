@@ -6,8 +6,9 @@ import { useArchive } from '@/app/(main)/context/ArchiveContext'
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentFileType, DocumentStatus } from '@/types/document'
-import { CheckCircle2, FileText, Loader2, Lock, RefreshCw, Trash2, Upload, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, FileText, Loader2, Lock, RefreshCw, Trash2, Upload, WifiOff, X } from 'lucide-react'
 import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
+import { deleteUploadedFile } from '@/lib/dms/documentService'
 
 // ສ້າງເລກທີເອກະສານອັດຕະໂນມັດ ເຊັ່ນ DOC-2026-4819
 function generateDocNumber(): string {
@@ -85,6 +86,29 @@ export default function UploadDocumentModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadStep, setUploadStep] = useState<'idle' | 'uploading' | 'saving'>('idle')
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [retryAttempt, setRetryAttempt] = useState(0)
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true,
+  )
+
+  useEffect(() => {
+    function handleOnline() {
+      setIsOnline(true)
+      setError((prev) => (prev?.includes('Offline') ? null : prev))
+    }
+    function handleOffline() {
+      setIsOnline(false)
+      setError('ອິນເຕີເນັດຂາດການເຊື່ອມຕໍ່ (Offline) — ກະລຸນາກວດສອບສັນຍານເຄືອຂ່າຍຂອງທ່ານ')
+    }
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
   const [title, setTitle] = useState('')
   const [docNumber, setDocNumber] = useState(generateDocNumber)
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0])
@@ -226,14 +250,52 @@ export default function UploadDocumentModal({
   async function handleSubmit(status: DocumentStatus) {
     if (!validateForm() || !selectedFile) return
 
+    if (!navigator.onLine) {
+      setError('ອິນເຕີເນັດຂາດການເຊື່ອມຕໍ່ (Offline), ກະລຸນາກວດສອບສັນຍານອິນເຕີເນັດຂອງທ່ານ')
+      return
+    }
+
     const selectedShelf = shelves.find((s) => s.id === shelfId)
     const selectedFolder = folders.find((f) => f.id === folderId)
 
     setIsSubmitting(true)
     setUploadStep('uploading')
+    setRetryAttempt(0)
+    setUploadProgress(0)
+
+    let uploadedPath: string | null = null
+
     try {
-      // 1. ອັບໂຫຼດໄຟລ໌ຈິງຂຶ້ນ Supabase Storage ກ່ອນ
-      const uploaded = await uploadFile(selectedFile)
+      // 1. ອັບໂຫຼດໄຟລ໌ຂຶ້ນ Storage ພ້ອມ Progress & Auto-Retry ຖ້າສັນຍານຫຼຸດຊົ່ວຄາວ
+      let uploaded: { fileUrl: string; fileName: string; fileSize: string } | null = null
+      const maxRetries = 2
+
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (attempt > 0) {
+          setRetryAttempt(attempt)
+          // ລໍຖ້າ 1.5 ວິນາທີ ກ່ອນລອງໃໝ່
+          await new Promise((resolve) => setTimeout(resolve, 1500))
+        }
+        try {
+          setUploadProgress(0)
+          uploaded = await uploadFile(selectedFile, (pct) => setUploadProgress(pct))
+          break
+        } catch (uploadErr: unknown) {
+          const isNetworkError =
+            !navigator.onLine ||
+            (uploadErr as { code?: string })?.code === 'ERR_NETWORK' ||
+            (uploadErr as Error)?.message?.includes('Network') ||
+            (uploadErr as Error)?.message?.includes('timeout')
+
+          if (attempt < maxRetries && isNetworkError) {
+            continue
+          }
+          throw uploadErr
+        }
+      }
+
+      if (!uploaded) throw new Error('ອັບໂຫຼດໄຟລ໌ບໍ່ສຳເລັດ')
+      uploadedPath = uploaded.fileUrl
 
       // 2. ບັນທຶກຂໍ້ມູນເອກະສານລົງຖານຂໍ້ມູນ
       setUploadStep('saving')
@@ -262,7 +324,7 @@ export default function UploadDocumentModal({
         folderName: selectedFolder?.name,
       })
 
-      // ແຈ້ງ toast ແລະ ປິດ modal ທັນທີ (ບໍ່ຕ້ອງລໍຖ້າ reload ທັງໝົດໃຫ້ໜ່ວງ)
+      // ແຈ້ງ toast ແລະ ປິດ modal ທັນທີ
       pushToast({
         title: status === 'draft' ? 'ບັນທຶກເປັນສະບັບຮ່າງສຳເລັດ' : 'ອັບໂຫຼດເອກະສານສຳເລັດ',
       })
@@ -272,15 +334,32 @@ export default function UploadDocumentModal({
       void reload()
     } catch (err: unknown) {
       console.error('Upload failed:', err)
+
+      // ຖ້າໄຟລ໌ຂຶ້ນ Storage ສຳເລັດແລ້ວ ແຕ່ຂັ້ນຕອນ Save DB ຫຼຸດ -> ສັ່ງ Rollback ລຶບໄຟລ໌ອອກຈາກ Storage ທັນທີ
+      if (uploadedPath) {
+        try {
+          await deleteUploadedFile(uploadedPath)
+        } catch (cleanupErr) {
+          console.warn('Cleanup orphaned file failed:', cleanupErr)
+        }
+      }
+
       let msg = 'ອັບໂຫຼດເອກະສານລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່'
-      if (err instanceof Error && err.message) {
-        msg = err.message
+      if (!navigator.onLine) {
+        msg = 'ການເຊື່ອມຕໍ່ເຄືອຂ່າຍຂັດຂ້ອງ: ອຸປະກອນຂອງທ່ານຢູ່ໃນສະຖານະ Offline'
+      } else if (err instanceof Error && err.message) {
+        if (err.message.includes('Network Error') || (err as { code?: string }).code === 'ERR_NETWORK') {
+          msg = 'ການເຊື່ອມຕໍ່ເຄືອຂ່າຍຂັດຂ້ອງ (Network Disconnected), ກະລຸນາກວດສອບສັນຍານອິນເຕີເນັດ ແລ້ວກົດລອງໃໝ່'
+        } else {
+          msg = err.message
+        }
       }
       setError(msg)
       pushToast({ title: 'ອັບໂຫຼດເອກະສານບໍ່ສຳເລັດ', description: msg })
     } finally {
       setIsSubmitting(false)
       setUploadStep('idle')
+      setRetryAttempt(0)
     }
   }
 
@@ -307,6 +386,14 @@ export default function UploadDocumentModal({
             <X className="h-4.5 w-4.5" />
           </button>
         </div>
+
+        {/* Offline Banner if disconnected */}
+        {!isOnline && (
+          <div className="flex shrink-0 items-center gap-2.5 bg-amber-500/15 border-b border-amber-500/30 px-5 py-2 text-xs text-amber-300 font-medium">
+            <WifiOff className="h-4 w-4 shrink-0 text-amber-400" />
+            <span>ອຸປະກອນຂອງທ່ານຂາດການເຊື່ອມຕໍ່ອິນເຕີເນັດ (Offline) — ກະລຸນາກວດສອບສັນຍານເຄືອຂ່າຍ</span>
+          </div>
+        )}
 
         {/* Body: 2 columns (left dropzone/file card fills full height, right metadata form scrolls independently) */}
         <div className="min-h-0 flex-1 overflow-hidden px-5 py-4">
@@ -642,44 +729,84 @@ export default function UploadDocumentModal({
         </div>
 
         {/* Footer: fixed at bottom, never scrolls away */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-slate-800 px-5 py-3.5">
-          <div className="min-w-0 flex-1">
-            {error && <p className="text-xs text-rose-400">{error}</p>}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              ຍົກເລີກ
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSubmit('draft')}
-              disabled={isSubmitting || loading}
-              className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isSubmitting
-                ? uploadStep === 'uploading'
-                  ? 'ກຳລັງອັບໂຫຼດໄຟລ໌...'
-                  : 'ກຳລັງບັນທຶກ...'
-                : 'ບັນທຶກເປັນຮ່າງ'}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSubmit('approved')}
-              disabled={isSubmitting || loading}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-900/60"
-            >
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting
-                ? uploadStep === 'uploading'
-                  ? 'ກຳລັງອັບໂຫຼດໄຟລ໌...'
-                  : 'ກຳລັງບັນທຶກ...'
-                : 'ອັບໂຫຼດເອກະສານ'}
-            </button>
+        <div className="flex shrink-0 flex-col gap-2.5 border-t border-slate-800 px-5 py-3.5">
+          {/* Real-time upload progress bar */}
+          {isSubmitting && (
+            <div className="w-full space-y-1.5 rounded-lg border border-slate-700/80 bg-slate-800/60 p-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-400" />
+                  {uploadStep === 'uploading' ? (
+                    retryAttempt > 0 ? (
+                      <span className="font-medium text-amber-300">
+                        ສັນຍານຂັດຂ້ອງ, ກຳລັງລອງໃໝ່ອັດຕະໂນມັດ (ຄັ້ງທີ {retryAttempt}/2)...
+                      </span>
+                    ) : (
+                      <span>ກຳລັງອັບໂຫຼດໄຟລ໌ຂຶ້ນ Cloud Storage... ({uploadProgress}%)</span>
+                    )
+                  ) : (
+                    <span className="text-emerald-300">ກຳລັງບັນທຶກຂໍ້ມູນເອກະສານລົງຖານຂໍ້ມູນ...</span>
+                  )}
+                </span>
+                <span className="font-mono text-xs font-semibold text-indigo-300">
+                  {uploadStep === 'saving' ? '100%' : `${uploadProgress}%`}
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-700/80">
+                <div
+                  className={`h-full transition-all duration-300 ease-out ${
+                    uploadStep === 'saving' ? 'bg-emerald-500' : 'bg-indigo-500'
+                  }`}
+                  style={{ width: `${uploadStep === 'saving' ? 100 : uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              {error && (
+                <p className="flex items-center gap-1.5 text-xs font-medium text-rose-400">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <span>{error}</span>
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ຍົກເລີກ
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSubmit('draft')}
+                disabled={isSubmitting || loading || !isOnline}
+                className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSubmitting
+                  ? uploadStep === 'uploading'
+                    ? 'ກຳລັງອັບໂຫຼດໄຟລ໌...'
+                    : 'ກຳລັງບັນທຶກ...'
+                  : 'ບັນທຶກເປັນຮ່າງ'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSubmit('approved')}
+                disabled={isSubmitting || loading || !isOnline}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-900/60"
+              >
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isSubmitting
+                  ? uploadStep === 'uploading'
+                    ? 'ກຳລັງອັບໂຫຼດໄຟລ໌...'
+                    : 'ກຳລັງບັນທຶກ...'
+                  : 'ອັບໂຫຼດເອກະສານ'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
