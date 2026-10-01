@@ -28,9 +28,9 @@ const masterDataOptions = [
 export default function MasterDataPage() {
   return (
     <DashboardLayout title="ຈັດການຂໍ້ມູນພື້ນຖານ">
-      <div className="w-full min-w-0 space-y-6 p-4 sm:p-6 lg:p-8">
+      <div className="w-full min-w-0 space-y-4 p-3 sm:p-4 lg:p-5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl font-bold text-slate-900">
             ຈັດການຂໍ້ມູນພື້ນຖານ (Master Data)
           </h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -38,24 +38,24 @@ export default function MasterDataPage() {
           </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {masterDataOptions.map(({ href, icon, title, description }) => (
             <Link
               key={href}
               href={href}
-              className="group flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+              className="group flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
             >
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-2xl transition group-hover:scale-105">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-xl transition group-hover:scale-105">
                   {icon}
                 </div>
-                <h2 className="mt-4 text-lg font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
+                <h2 className="mt-3 text-base font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
                   {title}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">{description}</p>
               </div>
 
-              <span className="mt-4 inline-block border-t border-slate-100 pt-3 text-sm font-semibold text-indigo-600">
+              <span className="mt-3 inline-block border-t border-slate-100 pt-3 text-sm font-semibold text-indigo-600">
                 ເປີດຈັດການ ➡️
               </span>
             </Link>

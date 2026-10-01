@@ -105,7 +105,7 @@ export default function MoveShelfPage() {
 
   return (
     <DashboardLayout title="ຍ້າຍຊັ້ນວາງ">
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
         <RelocateHeader
           icon="🪜"
           title="ຍ້າຍຊັ້ນວາງເອກະສານ"
@@ -113,7 +113,7 @@ export default function MoveShelfPage() {
           countLabel={`${shelves.length} ຊັ້ນວາງ`}
         />
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* 1. ຊັ້ນວາງຕົ້ນທາງ */}
           <RelocatePanel>
             <PanelTitle

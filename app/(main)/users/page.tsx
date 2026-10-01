@@ -103,7 +103,7 @@ export default function UsersPage() {
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-rose-100 text-rose-700">
             <ShieldCheck className="h-10 w-10" />
           </div>
-          <h1 className="mt-5 text-2xl font-bold text-gray-900">ບໍ່ມີສິດເຂົ້າເຖິງ</h1>
+          <h1 className="mt-5 text-xl font-bold text-gray-900">ບໍ່ມີສິດເຂົ້າເຖິງ</h1>
           <p className="mt-2 max-w-md text-center text-sm text-gray-500">
             ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້. ພຽງ ຜູ້ດູແລລະບົບສູງສຸດ ຫຼື Admin ຝ່າຍ ສາມາດຈັດການຜູ້ໃຊ້ງານ.
           </p>
@@ -215,10 +215,10 @@ export default function UsersPage() {
 
   return (
     <DashboardLayout title="ຈັດການຜູ້ໃຊ້ງານ">
-      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">ຈັດການຜູ້ໃຊ້ງານ</h1>
+            <h1 className="text-xl font-bold text-gray-900">ຈັດການຜູ້ໃຊ້ງານ</h1>
             <p className="mt-1 text-sm text-gray-500">ສ້າງ ແກ້ໄຂ ແລະ ຈັດສິດການເຂົ້າໃຊ້ລະບົບ DMS</p>
           </div>
           <button
@@ -231,40 +231,40 @@ export default function UsersPage() {
 
         {/* Stats cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">ຜູ້ໃຊ້ງານທັງໝົດ</div>
               <UsersIcon size={18} className="text-indigo-500" />
             </div>
-            <div className="mt-3 text-2xl font-bold text-gray-900">{stats.total}</div>
+            <div className="mt-3 text-xl font-bold text-gray-900">{stats.total}</div>
           </div>
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">SuperAdmin</div>
               <ShieldCheck size={18} className="text-violet-500" />
             </div>
-            <div className="mt-3 text-2xl font-bold text-gray-900">{stats.superAdmin}</div>
+            <div className="mt-3 text-xl font-bold text-gray-900">{stats.superAdmin}</div>
           </div>
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">Admin ຝ່າຍ</div>
               <ShieldCheck size={18} className="text-blue-500" />
             </div>
-            <div className="mt-3 text-2xl font-bold text-gray-900">{stats.divisionAdmin}</div>
+            <div className="mt-3 text-xl font-bold text-gray-900">{stats.divisionAdmin}</div>
           </div>
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">Admin ພະແນກ</div>
               <ShieldCheck size={18} className="text-emerald-500" />
             </div>
-            <div className="mt-3 text-2xl font-bold text-gray-900">{stats.departmentAdmin}</div>
+            <div className="mt-3 text-xl font-bold text-gray-900">{stats.departmentAdmin}</div>
           </div>
-          <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">ໃຊ້ງານຢູ່</div>
               <UserCheck size={18} className="text-emerald-500" />
             </div>
-            <div className="mt-3 text-2xl font-bold text-gray-900">{stats.active}</div>
+            <div className="mt-3 text-xl font-bold text-gray-900">{stats.active}</div>
           </div>
         </div>
 
@@ -335,12 +335,12 @@ export default function UsersPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-4 py-3 min-w-[220px]">ຜູ້ໃຊ້ງານ</th>
-                  <th className="px-4 py-3 min-w-[140px]">ພະແນກ</th>
-                  <th className="px-4 py-3 w-40 min-w-[140px] whitespace-nowrap">ສິດນຳໃຊ້</th>
-                  <th className="px-4 py-3 w-36 min-w-[130px] whitespace-nowrap">ສະຖານະ</th>
-                  <th className="px-4 py-3 w-44 min-w-[150px] whitespace-nowrap">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
-                  <th className="px-4 py-3 text-center w-28 min-w-[100px] whitespace-nowrap">ຈັດການ</th>
+                  <th className="px-3 py-2.5 min-w-[220px]">ຜູ້ໃຊ້ງານ</th>
+                  <th className="px-3 py-2.5 min-w-[140px]">ພະແນກ</th>
+                  <th className="px-3 py-2.5 w-40 min-w-[140px] whitespace-nowrap">ສິດນຳໃຊ້</th>
+                  <th className="px-3 py-2.5 w-36 min-w-[130px] whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-3 py-2.5 w-44 min-w-[150px] whitespace-nowrap">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
+                  <th className="px-3 py-2.5 text-center w-28 min-w-[100px] whitespace-nowrap">ຈັດການ</th>
                 </tr>
               </thead>
               <tbody>
@@ -363,7 +363,7 @@ export default function UsersPage() {
 
                       return (
                         <tr key={u.id} className="border-t border-gray-100 align-top">
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-2.5">
                             <div className="flex items-center gap-3">
                               <UserAvatar
                                 name={u.name}
@@ -384,19 +384,19 @@ export default function UsersPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{u.department}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-3 py-2.5 text-sm text-gray-700 whitespace-nowrap">{u.department}</td>
+                          <td className="px-3 py-2.5 whitespace-nowrap">
                             <span className={`inline-flex items-center justify-center min-w-[110px] rounded-full px-2.5 py-1 text-xs font-medium text-center ${roleStyles[u.role]}`}>
                               {roleLabels[u.role]}
                             </span>
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-3 py-2.5 whitespace-nowrap">
                             <span className={`inline-flex items-center justify-center min-w-[100px] rounded-full px-2.5 py-1 text-xs font-medium text-center ${statusStyles[u.status]}`}>
                               {statusLabels[u.status]}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{u.lastActive || '-'}</td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                          <td className="px-3 py-2.5 text-sm text-gray-700 whitespace-nowrap">{u.lastActive || '-'}</td>
+                          <td className="px-3 py-2.5 text-center whitespace-nowrap">
                             <div className="relative inline-flex items-center justify-center">
                               {/* Dropdown Menu Trigger */}
                               <button

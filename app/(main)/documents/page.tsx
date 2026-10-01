@@ -242,10 +242,10 @@ export default function DocumentsPage() {
 
   return (
     <DashboardLayout title="ເອກກະສານທັງໝົດ">
-      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">ເອກກະສານທັງໝົດ</h1>
+            <h1 className="text-xl font-bold text-gray-900">ເອກກະສານທັງໝົດ</h1>
             <p className="text-sm text-gray-500 mt-1">ການຕິດຕາມແລະຈັດການເອກະສານໃນລະບົບ DMS</p>
           </div>
 
@@ -386,21 +386,21 @@ export default function DocumentsPage() {
             <table className="min-w-full text-left">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
-                  <th className="px-4 py-3">ເອກະສານ</th>
-                  <th className="px-4 py-3">ໝວດໝູ່</th>
-                  <th className="px-4 py-3">ເລກທີ</th>
-                  <th className="px-4 py-3">ຮູບແບບ</th>
-                  <th className="px-4 py-3">ຂະໜາດ</th>
-                  <th className="px-4 py-3">ວັນທີ</th>
-                  <th className="px-4 py-3">ຜູ້ອັບໂຫຼດ</th>
-                  <th className="px-4 py-3">ສະຖານະ</th>
-                  <th className="px-4 py-3 text-center">ການກະທຳ</th>
+                  <th className="px-3 py-2.5">ເອກະສານ</th>
+                  <th className="px-3 py-2.5">ໝວດໝູ່</th>
+                  <th className="px-3 py-2.5">ເລກທີ</th>
+                  <th className="px-3 py-2.5">ຮູບແບບ</th>
+                  <th className="px-3 py-2.5">ຂະໜາດ</th>
+                  <th className="px-3 py-2.5">ວັນທີ</th>
+                  <th className="px-3 py-2.5">ຜູ້ອັບໂຫຼດ</th>
+                  <th className="px-3 py-2.5">ສະຖານະ</th>
+                  <th className="px-3 py-2.5 text-center">ການກະທຳ</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedDocs.map((doc, idx) => (
                   <tr key={doc.id} className="border-t border-gray-100 align-top">
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5">
                       <div className="font-semibold text-gray-900">{doc.title}</div>
                       {(doc.department || doc.division) && (
                         <div
@@ -441,11 +441,11 @@ export default function DocumentsPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3"><CategoryBadge category={doc.category} /></td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{doc.docNumber}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 uppercase">{doc.fileType}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{doc.fileSize}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-3 py-2.5"><CategoryBadge category={doc.category} /></td>
+                    <td className="px-3 py-2.5 text-sm text-gray-700">{doc.docNumber}</td>
+                    <td className="px-3 py-2.5 text-sm text-gray-700 uppercase">{doc.fileType}</td>
+                    <td className="px-3 py-2.5 text-sm text-gray-700">{doc.fileSize}</td>
+                    <td className="px-3 py-2.5 text-sm text-gray-700">
                       <div>{doc.uploadDate}</div>
                       {doc.expiresAt && (
                         <div className="mt-1">
@@ -461,13 +461,13 @@ export default function DocumentsPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadedBy}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5 text-sm text-gray-700">{doc.uploadedBy}</td>
+                    <td className="px-3 py-2.5">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
                         {statusLabels[doc.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-2.5 text-center">
                       <div className="relative inline-flex items-center justify-center gap-1.5">
                         {/* Quick View Button */}
                         <button

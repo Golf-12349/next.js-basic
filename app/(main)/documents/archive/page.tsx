@@ -88,14 +88,14 @@ export default function ArchivePage() {
 
   return (
     <DashboardLayout title="ຄັງເກັບເອກກະສານ">
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
         <PageHeader
           showCreateButton={false}
           onSearchChange={undefined}
         />
 
         {unassignedDocsCount > 0 && (
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-amber-900 shadow-sm">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-amber-900 shadow-sm">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xl">
                 📦
@@ -118,8 +118,8 @@ export default function ArchivePage() {
           </div>
         )}
 
-        <div className="mb-6">
-          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+        <div className="mb-4">
+          <div className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
             <Breadcrumbs
               view={archive.view}
               activeWarehouse={archive.activeWarehouse}

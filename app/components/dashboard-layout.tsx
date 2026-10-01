@@ -443,12 +443,12 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
 
       {/* Sidebar — ຈໍໃຫຍ່ (lg+) ສະແດງຄົງທີ່ · ຈໍນ້ອຍ ເປັນ drawer ເລື່ອນເຂົ້າ-ອອກ */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col justify-between overscroll-contain overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] flex-col justify-between overscroll-contain overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0 ${
           mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div>
-          <div className="mb-6 flex items-center justify-between gap-2 border-b border-slate-800 px-2 pb-4">
+          <div className="mb-4 flex items-center justify-between gap-2 border-b border-slate-800 px-2 pb-4">
             <BrandLogo variant="dark" subtitle="ລະບົບເອກກະສານ" />
             <button
               type="button"
@@ -460,7 +460,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
             </button>
           </div>
 
-          <nav className="space-y-5">
+          <nav className="space-y-4">
             {menuSections
               .map((section) => ({
                 ...section,
@@ -479,7 +479,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
               .filter((section) => section.items.length > 0)
               .map((section) => (
                 <div key={section.title}>
-                  <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
                     {section.title === 'MAIN' ? 'ເມນູຫຼັກ' : section.title === 'DOCUMENTS' ? 'ຈັດການເອກກະສານ' : 'ລະບົບ & ການຕັ້ງຄ່າ'}
                   </div>
 
@@ -646,7 +646,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Header — sticky + ແຖວຄົ້ນຫາແຍກສຳລັບມືຖື, ບໍ່ໃຫ້ລົ້ນຂອບຈໍ */}
         <header className="sticky top-0 z-30 shrink-0 border-b border-gray-200/70 bg-white/90 backdrop-blur">
-          <div className="flex h-16 items-center gap-1.5 px-3 sm:gap-3 sm:px-4 lg:px-6">
+          <div className="flex h-14 items-center gap-1.5 px-3 sm:gap-3 sm:px-4 lg:px-6">
             <button
               type="button"
               onClick={() => setMobileNavOpen(true)}
@@ -732,14 +732,14 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
 
               {/* Notification Dropdown Menu — ກວ້າງເຕັມເກືອບເຕັມຈໍໃນມືຖື, ກັນລົ້ນຂອບຂວາ */}
               <div
-                className={`fixed left-3 right-3 top-[68px] z-50 max-h-[calc(100dvh-5rem)] w-auto origin-top-right overflow-y-auto overscroll-contain rounded-2xl border border-gray-200 bg-white shadow-xl transition-all duration-200 ease-out sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 ${
+                className={`fixed left-3 right-3 top-[60px] z-50 max-h-[calc(100dvh-5rem)] w-auto origin-top-right overflow-y-auto overscroll-contain rounded-2xl border border-gray-200 bg-white shadow-xl transition-all duration-200 ease-out sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 ${
                   notifOpen
                     ? 'pointer-events-auto scale-100 opacity-100'
                     : 'pointer-events-none scale-95 opacity-0'
                 }`}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3.5">
+                <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2.5">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-900">ການແຈ້ງເຕືອນ</span>
                     {unreadCount > 0 ? (
@@ -853,14 +853,14 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
               </button>
 
               <div
-                className={`fixed right-4 top-[68px] z-50 w-64 max-w-[calc(100vw-2rem)] origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 ease-out sm:absolute sm:right-0 sm:top-full sm:mt-2 ${
+                className={`fixed right-4 top-[60px] z-50 w-64 max-w-[calc(100vw-2rem)] origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 ease-out sm:absolute sm:right-0 sm:top-full sm:mt-2 ${
                   profileOpen
                     ? 'pointer-events-auto scale-100 opacity-100'
                     : 'pointer-events-none scale-95 opacity-0'
                 }`}
               >
                 {/* User header */}
-                <div className="border-b border-gray-100 px-4 py-3">
+                <div className="border-b border-gray-100 px-3 py-2.5">
                   <div className="flex items-center gap-3">
                     <UserAvatar
                       name={currentUser?.name || 'ຜູ້ໃຊ້ງານ'}

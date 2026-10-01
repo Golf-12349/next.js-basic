@@ -369,8 +369,8 @@ function DocumentList({
 
   if (documents.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center">
-        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl text-indigo-600">
+      <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-xl text-indigo-600">
           📄
         </div>
         <p className="text-gray-500">{emptyMessage}</p>
@@ -379,7 +379,7 @@ function DocumentList({
           <button
             type="button"
             onClick={onAction}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
           >
             <Plus size={14} /> {actionLabel}
           </button>
@@ -649,9 +649,9 @@ export default function DocumentView({
 
     return (
       <>
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-2xl shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-xl shadow-sm">
               📁
             </div>
             <div>
@@ -728,9 +728,9 @@ export default function DocumentView({
   // 2. ALL DOCUMENTS STORAGE LOCATION BROWSING VIEW
   return (
     <>
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-2xl shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-xl shadow-sm">
             📑
           </div>
           <div>
@@ -762,7 +762,7 @@ export default function DocumentView({
       </div>
 
       {/* Filter Bar */}
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
             <Filter size={14} />

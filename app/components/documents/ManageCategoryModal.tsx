@@ -92,7 +92,7 @@ export default function ManageCategoryModal({ open, onClose, categories, onAdd, 
         ) : (
           <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
             {categories.map((c) => (
-              <li key={c} className="flex items-center justify-between px-4 py-3">
+              <li key={c} className="flex items-center justify-between px-3 py-2.5">
                 <span className="text-sm font-medium text-gray-800">
                   {c} <span className="text-gray-400">({countDocs(c)})</span>
                 </span>

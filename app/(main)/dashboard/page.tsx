@@ -11,12 +11,12 @@ import { TrafficChart } from '@/app/components/dashboard/TrafficChart';
 export default function DashboardPage() {
   return (
     <DashboardLayout title="ໜ້າຫຼັກ">
-      <main className="w-full space-y-6 p-4 sm:p-6 lg:p-8">
+      <main className="w-full space-y-4 p-3 sm:p-4 lg:p-5">
         <GreetingHeader />
         <MetricCards />
 
-        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-4">
             <TrafficChart />
             <StatusBreakdown />
           </div>

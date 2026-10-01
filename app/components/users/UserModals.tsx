@@ -133,16 +133,16 @@ export function UserDetailModal({
   return (
     <Modal open={open} onClose={onClose} title="ລາຍລະອຽດຜູ້ໃຊ້ງານ">
       {user && (
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div className="flex items-center gap-4">
             <UserAvatar
               name={user.name}
               avatarUrl={user.avatarUrl}
-              avatarClassName="h-14 w-14"
+              avatarClassName="h-12 w-12"
               textClassName="text-lg"
             />
             <div>
-              <div className="text-lg font-bold text-gray-900">{user.name}</div>
+              <div className="text-base font-bold text-gray-900">{user.name}</div>
               <div className="text-xs text-gray-500">{user.id}</div>
             </div>
             <div className="ml-auto flex flex-col items-end gap-2">
@@ -425,7 +425,7 @@ export function UserFormModal({
           <UserAvatar
             name={form.name || '?'}
             avatarUrl={form.avatarUrl}
-            avatarClassName="h-16 w-16 ring-2 ring-indigo-100"
+            avatarClassName="h-12 w-12 ring-2 ring-indigo-100"
             textClassName="text-xl"
           />
           <div className="flex-1 space-y-2">

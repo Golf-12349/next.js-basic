@@ -28,7 +28,7 @@ export function StatusBreakdown() {
   }, [documents]);
 
   return (
-    <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
       <div className="flex items-start justify-between gap-3 sm:items-center">
         <div className="flex min-w-0 items-start gap-3 sm:items-center">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
@@ -62,7 +62,7 @@ export function StatusBreakdown() {
         {data.counts.map((c) => (
           <div
             key={c.key}
-            className={`flex items-center justify-between gap-2 rounded-2xl px-4 py-3 ring-1 ${c.pill}`}
+            className={`flex items-center justify-between gap-2 rounded-2xl px-3 py-2.5 ring-1 ${c.pill}`}
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />
@@ -77,7 +77,7 @@ export function StatusBreakdown() {
       </div>
 
       {data.total === 0 && (
-        <p className="mt-4 text-center text-sm text-slate-400">ຍັງບໍ່ມີຂໍ້ມູນເອກະສານໃນລະບົບ</p>
+        <p className="mt-3 text-center text-sm text-slate-400">ຍັງບໍ່ມີຂໍ້ມູນເອກະສານໃນລະບົບ</p>
       )}
     </section>
   );

@@ -29,7 +29,7 @@ export default function ToastContainer() {
   return (
     <div className="fixed right-4 bottom-6 z-50 flex flex-col gap-3">
       {local.map((t) => (
-        <div key={t.id} className="bg-white border rounded-lg px-4 py-3 shadow-md w-80">
+        <div key={t.id} className="bg-white border rounded-lg px-3 py-2.5 shadow-md w-80">
           <div className="font-semibold">{t.title}</div>
           {t.description && <div className="text-sm text-black/60">{t.description}</div>}
         </div>

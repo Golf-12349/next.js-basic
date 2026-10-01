@@ -57,15 +57,15 @@ export default function SystemSettingsPage() {
 
   return (
     <DashboardLayout title="ຕັ້ງຄ່າລະບົບ">
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
         {/* Header */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-600">
               <Settings className="h-4 w-4" />
               <span>ການຕັ້ງຄ່າສ່ວນກາງ</span>
             </div>
-            <h1 className="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">ຕັ້ງຄ່າລະບົບ</h1>
+            <h1 className="mt-1 text-xl font-bold text-gray-900">ຕັ້ງຄ່າລະບົບ</h1>
             <p className="mt-1 text-sm text-gray-500">
               ກຳນົດຄ່າທົ່ວໄປ, ສະຖານະເຊີບເວີ, ແລະ ການເຊື່ອມຕໍ່ລະບົບ DMS (ສະເພາະ Admin)
             </p>
@@ -81,8 +81,8 @@ export default function SystemSettingsPage() {
         </div>
 
         {/* System Health Status Banner */}
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-gray-500">ສະຖານະ Real-time</span>
               <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isConnected ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
@@ -96,7 +96,7 @@ export default function SystemSettingsPage() {
             <p className="mt-1 text-xs text-gray-400">Server-Sent Events /api/events</p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-gray-500">ຖານຂໍ້ມູນ</span>
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
@@ -110,7 +110,7 @@ export default function SystemSettingsPage() {
             <p className="mt-1 text-xs text-gray-400">ເຊື່ອມຕໍ່ປົກກະຕິ</p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-gray-500">ບ່ອນເກັບໄຟລ໌</span>
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
@@ -124,7 +124,7 @@ export default function SystemSettingsPage() {
             <p className="mt-1 text-xs text-gray-400">Private Bucket / Signed URLs</p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-gray-500">ເວີຊັນລະບົບ</span>
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
@@ -136,16 +136,16 @@ export default function SystemSettingsPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
           {/* General Config Form */}
-          <form onSubmit={handleSaveSystemSettings} className="space-y-6">
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-5 flex items-center gap-3 border-b border-gray-100 pb-4">
+          <form onSubmit={handleSaveSystemSettings} className="space-y-4">
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
                   <Activity className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">ຂໍ້ມູນອົງກອນ & ລະບົບ</h2>
+                  <h2 className="text-base font-bold text-gray-900">ຂໍ້ມູນອົງກອນ & ລະບົບ</h2>
                   <p className="text-sm text-gray-500">ກຳນົດຊື່ອົງກອນ ແລະ ຂໍ້ມູນຕິດຕໍ່ຫຼັກ</p>
                 </div>
               </div>
@@ -223,8 +223,8 @@ export default function SystemSettingsPage() {
           </form>
 
           {/* Quick Management Shortcuts */}
-          <div className="space-y-6">
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="space-y-4">
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-500">
                 ທາງລັດການຈັດການລະບົບ
               </h3>
@@ -279,7 +279,7 @@ export default function SystemSettingsPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+            <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
               <div className="flex items-start gap-3">
                 <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div>

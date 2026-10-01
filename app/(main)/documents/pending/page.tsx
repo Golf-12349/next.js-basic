@@ -102,10 +102,10 @@ export default function PendingDocumentsPage() {
 
   return (
     <DashboardLayout title="ເອກະສານສົ່ງຂ້າມມາຫາທ່ານ">
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900">
               🔄 ເອກະສານສົ່ງຂ້າມມາຫາທ່ານ
               {incomingTransfers.length > 0 && (
                 <span className="ml-2.5 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
@@ -122,13 +122,13 @@ export default function PendingDocumentsPage() {
         {/* Incoming Cross-department / Cross-division Transfers */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           {loadingTransfers ? (
-            <div className="p-12 text-center text-sm text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
+            <div className="p-8 text-center text-sm text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນ...</div>
           ) : incomingTransfers.length === 0 ? (
-            <div className="p-16 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-3xl">
+            <div className="p-10 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-2xl">
                 📥
               </div>
-              <div className="mt-4 text-base font-semibold text-gray-900">ບໍ່ມີເອກະສານສົ່ງຂ້າມທີ່ລໍຖ້າການຕອບຮັບ</div>
+              <div className="mt-3 text-base font-semibold text-gray-900">ບໍ່ມີເອກະສານສົ່ງຂ້າມທີ່ລໍຖ້າການຕອບຮັບ</div>
               <p className="mt-1 text-xs text-gray-500 max-w-sm mx-auto">
                 ເມື່ອມີພະແນກ ຫຼື ຝ່າຍອື່ນສົ່ງເອກະສານມາຫາພະແນກຂອງທ່ານ ລາຍການຈະສະແດງຢູ່ນີ້ເພື່ອໃຫ້ທ່ານກວດສອບ ແລະ ຈັດເກັບເຂົ້າຄັງ
               </p>
@@ -138,12 +138,12 @@ export default function PendingDocumentsPage() {
               <table className="min-w-full text-left">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 border-b border-gray-100">
                   <tr>
-                    <th className="px-4 py-3.5">ເອກະສານ</th>
-                    <th className="px-4 py-3.5">ຕົ້ນທາງ (ສົ່ງມາຈາກ)</th>
-                    <th className="px-4 py-3.5">ປາຍທາງ (ສົ່ງຫາ)</th>
-                    <th className="px-4 py-3.5">ໝາຍເຫດ</th>
-                    <th className="px-4 py-3.5">ວັນທີສົ່ງ</th>
-                    <th className="px-4 py-3.5 text-center">ການກະທຳ</th>
+                    <th className="px-3 py-2.5">ເອກະສານ</th>
+                    <th className="px-3 py-2.5">ຕົ້ນທາງ (ສົ່ງມາຈາກ)</th>
+                    <th className="px-3 py-2.5">ປາຍທາງ (ສົ່ງຫາ)</th>
+                    <th className="px-3 py-2.5">ໝາຍເຫດ</th>
+                    <th className="px-3 py-2.5">ວັນທີສົ່ງ</th>
+                    <th className="px-3 py-2.5 text-center">ການກະທຳ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -166,7 +166,7 @@ export default function PendingDocumentsPage() {
 
                     return (
                       <tr key={t.id} className="hover:bg-gray-50/60 transition">
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-gray-900">
                               {docItem?.title || 'ເອກະສານບໍ່ລະບຸຊື່'}
@@ -188,7 +188,7 @@ export default function PendingDocumentsPage() {
                           </div>
                         </td>
 
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           <div className="flex flex-col text-xs">
                             <span className="font-semibold text-gray-800">
                               🏢 {t.fromDepartment || '—'}
@@ -206,7 +206,7 @@ export default function PendingDocumentsPage() {
                           </div>
                         </td>
 
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           <div className="flex flex-col text-xs">
                             <span className="font-semibold text-indigo-700">
                               🏢 {t.toDepartment}
@@ -224,7 +224,7 @@ export default function PendingDocumentsPage() {
                           </div>
                         </td>
 
-                        <td className="px-4 py-3.5 text-xs text-gray-600 max-w-xs">
+                        <td className="px-3 py-2.5 text-xs text-gray-600 max-w-xs">
                           {t.note ? (
                             <span className="italic">{t.note}</span>
                           ) : (
@@ -232,11 +232,11 @@ export default function PendingDocumentsPage() {
                           )}
                         </td>
 
-                        <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">
                           {t.createdAt?.slice(0, 10) || '—'}
                         </td>
 
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           <div className="flex items-center justify-center gap-2">
                             {docItem && (
                               <button

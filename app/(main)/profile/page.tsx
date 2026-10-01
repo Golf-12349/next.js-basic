@@ -190,26 +190,26 @@ export default function PersonalProfilePage() {
 
   return (
     <DashboardLayout title="ການຕັ້ງຄ່າສ່ວນຕົວ">
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
         {/* Page Header */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-600">
             <Sparkles className="h-4 w-4" />
             <span>ບັນຊີຜູ້ໃຊ້ງານ</span>
           </div>
-          <h1 className="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">ການຕັ້ງຄ່າສ່ວນຕົວ</h1>
+          <h1 className="mt-1 text-xl font-bold text-gray-900">ການຕັ້ງຄ່າສ່ວນຕົວ</h1>
           <p className="mt-1 text-sm text-gray-500">
             ຈັດການຂໍ້ມູນໂປຣໄຟລ໌, ຮູບພາບຕົວແທນ, ແລະ ຄວາມປອດໄພຂອງບັນຊີຂອງທ່ານ
           </p>
         </div>
 
         {/* User Hero Overview Card */}
-        <div className="mb-6 overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-6 text-white shadow-lg sm:p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-5">
+        <div className="mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-4 text-white shadow-lg sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
               <div className="relative">
                 <div
-                  className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-bold text-white shadow-md ring-4 ring-white/20 ${
+                  className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-md ring-4 ring-white/20 ${
                     avatarUrl && avatarUrl.startsWith("#") ? "" : "bg-indigo-600"
                   }`}
                   style={avatarUrl && avatarUrl.startsWith("#") ? { backgroundColor: avatarUrl } : undefined}
@@ -224,7 +224,7 @@ export default function PersonalProfilePage() {
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-xl font-bold sm:text-2xl">{currentUser?.name || "ຜູ້ໃຊ້ງານ"}</h2>
+                  <h2 className="truncate text-xl font-bold">{currentUser?.name || "ຜູ້ໃຊ້ງານ"}</h2>
                   {currentUser?.position && (
                     <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-2.5 py-0.5 text-xs font-semibold text-white">
                       {currentUser.position}
@@ -267,7 +267,7 @@ export default function PersonalProfilePage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-6 flex gap-2 border-b border-gray-200 pb-2">
+        <div className="mb-4 flex gap-2 border-b border-gray-200 pb-2">
           <button
             type="button"
             onClick={() => setActiveTab("profile")}
@@ -308,21 +308,21 @@ export default function PersonalProfilePage() {
 
         {/* TAB 1: Profile Information */}
         {activeTab === "profile" && (
-          <div className="space-y-6">
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
+          <div className="space-y-4">
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-4">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">ຂໍ້ມູນໂປຣໄຟລ໌ຂອງທ່ານ</h2>
+                  <h2 className="text-base font-bold text-gray-900">ຂໍ້ມູນໂປຣໄຟລ໌ຂອງທ່ານ</h2>
                   <p className="text-sm text-gray-500">ອັບເດດຊື່, ອີເມວ, ເບີໂທລະສັບ ແລະ ຮູບພາບຕົວແທນ</p>
                 </div>
               </div>
 
               <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
                 {/* Avatar Uploader */}
-                <div className="flex flex-col items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/50 p-6 text-center lg:w-64">
+                <div className="flex flex-col items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/50 p-4 text-center lg:w-64">
                   <div className="relative">
                     <div
-                      className={`flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl text-2xl font-bold text-white shadow-md ring-4 ring-white ${
+                      className={`flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white shadow-md ring-4 ring-white ${
                         avatarUrl && avatarUrl.startsWith("#") ? "" : "bg-gradient-to-br from-indigo-500 to-indigo-700"
                       }`}
                       style={avatarUrl && avatarUrl.startsWith("#") ? { backgroundColor: avatarUrl } : undefined}
@@ -384,7 +384,7 @@ export default function PersonalProfilePage() {
                 </div>
 
                 {/* Form Fields */}
-                <div className="grid flex-1 gap-5 md:grid-cols-2">
+                <div className="grid flex-1 gap-4 md:grid-cols-2">
                   <div className="md:col-span-2">
                     <label className="mb-1.5 block text-sm font-semibold text-gray-700">
                       ຊື່ ແລະ ນາມສະກຸນ <span className="text-rose-500">*</span>
@@ -484,19 +484,19 @@ export default function PersonalProfilePage() {
 
         {/* TAB 2: Security & Password */}
         {activeTab === "security" && (
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="mb-6 flex items-center gap-3 border-b border-gray-100 pb-4">
+          <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">ປ່ຽນລະຫັດຜ່ານ</h2>
+                <h2 className="text-base font-bold text-gray-900">ປ່ຽນລະຫັດຜ່ານ</h2>
                 <p className="text-sm text-gray-500">ປ່ຽນລະຫັດຜ່ານໃໝ່ເພື່ອຄວາມປອດໄພຂອງບັນຊີທ່ານ</p>
               </div>
             </div>
 
             {(role === "DivisionAdmin" || role === "DepartmentAdmin") ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 text-amber-900">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-amber-900">
                 <div className="flex items-start gap-3">
                   <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
                     <ShieldAlert className="h-5 w-5" />
@@ -515,7 +515,7 @@ export default function PersonalProfilePage() {
                 </div>
               </div>
             ) : (
-              <div className="max-w-xl space-y-5">
+              <div className="max-w-xl space-y-4">
                 {/* Current Password */}
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານປັດຈຸບັນ</label>
@@ -606,14 +606,14 @@ export default function PersonalProfilePage() {
 
         {/* TAB 3: Preferences */}
         {activeTab === "preferences" && (
-          <div className="space-y-6">
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-6 flex items-center gap-3 border-b border-gray-100 pb-4">
+          <div className="space-y-4">
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
                   <Bell className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">ການແຈ້ງເຕືອນ</h2>
+                  <h2 className="text-base font-bold text-gray-900">ການແຈ້ງເຕືອນ</h2>
                   <p className="text-sm text-gray-500">ຕັ້ງຄ່າການຮັບແຈ້ງເຕືອນ ແລະ ສຽງໃນລະບົບ</p>
                 </div>
               </div>
@@ -669,20 +669,20 @@ export default function PersonalProfilePage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
                   <Globe className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">ພາສາລະບົບ</h2>
+                  <h2 className="text-base font-bold text-gray-900">ພາສາລະບົບ</h2>
                   <p className="text-sm text-gray-500">ການສະແດງຜົນພາສາຂອງລະບົບ DMS</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🇱🇦</span>
+                  <span className="text-xl">🇱🇦</span>
                   <div>
                     <div className="text-sm font-semibold text-gray-900">ພາສາລາວ (Lao)</div>
                     <div className="text-xs text-gray-500">ພາສາຫຼັກທີ່ໃຊ້ໃນລະບົບທັງໝົດ</div>

@@ -115,11 +115,11 @@ export default function AuditLogsPage() {
 
   return (
     <DashboardLayout title="ບັນທຶກຄວາມປອດໄພ">
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header Title */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
               <span className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
                 <ShieldCheck className="h-6 w-6" />
               </span>
@@ -141,47 +141,47 @@ export default function AuditLogsPage() {
 
         {/* Metric Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500">ບັນທຶກທັງໝົດ</span>
               <span className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
                 <ShieldCheck className="h-5 w-5" />
               </span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-slate-900">{metrics.total.toLocaleString()}</p>
+            <p className="mt-3 text-xl font-bold text-slate-900">{metrics.total.toLocaleString()}</p>
             <p className="mt-1 text-xs text-slate-400">ລາຍການປະຫວັດໃນຖານຂໍ້ມູນ</p>
           </div>
 
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-5 shadow-xs">
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-emerald-700">ເຂົ້າສູ່ລະບົບສຳເລັດ</span>
               <span className="rounded-lg bg-emerald-100/80 p-2 text-emerald-700">
                 <CheckCircle2 className="h-5 w-5" />
               </span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-emerald-800">{metrics.loginSuccess}</p>
+            <p className="mt-3 text-xl font-bold text-emerald-800">{metrics.loginSuccess}</p>
             <p className="mt-1 text-xs text-emerald-600/80">ໃນໜ້ານີ້</p>
           </div>
 
-          <div className="rounded-2xl border border-rose-100 bg-rose-50/30 p-5 shadow-xs">
+          <div className="rounded-2xl border border-rose-100 bg-rose-50/30 p-4 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-rose-700">ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ</span>
               <span className="rounded-lg bg-rose-100/80 p-2 text-rose-700">
                 <AlertTriangle className="h-5 w-5" />
               </span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-rose-800">{metrics.loginFailed}</p>
+            <p className="mt-3 text-xl font-bold text-rose-800">{metrics.loginFailed}</p>
             <p className="mt-1 text-xs text-rose-600/80">ລະຫັດຜິດ / ບໍ່ພົບບັນຊີ</p>
           </div>
 
-          <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-5 shadow-xs">
+          <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-amber-700">ຈັດການສິດ & ຜູ້ໃຊ້</span>
               <span className="rounded-lg bg-amber-100/80 p-2 text-amber-700">
                 <KeyRound className="h-5 w-5" />
               </span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-amber-800">{metrics.userChanges}</p>
+            <p className="mt-3 text-xl font-bold text-amber-800">{metrics.userChanges}</p>
             <p className="mt-1 text-xs text-amber-600/80">ສ້າງ, ປ່ຽນ Role, Reset ລະຫັດ</p>
           </div>
         </div>
@@ -265,12 +265,12 @@ export default function AuditLogsPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/75 text-xs font-semibold text-slate-500">
                 <tr>
-                  <th className="px-4 py-3.5">ວັນທີ & ເວລາ</th>
-                  <th className="px-4 py-3.5">ຜູ້ດຳເນີນການ</th>
-                  <th className="px-4 py-3.5">ເຫດການ (Action)</th>
-                  <th className="px-4 py-3.5">ເປົ້າໝາຍ / ລາຍລະອຽດ</th>
-                  <th className="px-4 py-3.5">IP Address & ອຸປະກອນ</th>
-                  <th className="px-4 py-3.5 text-right">ຈັດການ</th>
+                  <th className="px-3 py-2.5">ວັນທີ & ເວລາ</th>
+                  <th className="px-3 py-2.5">ຜູ້ດຳເນີນການ</th>
+                  <th className="px-3 py-2.5">ເຫດການ (Action)</th>
+                  <th className="px-3 py-2.5">ເປົ້າໝາຍ / ລາຍລະອຽດ</th>
+                  <th className="px-3 py-2.5">IP Address & ອຸປະກອນ</th>
+                  <th className="px-3 py-2.5 text-right">ຈັດການ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -300,12 +300,12 @@ export default function AuditLogsPage() {
                     return (
                       <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
                         {/* Timestamp */}
-                        <td className="px-4 py-3.5 whitespace-nowrap text-xs font-mono text-slate-500">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-xs font-mono text-slate-500">
                           {formatDate(log.createdAt)}
                         </td>
 
                         {/* Actor */}
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           <div className="flex items-center gap-2.5">
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
                               {(log.user?.name || log.actorEmail || 'U').charAt(0).toUpperCase()}
@@ -324,7 +324,7 @@ export default function AuditLogsPage() {
                         </td>
 
                         {/* Action Badge */}
-                        <td className="px-4 py-3.5 whitespace-nowrap">
+                        <td className="px-3 py-2.5 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${actionMeta.color}`}
                           >
@@ -334,7 +334,7 @@ export default function AuditLogsPage() {
                         </td>
 
                         {/* Target & Details preview */}
-                        <td className="px-4 py-3.5 max-w-xs truncate text-xs text-slate-600">
+                        <td className="px-3 py-2.5 max-w-xs truncate text-xs text-slate-600">
                           {log.details ? (
                             <span className="font-mono text-[11px] bg-slate-100/80 px-2 py-0.5 rounded text-slate-700">
                               {JSON.stringify(log.details)}
@@ -345,7 +345,7 @@ export default function AuditLogsPage() {
                         </td>
 
                         {/* IP & Device */}
-                        <td className="px-4 py-3.5 whitespace-nowrap text-xs">
+                        <td className="px-3 py-2.5 whitespace-nowrap text-xs">
                           <div className="flex items-center gap-1.5 text-slate-700 font-mono text-[11px]">
                             <Globe className="h-3.5 w-3.5 text-slate-400" />
                             {log.ipAddress || 'unknown'}
@@ -359,7 +359,7 @@ export default function AuditLogsPage() {
                         </td>
 
                         {/* Detail Modal Button */}
-                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-right whitespace-nowrap">
                           <button
                             onClick={() => setSelectedLog(log)}
                             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs"

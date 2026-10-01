@@ -41,7 +41,7 @@ function WarehouseCard({
       <div>
         <div className={`bg-gradient-to-br ${gradient} px-5 py-6 text-white`}>
           <div className="flex items-start justify-between">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-2xl backdrop-blur-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-xl backdrop-blur-sm">
               🏛️
             </div>
             <div className="flex items-center gap-1.5">
@@ -62,7 +62,7 @@ function WarehouseCard({
               )}
             </div>
           </div>
-          <h2 className="mt-4 text-xl font-bold">{warehouse.name}</h2>
+          <h2 className="mt-3 text-xl font-bold">{warehouse.name}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/90">
             <span className="inline-flex items-center gap-1 rounded bg-black/20 px-2 py-0.5 backdrop-blur-xs font-medium">
               <Building2 size={12} />
@@ -71,7 +71,7 @@ function WarehouseCard({
           </div>
         </div>
 
-        <div className="p-5">
+        <div className="p-4">
           <p className="text-sm text-gray-600 line-clamp-2">
             {warehouse.description || 'ບໍ່ມີລາຍລະອຽດ'}
           </p>
@@ -158,13 +158,13 @@ export default function WarehouseView({
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-xl text-white">
             🏛️
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">ຄັງເອກະສານທັງໝົດ</h2>
+            <h2 className="text-base font-bold text-gray-900">ຄັງເອກະສານທັງໝົດ</h2>
             <p className="text-xs text-gray-500">ສູນລວມການຈັດເກັບເອກະສານ • ລວມ {filteredWarehouses.length} ຄັງ</p>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function WarehouseView({
       </div>
 
       {/* Filter Toolbar */}
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="mb-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
             {/* Division Filter */}
@@ -236,8 +236,8 @@ export default function WarehouseView({
       </div>
 
       {!filteredWarehouses || filteredWarehouses.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-12 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 text-2xl">
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-xl">
             🏛️
           </div>
           <p className="text-gray-500">
@@ -249,7 +249,7 @@ export default function WarehouseView({
           {isFiltered ? (
             <button
               onClick={resetFilters}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >
               <RotateCcw size={16} /> ລ້າງຕົວກອງ
             </button>
@@ -257,7 +257,7 @@ export default function WarehouseView({
             canManage && (
               <button
                 onClick={onCreate}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
               >
                 <Plus size={16} /> ສ້າງຄັງເອກະສານໃໝ່
               </button>
@@ -265,8 +265,8 @@ export default function WarehouseView({
           )}
         </div>
       ) : (
-        <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {paginatedWarehouses.map((warehouse) => {
               const whCabinets = cabinets.filter((c) => c.warehouseId === warehouse.id);
               const whCabinetIds = whCabinets.map((c) => c.id);

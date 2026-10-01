@@ -142,10 +142,10 @@ export default function StandaloneRealtimeTestPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="max-w-4xl mx-auto space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900">
               ระบบทดสอบ Real-time Synchronization (SSE Test Suite)
             </h1>
             <p className="text-sm text-gray-500 mt-1">
@@ -178,10 +178,10 @@ export default function StandaloneRealtimeTestPage() {
         </div>
 
         {/* Backend Self-Test Result Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">
+              <h2 className="text-base font-semibold text-gray-800">
                 1. ผลการทดสอบระดับ Backend (Automated Self-Test)
               </h2>
               <p className="text-xs text-gray-500">
@@ -239,8 +239,8 @@ export default function StandaloneRealtimeTestPage() {
         </div>
 
         {/* Interactive Trigger Buttons */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-1">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+          <h2 className="text-base font-semibold text-gray-800 mb-1">
             2. จำลองส่งสัญญาณ Event แบบ Real-time (Emit Event)
           </h2>
           <p className="text-xs text-gray-500 mb-4">
@@ -258,7 +258,7 @@ export default function StandaloneRealtimeTestPage() {
                 key={btn.type}
                 onClick={() => triggerTestEmit(btn.type)}
                 disabled={emitting === btn.type}
-                className={`px-4 py-3 text-white text-xs font-semibold rounded-xl shadow-sm transition ${btn.color} disabled:opacity-50`}
+                className={`px-3 py-2.5 text-white text-xs font-semibold rounded-xl shadow-sm transition ${btn.color} disabled:opacity-50`}
               >
                 {emitting === btn.type ? 'กำลังส่ง...' : btn.label}
               </button>
@@ -267,10 +267,10 @@ export default function StandaloneRealtimeTestPage() {
         </div>
 
         {/* Live Event Monitor */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">
+              <h2 className="text-base font-semibold text-gray-800">
                 3. หน้าต่างเฝ้าดูสัญญาณสด (Live Event Monitor)
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">

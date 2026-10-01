@@ -89,7 +89,7 @@ export default function DocumentDetailPage() {
   if (loadingDoc) {
     return (
       <DashboardLayout title="ເອກະສານ">
-        <main className="p-6">
+        <main className="p-5">
           <div className="text-gray-500">ກຳລັງໂຫຼດຂໍ້ມູນເອກະສານ...</div>
         </main>
       </DashboardLayout>
@@ -99,7 +99,7 @@ export default function DocumentDetailPage() {
   if (!doc) {
     return (
       <DashboardLayout title="ເອກະສານ">
-        <main className="p-6">
+        <main className="p-5">
           <div className="text-gray-500">ບໍ່ພົບເອກະສານ</div>
         </main>
       </DashboardLayout>
@@ -132,10 +132,10 @@ export default function DocumentDetailPage() {
 
   return (
     <DashboardLayout title="ເອກະສານ">
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="mb-6 flex items-center justify-between">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">ລາຍລະອຽດເອກະສານ</h1>
+            <h1 className="text-xl font-bold text-gray-900">ລາຍລະອຽດເອກະສານ</h1>
             <p className="mt-1 text-sm text-gray-500">ຂໍ້ມູນເອກະສານທີ່ລະບົບໄດ້ບັນທຶກໄວ້</p>
           </div>
 
@@ -146,9 +146,9 @@ export default function DocumentDetailPage() {
 
         {/* Expiration Alert Banners */}
         {isExpired && (
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-900 shadow-sm">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-900 shadow-sm">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">⚠️</span>
+              <span className="text-xl">⚠️</span>
               <div>
                 <div className="font-semibold text-rose-800">
                   ເອກະສານນີ້ໝົດອາຍຸແລ້ວ {doc.expiresAt ? `(ວັນທີ ${doc.expiresAt})` : ''}
@@ -169,9 +169,9 @@ export default function DocumentDetailPage() {
         )}
 
         {isExpiringSoon && (
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">⏳</span>
+              <span className="text-xl">⏳</span>
               <div>
                 <div className="font-semibold text-amber-800">
                   ເອກະສານນີ້ໃກ້ຈະໝົດອາຍຸ (ເຫຼືອອີກ {daysUntilExpiry} ວັນ - ຮອດວັນທີ {doc.expiresAt})
@@ -193,7 +193,7 @@ export default function DocumentDetailPage() {
 
         {/* Transfer Pending Alert Banner */}
         {pendingTransfer && (
-          <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
             <span className="text-xl">🔄</span>
             <div>
               <div className="font-semibold">ເອກະສານນີ້ກຳລັງຢູ່ໃນຂັ້ນຕອນການລໍຖ້າອະນຸມັດການໂອນຍ້າຍ</div>
@@ -209,9 +209,9 @@ export default function DocumentDetailPage() {
 
         {/* Unassigned Storage Alert Banner */}
         {!doc.warehouseName && !doc.cabinetName && !doc.shelfName && !doc.folderName && (
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">📦</span>
+              <span className="text-xl">📦</span>
               <div>
                 <div className="font-semibold text-amber-800">
                   ເອກະສານນີ້ຍັງບໍ່ທັນມີບ່ອນຈັດເກັບໃນຄັງ
@@ -231,24 +231,24 @@ export default function DocumentDetailPage() {
           </div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <div className="text-xs uppercase tracking-wide text-indigo-600">
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings */}
                   {typeof doc.category === 'object' && doc.category !== null ? (doc.category as any).name : (doc.category || '—')}
                 </div>
-                <h2 className="mt-2 text-2xl font-bold text-gray-900">{doc.title}</h2>
+                <h2 className="mt-2 text-xl font-bold text-gray-900">{doc.title}</h2>
               </div>
               <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
                 {statusLabels[doc.status]}
               </span>
             </div>
 
-            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-3xl text-indigo-600">PDF</div>
-              <div className="text-lg font-semibold text-gray-900">{doc.docNumber}</div>
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-2xl text-indigo-600">PDF</div>
+              <div className="text-base font-semibold text-gray-900">{doc.docNumber}</div>
               <div className="mt-2 text-sm text-gray-500">{doc.fileSize} • {doc.fileType.toUpperCase()}</div>
             </div>
 
@@ -287,11 +287,11 @@ export default function DocumentDetailPage() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Actions card */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900">ການກະທຳ</h3>
-              <div className="mt-4 space-y-3">
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <h3 className="text-base font-bold text-gray-900">ການກະທຳ</h3>
+              <div className="mt-3 space-y-3">
                 {doc.fileUrl && doc.fileUrl !== '#' ? (
                   <a
                     href={doc.fileUrl}
@@ -378,9 +378,9 @@ export default function DocumentDetailPage() {
             </div>
 
             {/* Additional info card */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900">ຂໍ້ມູນເພີ່ມເຕີມ</h3>
-              <dl className="mt-4 space-y-3 text-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <h3 className="text-base font-bold text-gray-900">ຂໍ້ມູນເພີ່ມເຕີມ</h3>
+              <dl className="mt-3 space-y-3 text-sm">
                 <div className="flex justify-between gap-4 border-b border-gray-100 pb-2">
                   <dt className="text-gray-500">ຄຳອະທິບາຍ</dt>
                   <dd className="text-right text-gray-900">{doc.title}</dd>

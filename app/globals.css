@@ -60,12 +60,17 @@
 
 html {
   font-family: var(--font-noto-sans), var(--font-noto-sans-lao), sans-serif;
+  /* Compact density — smaller, cleaner scale across all pages */
+  font-size: 15px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-noto-sans), var(--font-noto-sans-lao), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* ---------- Dashboard: hide scrollbar on horizontal strips ---------- */

@@ -252,7 +252,7 @@ export default function UploadHistoryPage() {
 
   return (
     <DashboardLayout title="ປະຫວັດການອັບໂຫຼດເອກະສານ">
-      <div className="w-full min-w-0 space-y-6 p-4 sm:p-6 lg:p-8">
+      <div className="w-full min-w-0 space-y-4 p-3 sm:p-4 lg:p-5">
         {/* ── Header + scope tabs ─────────────────────────────── */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3.5">
@@ -260,7 +260,7 @@ export default function UploadHistoryPage() {
               <History className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">ປະຫວັດການອັບໂຫຼດເອກະສານ</h1>
+              <h1 className="text-xl font-bold text-slate-900">ປະຫວັດການອັບໂຫຼດເອກະສານ</h1>
               <p className="mt-1 text-sm text-slate-500">
                 ຕິດຕາມ ແລະ ກວດສອບລາຍການເອກະສານທີ່ມີການອັບໂຫຼດເຂົ້າສູ່ລະບົບ
               </p>
@@ -311,16 +311,16 @@ export default function UploadHistoryPage() {
         </div>
 
         {/* ── Metric cards ────────────────────────────────────── */}
-        <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {/* Card 1 — ອັບໂຫຼດທັງໝົດ */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-500 p-6 text-white shadow-lg shadow-indigo-200/50">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-500 p-4 text-white shadow-lg shadow-indigo-200/50">
             <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
             <div className="pointer-events-none absolute -bottom-16 -left-10 h-36 w-36 rounded-full bg-white/10 blur-xl" />
             <div className="relative flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-indigo-100">ອັບໂຫຼດທັງໝົດ</p>
-                <div className="mt-4 flex items-baseline gap-1.5">
-                  <span className="text-4xl font-bold tracking-tight">{stats.total}</span>
+                <div className="mt-3 flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold ">{stats.total}</span>
                   <span className="text-sm font-medium text-indigo-200">ເອກະສານ</span>
                 </div>
               </div>
@@ -336,12 +336,12 @@ export default function UploadHistoryPage() {
           </div>
 
           {/* Card 2 — ອັບໂຫຼດໃນເດືອນນີ້ */}
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500">ອັບໂຫຼດໃນເດືອນນີ້</p>
-                <div className="mt-4 flex items-baseline gap-1.5">
-                  <span className="text-4xl font-bold tracking-tight text-slate-900">{stats.monthly}</span>
+                <div className="mt-3 flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold text-slate-900">{stats.monthly}</span>
                   <span className="text-sm font-medium text-slate-400">ເອກະສານ</span>
                 </div>
               </div>
@@ -361,12 +361,12 @@ export default function UploadHistoryPage() {
           </div>
 
           {/* Card 3 — ອະນຸມັດແລ້ວ */}
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500">ອະນຸມັດແລ້ວ</p>
-                <div className="mt-4 flex items-baseline gap-1.5">
-                  <span className="text-4xl font-bold tracking-tight text-slate-900">{stats.approved}</span>
+                <div className="mt-3 flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold text-slate-900">{stats.approved}</span>
                   <span className="text-sm font-medium text-emerald-600">{stats.approvedPct}%</span>
                 </div>
               </div>
@@ -530,14 +530,14 @@ export default function UploadHistoryPage() {
             <table className="w-full min-w-full divide-y divide-slate-100 text-sm">
               <thead className="bg-slate-50/80">
                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="px-4 py-3 whitespace-nowrap">ວັນທີ & ເວລາອັບໂຫຼດ</th>
-                  <th className="px-4 py-3 min-w-[220px]">ເອກະສານ</th>
-                  <th className="px-4 py-3 whitespace-nowrap">ທິດທາງ & ໝວດໝູ່</th>
-                  <th className="px-4 py-3 whitespace-nowrap">ຝ່າຍ</th>
-                  <th className="px-4 py-3 whitespace-nowrap">ພະແນກ</th>
-                  <th className="px-4 py-3 whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
-                  <th className="px-4 py-3 whitespace-nowrap">ສະຖານະ</th>
-                  <th className="px-4 py-3 whitespace-nowrap text-right">ການກະທຳ</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">ວັນທີ & ເວລາອັບໂຫຼດ</th>
+                  <th className="px-3 py-2.5 min-w-[220px]">ເອກະສານ</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">ທິດທາງ & ໝວດໝູ່</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">ຝ່າຍ</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">ພະແນກ</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap text-right">ການກະທຳ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -548,7 +548,7 @@ export default function UploadHistoryPage() {
                   return (
                     <tr key={doc.id} className="transition-colors hover:bg-slate-50/60">
                       {/* 1 — ວັນທີ & ເວລາອັບໂຫຼດ */}
-                      <td className="whitespace-nowrap px-4 py-3 align-top">
+                      <td className="whitespace-nowrap px-3 py-2.5 align-top">
                         <div className="font-medium text-slate-900">
                           {stamp.date}
                           {stamp.time ? <span className="text-slate-500">, {stamp.time}</span> : null}
@@ -559,7 +559,7 @@ export default function UploadHistoryPage() {
                       </td>
 
                       {/* 2 — ເອກະສານ */}
-                      <td className="px-4 py-3 align-top min-w-[220px]">
+                      <td className="px-3 py-2.5 align-top min-w-[220px]">
                         <div className="flex items-start gap-2.5">
                           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
                             <FileText className="h-4 w-4" />
@@ -588,7 +588,7 @@ export default function UploadHistoryPage() {
                       </td>
 
                       {/* 3 — ທິດທາງ & ໝວດໝູ່ */}
-                      <td className="px-4 py-3 align-top whitespace-nowrap">
+                      <td className="px-3 py-2.5 align-top whitespace-nowrap">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <DirectionBadge direction={doc.direction} category={doc.category} />
                           <CategoryBadge category={doc.category} />
@@ -596,7 +596,7 @@ export default function UploadHistoryPage() {
                       </td>
 
                       {/* 4 — ຝ່າຍ */}
-                      <td className="px-4 py-3 align-top whitespace-nowrap">
+                      <td className="px-3 py-2.5 align-top whitespace-nowrap">
                         {doc.division ? (
                           <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
                             🏢 {doc.division}
@@ -607,7 +607,7 @@ export default function UploadHistoryPage() {
                       </td>
 
                       {/* 5 — ພະແນກ */}
-                      <td className="px-4 py-3 align-top whitespace-nowrap">
+                      <td className="px-3 py-2.5 align-top whitespace-nowrap">
                         {doc.department ? (
                           <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50/80 px-2.5 py-1 text-xs font-medium text-indigo-700">
                             🏬 {doc.department}
@@ -618,7 +618,7 @@ export default function UploadHistoryPage() {
                       </td>
 
                       {/* 6 — ຜູ້ອັບໂຫຼດ */}
-                      <td className="px-4 py-3 align-top whitespace-nowrap">
+                      <td className="px-3 py-2.5 align-top whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <UserAvatar
                             name={doc.uploadedBy || '—'}
@@ -643,7 +643,7 @@ export default function UploadHistoryPage() {
                       </td>
 
                       {/* 7 — ສະຖານະ */}
-                      <td className="px-4 py-3 align-top whitespace-nowrap">
+                      <td className="px-3 py-2.5 align-top whitespace-nowrap">
                         <span
                           className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}
                         >
@@ -652,7 +652,7 @@ export default function UploadHistoryPage() {
                       </td>
 
                       {/* 8 — ການກະທຳ */}
-                      <td className="px-4 py-3 align-top whitespace-nowrap text-right">
+                      <td className="px-3 py-2.5 align-top whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
@@ -682,7 +682,7 @@ export default function UploadHistoryPage() {
           {/* Empty state */}
           {filtered.length === 0 && (
             <div className="border-t border-slate-100 px-6 py-14 text-center">
-              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 text-slate-300">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-300">
                 <History className="h-6 w-6" />
               </div>
               <p className="text-sm font-medium text-slate-600">ຍັງບໍ່ມີປະຫວັດການອັບໂຫຼດ</p>

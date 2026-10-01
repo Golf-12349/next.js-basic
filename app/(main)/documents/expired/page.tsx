@@ -195,7 +195,7 @@ export default function ExpiredDocumentsPage() {
 
   return (
     <DashboardLayout title="ເອກະສານໝົດອາຍຸ">
-      <div className="w-full space-y-6 p-6">
+      <div className="w-full space-y-4 p-3 sm:p-4 lg:p-5">
         {/* Header Title & Subtitle */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3.5">
@@ -203,7 +203,7 @@ export default function ExpiredDocumentsPage() {
               <CalendarX className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              <h1 className="text-xl font-bold text-gray-900">
                 ເອກະສານໝົດອາຍຸ & ໃກ້ໝົດອາຍຸ
               </h1>
               <p className="text-sm text-gray-500">
@@ -239,7 +239,7 @@ export default function ExpiredDocumentsPage() {
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-rose-700">{stats.expiredCount}</span>
+              <span className="text-xl font-black text-rose-700">{stats.expiredCount}</span>
               <span className="text-xs text-rose-600/80">ສະບັບ</span>
             </div>
             <p className="mt-1 text-[11px] text-gray-500">ຕ້ອງໄດ້ຮັບການຕໍ່ອາຍຸ ຫຼື ຈັດການທັນທີ</p>
@@ -261,7 +261,7 @@ export default function ExpiredDocumentsPage() {
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-amber-700">{stats.expiring7Days}</span>
+              <span className="text-xl font-black text-amber-700">{stats.expiring7Days}</span>
               <span className="text-xs text-amber-600/80">ສະບັບ</span>
             </div>
             <p className="mt-1 text-[11px] text-gray-500">ໃກ້ຮອດກຳນົດພາຍໃນອາທິດນີ້</p>
@@ -283,7 +283,7 @@ export default function ExpiredDocumentsPage() {
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-blue-700">{stats.expiring30Days}</span>
+              <span className="text-xl font-black text-blue-700">{stats.expiring30Days}</span>
               <span className="text-xs text-blue-600/80">ສະບັບ</span>
             </div>
             <p className="mt-1 text-[11px] text-gray-500">ຄວນວາງແຜນຕໍ່ອາຍຸລ່ວງໜ້າ</p>
@@ -305,7 +305,7 @@ export default function ExpiredDocumentsPage() {
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-slate-800">{stats.totalTracked}</span>
+              <span className="text-xl font-black text-slate-800">{stats.totalTracked}</span>
               <span className="text-xs text-slate-500">ສະບັບ</span>
             </div>
             <p className="mt-1 text-[11px] text-gray-500">ເອກະສານທັງໝົດທີ່ມີກຳນົດອາຍຸ</p>
@@ -444,20 +444,20 @@ export default function ExpiredDocumentsPage() {
             <table className="min-w-full text-left">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
-                  <th className="px-4 py-3.5">ເອກະສານ</th>
-                  <th className="px-4 py-3.5">ໝວດໝູ່</th>
-                  <th className="px-4 py-3.5">ເລກທີ</th>
-                  <th className="px-4 py-3.5">ວັນທີໝົດອາຍຸ</th>
-                  <th className="px-4 py-3.5">ຜູ້ອັບໂຫຼດ</th>
-                  <th className="px-4 py-3.5">ສະຖານະ</th>
-                  <th className="px-4 py-3.5 text-center">ການກະທຳ</th>
+                  <th className="px-3 py-2.5">ເອກະສານ</th>
+                  <th className="px-3 py-2.5">ໝວດໝູ່</th>
+                  <th className="px-3 py-2.5">ເລກທີ</th>
+                  <th className="px-3 py-2.5">ວັນທີໝົດອາຍຸ</th>
+                  <th className="px-3 py-2.5">ຜູ້ອັບໂຫຼດ</th>
+                  <th className="px-3 py-2.5">ສະຖານະ</th>
+                  <th className="px-3 py-2.5 text-center">ການກະທຳ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {paginatedDocs.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-16 text-center">
-                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                         <CheckCircle2 className="h-8 w-8" />
                       </div>
                       <p className="mt-3 text-base font-bold text-gray-800">
@@ -482,7 +482,7 @@ export default function ExpiredDocumentsPage() {
                         }`}
                       >
                         {/* Title & Organization info */}
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           <div className="font-semibold text-gray-900">{doc.title}</div>
                           {(doc.department || doc.division) && (
                             <div
@@ -505,15 +505,15 @@ export default function ExpiredDocumentsPage() {
                         </td>
 
                         {/* Category */}
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           <CategoryBadge category={doc.category} />
                         </td>
 
                         {/* Doc Number */}
-                        <td className="px-4 py-3.5 text-xs text-gray-700">{doc.docNumber}</td>
+                        <td className="px-3 py-2.5 text-xs text-gray-700">{doc.docNumber}</td>
 
                         {/* Expiration Date with Status Countdown Pill */}
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           {doc.expiresAt ? (
                             <div className="space-y-1">
                               <div className="text-xs font-mono font-medium text-gray-800">
@@ -539,10 +539,10 @@ export default function ExpiredDocumentsPage() {
                         </td>
 
                         {/* Uploaded By */}
-                        <td className="px-4 py-3.5 text-xs text-gray-600">{doc.uploadedBy}</td>
+                        <td className="px-3 py-2.5 text-xs text-gray-600">{doc.uploadedBy}</td>
 
                         {/* Status */}
-                        <td className="px-4 py-3.5">
+                        <td className="px-3 py-2.5">
                           {isExpired ? (
                             <span className="inline-flex rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">
                               🔴 ໝົດອາຍຸ
@@ -555,7 +555,7 @@ export default function ExpiredDocumentsPage() {
                         </td>
 
                         {/* Action Buttons */}
-                        <td className="px-4 py-3.5 text-center">
+                        <td className="px-3 py-2.5 text-center">
                           <div className="relative inline-flex items-center justify-center gap-1.5">
                             {/* Prominent Quick Renew Button */}
                             <button
@@ -758,7 +758,7 @@ export default function ExpiredDocumentsPage() {
         {/* Delete Confirmation Modal */}
         {confirmDelete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl space-y-4">
               <div className="flex items-center gap-3 text-rose-600">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100">
                   <Trash2 className="h-5 w-5" />

@@ -28,13 +28,13 @@ export default function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-0 sm:p-4">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div
-        className={`relative flex w-full max-w-full flex-col bg-white p-4 shadow-lg sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-lg sm:p-6 ${
+        className={`relative flex w-full max-w-full flex-col bg-white p-4 shadow-lg sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-lg sm:p-5 ${
           scrollBody ? 'max-h-dvh sm:max-h-[92dvh]' : 'h-dvh sm:h-[92dvh]'
         }`}
       >
         {/* Header: title & close — never scrolls away */}
         <div className="flex shrink-0 items-center justify-between pb-3 border-b border-gray-100">
-          <h3 className="text-lg font-semibold">{title}</h3>
+          <h3 className="text-base font-semibold">{title}</h3>
           <button onClick={onClose} className="text-black/50 hover:text-black">ປິດ</button>
         </div>
         {/* Body: either scrolls itself, or lets the PDF viewer scroll independently */}

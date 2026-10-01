@@ -49,11 +49,11 @@ export function MetricCards() {
   }, [documents]);
 
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {/* Card 1 — Primary featured card (pending approvals, indigo/blue gradient) */}
       <Link
         href="/documents/pending"
-        className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-500 p-6 text-white shadow-lg shadow-indigo-200/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-300/40"
+        className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-500 p-4 text-white shadow-lg shadow-indigo-200/50 transition-all duration-300 hover:shadow-md hover:shadow-indigo-300/40"
       >
         <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-16 -left-10 h-36 w-36 rounded-full bg-white/10 blur-xl" />
@@ -61,12 +61,12 @@ export function MetricCards() {
         <div className="relative flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-indigo-100">ເອກະສານລໍຖ້າອະນຸມັດ</p>
-            <div className="mt-4 flex items-baseline gap-1.5">
-              <span className="text-4xl font-bold tracking-tight">{stats.pending}</span>
+            <div className="mt-3 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold ">{stats.pending}</span>
               <span className="text-sm font-medium text-indigo-200">ເອກະສານ</span>
             </div>
           </div>
-          <span className="rounded-2xl bg-white/15 p-3 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110">
+          <span className="rounded-2xl bg-white/15 p-3 ring-1 ring-white/20">
             <Clock3 className="h-5 w-5" />
           </span>
         </div>
@@ -89,16 +89,16 @@ export function MetricCards() {
         </div>
       </Link>
 {/* Card 2 — Monthly documents */}
-      <div className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+      <div className="group rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-slate-500">ເອກະສານປະຈຳເດືອນ</p>
-            <div className="mt-4 flex items-baseline gap-1.5">
-              <span className="text-4xl font-bold tracking-tight text-slate-900">{stats.monthly}</span>
+            <div className="mt-3 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-slate-900">{stats.monthly}</span>
               <span className="text-sm font-medium text-slate-400">ເອກະສານ</span>
             </div>
           </div>
-          <span className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 ring-1 ring-indigo-100 transition-transform duration-300 group-hover:scale-110">
+          <span className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 ring-1 ring-indigo-100 ">
             <CalendarDays className="h-5 w-5" />
           </span>
         </div>
@@ -117,16 +117,16 @@ export function MetricCards() {
       </div>
 
       {/* Card 3 — Approval rate */}
-      <div className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+      <div className="group rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-slate-500">ອັດຕາການອະນຸມັດ</p>
-            <div className="mt-4 flex items-baseline gap-1.5">
-              <span className="text-4xl font-bold tracking-tight text-slate-900">{stats.approvalRate}%</span>
+            <div className="mt-3 flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold text-slate-900">{stats.approvalRate}%</span>
               <span className="text-sm font-medium text-slate-400">ອະນຸມັດ</span>
             </div>
           </div>
-          <span className="rounded-2xl bg-emerald-50 p-3 text-emerald-600 ring-1 ring-emerald-100 transition-transform duration-300 group-hover:scale-110">
+          <span className="rounded-2xl bg-emerald-50 p-3 text-emerald-600 ring-1 ring-emerald-100 ">
             <CheckCircle2 className="h-5 w-5" />
           </span>
         </div>
@@ -146,20 +146,20 @@ export function MetricCards() {
       {/* Card 4 — Expired & Expiring Soon Documents */}
       <Link
         href="/documents"
-        className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+        className="group rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md"
       >
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-slate-500">ເອກະສານໝົດອາຍຸ</p>
-            <div className="mt-4 flex items-baseline gap-1.5">
-              <span className={`text-4xl font-bold tracking-tight ${stats.expired > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+            <div className="mt-3 flex items-baseline gap-1.5">
+              <span className={`text-2xl font-bold ${stats.expired > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                 {stats.expired}
               </span>
               <span className="text-sm font-medium text-slate-400">ເອກະສານ</span>
             </div>
           </div>
           <span
-            className={`rounded-2xl p-3 ring-1 transition-transform duration-300 group-hover:scale-110 ${
+            className={`rounded-2xl p-3 ring-1  ${
               stats.expired > 0
                 ? 'bg-rose-50 text-rose-600 ring-rose-100'
                 : 'bg-slate-50 text-slate-400 ring-slate-100'

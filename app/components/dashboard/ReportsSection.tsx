@@ -98,33 +98,33 @@ export function ReportsSection() {
   }
 
   return (
-    <section id="reports" className="space-y-5">
+    <section id="reports" className="space-y-4">
       {/* ເນື້ອຫາລາຍງານທັງໝົດຢູ່ໃນ #print-area → ພິມອອກສະເພາະສ່ວນນີ້ */}
-      <div id="print-area" ref={printRef} className="space-y-6">
+      <div id="print-area" ref={printRef} className="space-y-4">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
             <BarChart3 className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="text-lg font-bold text-slate-900 sm:text-xl">ລາຍງານ &amp; ສະຖິຕິ</h2>
+            <h2 className="text-base font-bold text-slate-900">ລາຍງານ &amp; ສະຖິຕິ</h2>
             <p className="mt-0.5 text-sm text-slate-500">
               ຂໍ້ມູນການໃຊ້ງານເອກະສານຂອງລະບົບ (ຄິດໄລ່ຈາກຂໍ້ມູນປັດຈຸບັນ)
             </p>
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="text-sm text-gray-500">{stat.label}</div>
-              <div className="mt-4 text-3xl font-bold text-gray-900">{stat.value}</div>
+              <div className="mt-3 text-2xl font-bold text-gray-900">{stat.value}</div>
             </div>
           ))}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-5 text-lg font-bold text-gray-900">ການແຜ່ຂະຫຍາຍເອກກະສານຕາມໝວດໝູ່</h3>
+        <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-4 text-base font-bold text-gray-900">ການແຜ່ຂະຫຍາຍເອກກະສານຕາມໝວດໝູ່</h3>
             <div className="space-y-4">
               {categoryData.map((item) => (
                 <div key={item.name}>
@@ -142,8 +142,8 @@ export function ReportsSection() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-5 text-lg font-bold text-gray-900">ລາຍການເຂົ້າໃໝ່</h3>
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <h3 className="mb-4 text-base font-bold text-gray-900">ລາຍການເຂົ້າໃໝ່</h3>
             <div className="space-y-3">
               {recentEntries.length === 0 ? (
                 <div className="text-sm text-gray-400">ຍັງບໍ່ມີເອກະສານ</div>
@@ -172,10 +172,10 @@ export function ReportsSection() {
       </div>
 
       {/* ປຸ່ມຈັດການລາຍງານ — ຢູ່ນອກ #print-area ໂດຍຕັ້ງໃຈ ຈະບໍ່ຖືກພິມອອກ */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm print:hidden">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm print:hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-lg font-bold text-gray-900">ຕົວເລືອກສ່ວນປະກອບ</h3>
+            <h3 className="text-base font-bold text-gray-900">ຕົວເລືອກສ່ວນປະກອບ</h3>
             <p className="mt-1 text-sm text-gray-500">ສົ່ງອອກ ຫຼື ພິມລາຍງານ</p>
           </div>
           <div className="flex flex-wrap gap-2">

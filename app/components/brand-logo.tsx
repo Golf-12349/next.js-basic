@@ -43,7 +43,7 @@ export function BrandLogo({
       {size === 'md' && (
         <div className="min-w-0">
           <div
-            className={`text-sm font-bold tracking-tight ${
+            className={`text-sm font-bold ${
               variant === 'dark' ? 'text-white' : 'text-slate-900'
             }`}
           >

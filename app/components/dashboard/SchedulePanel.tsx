@@ -103,7 +103,7 @@ export function SchedulePanel() {
   };
 
   return (
-    <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
       {/* Panel header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
@@ -118,7 +118,7 @@ export function SchedulePanel() {
       </div>
 
       {/* Horizontal date picker strip */}
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
         {days.map((d) => {
           const key = toDateKey(d);
           const isSelected = selectedKey === key;
@@ -145,7 +145,7 @@ export function SchedulePanel() {
         })}
       </div>
 {/* Selected date label */}
-      <p className="mt-4 text-xs font-medium text-slate-400">
+      <p className="mt-3 text-xs font-medium text-slate-400">
         {selectedDate ? formatFullDateLao(selectedDate) : 'ກຳລັງໂຫຼດວັນທີ...'}
       </p>
 
@@ -158,7 +158,7 @@ export function SchedulePanel() {
           return (
             <li key={task.id} className="group relative pl-12">
               <span
-                className={`absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-xl ring-1 transition-transform duration-300 group-hover:scale-110 ${meta.iconBox} ${done ? 'opacity-60' : ''}`}
+                className={`absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-xl ring-1  ${meta.iconBox} ${done ? 'opacity-60' : ''}`}
               >
                 <Icon className="h-4 w-4" />
               </span>
@@ -184,7 +184,7 @@ export function SchedulePanel() {
         })}
 
         {tasks.length === 0 && (
-          <li className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
+          <li className="rounded-2xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
             ບໍ່ມີລາຍການໃນມື້ນີ້
           </li>
         )}

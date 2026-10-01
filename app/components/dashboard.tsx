@@ -17,10 +17,10 @@ const stats: StatItem[] = [
 
 export function Dashboard() {
   return (
-    <main className="flex-1 overflow-y-auto p-6 space-y-6">
+    <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-sm text-gray-500 mt-1">ຍິນດີຕ້ອນຮັບກັບຄືນ! ນີ້ແມ່ນພາບລວມລະບົບຂອງທ່ານມື້ນີ້</p>
         </div>
         <button
@@ -32,20 +32,20 @@ export function Dashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
 
           return (
-            <div key={stat.title} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div key={stat.title} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-500">{stat.title}</span>
                 <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
                   <Icon className="w-5 h-5" />
                 </div>
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-bold text-gray-900">{stat.value}</h3>
+              <div className="mt-3">
+                <h3 className="text-xl font-bold text-gray-900">{stat.value}</h3>
                 <p className={`text-xs mt-1 font-semibold ${stat.isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {stat.change} <span className="text-gray-400 font-normal">ທຽບກັບເດືອນກ່ອນ</span>
                 </p>
@@ -55,8 +55,8 @@ export function Dashboard() {
         })}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">ກິດຈະກຳລ່າສຸດ</h2>
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <h2 className="text-base font-bold text-gray-900 mb-4">ກິດຈະກຳລ່າສຸດ</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

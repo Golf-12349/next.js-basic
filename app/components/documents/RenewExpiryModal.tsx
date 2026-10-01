@@ -96,7 +96,7 @@ export default function RenewExpiryModal({
               <RefreshCw className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">ຕໍ່ອາຍຸເອກະສານ</h2>
+              <h2 className="text-base font-bold text-gray-900">ຕໍ່ອາຍຸເອກະສານ</h2>
               <p className="text-xs text-gray-500">ກຳນົດວັນທີໝົດອາຍຸ ແລະ ເປີດໃຊ້ງານເອກະສານໃໝ່</p>
             </div>
           </div>
@@ -110,7 +110,7 @@ export default function RenewExpiryModal({
         </div>
 
         {/* Content */}
-        <form onSubmit={handleRenew} className="p-6 space-y-5">
+        <form onSubmit={handleRenew} className="p-4 space-y-4">
           {/* Document Summary */}
           <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200/60 text-sm">
             <div className="font-semibold text-gray-900 line-clamp-1">{document.title}</div>

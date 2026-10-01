@@ -135,7 +135,7 @@ export default function MoveCabinetPage() {
 
   return (
     <DashboardLayout title="ຍ້າຍຕູ້ເອກະສານ">
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
         <RelocateHeader
           icon="🗄️"
           title="ຍ້າຍຕູ້ເອກະສານ"
@@ -143,7 +143,7 @@ export default function MoveCabinetPage() {
           countLabel={`${cabinets.length} ຕູ້`}
         />
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* 1. ຕູ້ຕົ້ນທາງ */}
           <RelocatePanel>
             <PanelTitle step={1} icon="🗄️" title="ເລືອກຕູ້ຕົ້ນທາງ" hint={`ພົບ ${visibleCabinets.length} ຕູ້`} />

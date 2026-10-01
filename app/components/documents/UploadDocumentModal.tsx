@@ -382,9 +382,9 @@ export default function UploadDocumentModal({
         style={{ colorScheme: 'dark' }}
       >
         {/* Header: title & close — never scrolls away */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 px-4 py-3 sm:px-5 sm:py-3.5">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 px-3 py-2.5 sm:px-5 sm:py-3.5">
           <div>
-            <h2 className="text-lg font-semibold text-slate-100">ອັບໂຫຼດເອກະສານ</h2>
+            <h2 className="text-base font-semibold text-slate-100">ອັບໂຫຼດເອກະສານ</h2>
             <p className="mt-0.5 text-xs text-slate-400">PDF, DOC, PNG, JPG — ໄຟລ໌ + ຂໍ້ມູນເອກະສານ</p>
           </div>
           <button
@@ -407,7 +407,7 @@ export default function UploadDocumentModal({
 
         {/* Body: 2 columns (left dropzone/file card fills full height, right metadata form scrolls independently) */}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 lg:overflow-hidden">
-          <div className="grid min-h-0 gap-6 lg:h-full lg:grid-cols-2">
+          <div className="grid min-h-0 gap-4 lg:h-full lg:grid-cols-2">
             {/* ── LEFT: dropzone + file card (Full height, pinned) ── */}
             <div className="flex flex-col gap-2.5 lg:h-full lg:min-h-0 lg:overflow-hidden">
               <label className="mb-0.5 block text-sm font-medium text-slate-300 shrink-0">
@@ -442,7 +442,7 @@ export default function UploadDocumentModal({
                     </div>
                   ) : (
                     <div className="flex flex-1 min-h-0 flex-col items-center justify-center gap-3 bg-slate-900 px-6 py-10 text-center">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-500/10">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/10">
                         <FileText className="h-8 w-8 text-indigo-400" />
                       </div>
                       <p className="text-sm text-slate-400">ໄຟລ໌ປະເພດນີ້ບໍ່ສາມາດສະແດງຕົວຢ່າງໄດ້</p>
@@ -450,7 +450,7 @@ export default function UploadDocumentModal({
                   )}
 
                   {/* File card footer: name/size + checkmark + actions */}
-                  <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-800/90 px-4 py-3">
+                  <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-800/90 px-3 py-2.5">
                     <div className="flex min-w-0 items-center gap-2">
                       <FileText className="h-5 w-5 shrink-0 text-indigo-400" />
                       <div className="min-w-0">
@@ -507,7 +507,7 @@ export default function UploadDocumentModal({
                   }`}
                 >
                   <div
-                    className={`mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl transition ${
+                    className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl transition ${
                       dragActive ? 'bg-indigo-500/20 text-indigo-300 scale-110' : 'bg-indigo-500/10 text-indigo-400'
                     }`}
                   >

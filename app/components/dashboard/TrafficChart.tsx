@@ -117,7 +117,7 @@ export function TrafficChart() {
   const hoverDate = hoverPoint ? parseDateKey(hoverPoint.key) : null;
 
   return (
-    <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5">
       {/* Chart header — total handled + quick period selector */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -147,7 +147,7 @@ export function TrafficChart() {
       </div>
 
       {/* Legend */}
-      <div className="mt-4 flex items-center gap-4 text-xs font-medium text-slate-500">
+      <div className="mt-3 flex items-center gap-4 text-xs font-medium text-slate-500">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" /> ຂາເຂົ້າ
         </span>

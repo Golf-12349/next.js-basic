@@ -39,8 +39,8 @@ export function RelocateHeader({
   countLabel?: string
 }) {
   return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-bold text-gray-900">
+    <div className="mb-4">
+      <h1 className="text-xl font-bold text-gray-900">
         {icon} {title}
         {countLabel && (
           <span className="ml-2.5 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
@@ -55,7 +55,7 @@ export function RelocateHeader({
 
 // ── Panel (ກາຕູນຂາວມາດຕະຖານ) ─────────────────────────────────
 export function RelocatePanel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-2xl border border-gray-200 bg-white p-5 shadow-sm ${className}`}>{children}</div>
+  return <div className={`rounded-2xl border border-gray-200 bg-white p-4 shadow-sm ${className}`}>{children}</div>
 }
 
 // ── Step title in a panel ────────────────────────────────────
@@ -259,9 +259,9 @@ export function ConfirmButton({
 // ── Empty state ──────────────────────────────────────────────
 export function RelocateEmptyState({ icon, title, sub }: { icon: string; title: string; sub: string }) {
   return (
-    <div className="p-12 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50 text-3xl">{icon}</div>
-      <div className="mt-4 text-base font-semibold text-gray-900">{title}</div>
+    <div className="p-8 text-center">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-2xl">{icon}</div>
+      <div className="mt-3 text-base font-semibold text-gray-900">{title}</div>
       <p className="mx-auto mt-1 max-w-sm text-xs text-gray-500">{sub}</p>
     </div>
   )

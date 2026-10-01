@@ -99,7 +99,7 @@ function GlassBubble({
 }) {
   return (
     <div
-      className={`dms-bubble pointer-events-none absolute flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-xl shadow-blue-500/10 backdrop-blur-xl ${className}`}
+      className={`dms-bubble pointer-events-none absolute flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 shadow-lg shadow-blue-500/10 backdrop-blur ${className}`}
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/15 text-blue-600">
         {icon}
@@ -290,15 +290,15 @@ export default function LoginForm() {
 
           {/* Center title + floating bubbles */}
           <div className="relative my-auto max-w-lg pb-28">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/60 px-3.5 py-1.5 text-xs font-semibold text-blue-700 shadow-sm backdrop-blur-md">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/60 px-3.5 py-1.5 text-xs font-semibold text-blue-700 shadow-sm backdrop-blur-md">
               <Sparkles size={14} className="text-blue-500" />
               ລະບົບຈັດການເອກະສານ 3 ລະດັບ
             </div>
 
-            <h1 className="text-7xl font-black italic tracking-tight text-slate-900 xl:text-8xl">
+            <h1 className="text-7xl font-black italic text-slate-900 xl:text-8xl">
               DMS
             </h1>
-            <p className="mt-4 max-w-md text-xl font-semibold leading-snug text-slate-800">
+            <p className="mt-3 max-w-md text-xl font-semibold leading-snug text-slate-800">
               THE FUTURE OF{" "}
               <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 DOCUMENT MANAGEMENT
@@ -315,7 +315,7 @@ export default function LoginForm() {
               subtitle="256-bit SSL Encryption"
               className="right-0 top-0 lg:-right-6"
             />
-            <div className="dms-bubble dms-bubble-delay-1 pointer-events-none absolute right-10 top-24 hidden flex-col items-end gap-1.5 rounded-2xl rounded-tr-sm border border-white/60 bg-white/70 px-4 py-3 shadow-xl shadow-blue-500/10 backdrop-blur-xl sm:flex lg:-right-2">
+            <div className="dms-bubble dms-bubble-delay-1 pointer-events-none absolute right-10 top-24 hidden flex-col items-end gap-1.5 rounded-2xl rounded-tr-sm border border-white/60 bg-white/70 px-3 py-2.5 shadow-lg shadow-blue-500/10 backdrop-blur sm:flex lg:-right-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
                 <FileText size={15} className="text-indigo-500" />
                 DMS-2026-088.pdf
@@ -332,7 +332,7 @@ export default function LoginForm() {
               className="bottom-6 left-4 lg:left-0"
             />
             <div className="dms-bubble dms-bubble-delay-2 pointer-events-none absolute bottom-32 right-16 hidden xl:block">
-              <div className="rounded-2xl rounded-br-sm border border-white/60 bg-white/70 px-4 py-3 shadow-xl shadow-blue-500/10 backdrop-blur-xl">
+              <div className="rounded-2xl rounded-br-sm border border-white/60 bg-white/70 px-3 py-2.5 shadow-lg shadow-blue-500/10 backdrop-blur">
                 <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                   ອັບໂຫຼດສຳເລັດ
                 </div>
@@ -352,14 +352,14 @@ export default function LoginForm() {
         </div>
 
         {/* ── ຝັ່ງຂວາ: Frosted glass login card ── */}
-        <div className="relative flex min-h-screen items-center justify-center p-6 sm:p-10">
-          <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white/80 p-8 shadow-2xl shadow-blue-500/10 backdrop-blur-xl sm:p-10">
+        <div className="relative flex min-h-screen items-center justify-center p-4 sm:p-8">
+          <div className="w-full max-w-md rounded-2xl border border-white/60 bg-white/80 p-5 shadow-lg shadow-blue-500/10 backdrop-blur sm:p-8">
             {/* Card Header */}
             <div className="mb-8">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30">
                 <Lock size={22} />
               </div>
-              <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
+              <h2 className="mt-3 text-xl font-bold text-slate-900">
                 ເຂົ້າສູ່ລະບົບ DMS
               </h2>
               <p className="mt-1.5 text-sm text-slate-500">
@@ -367,7 +367,7 @@ export default function LoginForm() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               {/* Identifier input (Email / Phone) */}
               <div>
                 <label className="mb-1.5 block text-xs font-semibold text-slate-700">

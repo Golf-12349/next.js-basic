@@ -143,11 +143,11 @@ export default function TrashPage() {
 
   return (
     <DashboardLayout title="ຖັງຂີ້ເຫຍື້ອ">
-      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-4">
         {/* ── Header & Actions ───────────────────────────────────── */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">ຖັງຂີ້ເຫຍື້ອ</h1>
+            <h1 className="text-xl font-bold text-gray-900">ຖັງຂີ້ເຫຍື້ອ</h1>
             <p className="mt-1 text-sm text-gray-500">
               ລາຍການເອກະສານທີ່ຖືກລຶບຊົ່ວຄາວ ສາມາດກູ້ຄືນ ຫຼື ລຶບຖາວອນໄດ້
             </p>
@@ -175,37 +175,37 @@ export default function TrashPage() {
 
         {/* ── Stats Summary ──────────────────────────────────────── */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
                 <Trash2 size={22} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{trash.length}</div>
+                <div className="text-xl font-bold text-gray-900">{trash.length}</div>
                 <div className="text-sm text-gray-500">🗑️ ຈຳນວນໃນຖັງຂີ້ເຫຍື້ອ</div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
                 <Clock3 size={22} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">30 ວັນ</div>
+                <div className="text-xl font-bold text-gray-900">30 ວັນ</div>
                 <div className="text-sm text-gray-500">⏳ ນະໂຍບາຍການເກັບຮັກສາ</div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:col-span-2 xl:col-span-1">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:col-span-2 xl:col-span-1">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                 <HardDrive size={22} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{formatMB(reclaimableMB)}</div>
+                <div className="text-xl font-bold text-gray-900">{formatMB(reclaimableMB)}</div>
                 <div className="text-sm text-gray-500">💾 ພື້ນທີ່ທີ່ກູ້ຄືນໄດ້</div>
               </div>
             </div>
@@ -259,10 +259,10 @@ export default function TrashPage() {
           </div>
         ) : visible.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center shadow-sm">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
               <Search className="h-6 w-6 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-800">ບໍ່ພົບເອກະສານ</h3>
+            <h3 className="text-base font-semibold text-gray-800">ບໍ່ພົບເອກະສານ</h3>
             <p className="mt-1 text-sm text-gray-500">ລອງປ່ຽນຄຳຄົ້ນຫາ ຫຼື ໝວດໝູ່ທີ່ເລືອກໄວ້</p>
           </div>
         ) : (
@@ -272,12 +272,12 @@ export default function TrashPage() {
               <table className="min-w-full text-left">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                   <tr>
-                    <th className="px-4 py-3">ເອກະສານ</th>
-                    <th className="px-4 py-3">ໝວດໝູ່ ແລະ ທີ່ຕັ້ງເດີມ</th>
-                    <th className="px-4 py-3">ຂະໜາດ</th>
-                    <th className="px-4 py-3">ວັນທີອັບໂຫຼດ</th>
-                    <th className="px-4 py-3">ຜູ້ອັບໂຫຼດ</th>
-                    <th className="px-4 py-3 text-center">ການກະທຳ</th>
+                    <th className="px-3 py-2.5">ເອກະສານ</th>
+                    <th className="px-3 py-2.5">ໝວດໝູ່ ແລະ ທີ່ຕັ້ງເດີມ</th>
+                    <th className="px-3 py-2.5">ຂະໜາດ</th>
+                    <th className="px-3 py-2.5">ວັນທີອັບໂຫຼດ</th>
+                    <th className="px-3 py-2.5">ຜູ້ອັບໂຫຼດ</th>
+                    <th className="px-3 py-2.5 text-center">ການກະທຳ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -285,7 +285,7 @@ export default function TrashPage() {
                     const { icon: TypeIcon, color: typeColor, label: typeLabel } = fileTypeInfo(doc.fileType)
                     return (
                       <tr key={doc.id} className="border-t border-gray-100 align-top transition hover:bg-gray-50/60">
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2.5">
                           <div className="flex items-start gap-3">
                             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${typeColor}`}>
                               <TypeIcon size={18} />
@@ -301,7 +301,7 @@ export default function TrashPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2.5">
                           <span className="mb-1 inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
                             {doc.category}
                           </span>
@@ -322,10 +322,10 @@ export default function TrashPage() {
                             <div className="mt-1.5 text-xs text-gray-400">— ບໍ່ໄດ້ຈັດເຂົ້າຄັງເກັບ —</div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{doc.fileSize}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadDate}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{doc.uploadedBy}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2.5 text-sm text-gray-700">{doc.fileSize}</td>
+                        <td className="px-3 py-2.5 text-sm text-gray-700">{doc.uploadDate}</td>
+                        <td className="px-3 py-2.5 text-sm text-gray-700">{doc.uploadedBy}</td>
+                        <td className="px-3 py-2.5">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
                               onClick={() => setPreviewDoc(doc)}
