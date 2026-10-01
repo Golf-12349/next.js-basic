@@ -7,7 +7,7 @@ type Props = {
 
 const Layout = ({ children }: Props) => {
   return (
-    <div className="min-h-screen w-full bg-white">
+    <div className="min-h-dvh w-full bg-white">
       <Guard>
         {children}
       </Guard>

@@ -22,6 +22,7 @@ import {
   Layers,
   Library,
   LogOut,
+  Menu,
   Search,
   Settings,
   Tag,
@@ -210,6 +211,48 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const [, setCurrentQuery] = useState('');
   const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
 
+  // ── Responsive shell: ຈໍນ້ອຍ (ມືຖື/ແທັບເລັດ) ໃຊ້ off-canvas drawer ສຳລັບເມນູ ──
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
+  // ປິດ drawer / ຊ່ອງຄົ້ນຫາມືຖື ອັດຕະໂນມັດເມື່ອປ່ຽນໜ້າ
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- close the mobile overlays after navigation
+    setMobileNavOpen(false);
+    setMobileSearchOpen(false);
+  }, [pathname]);
+
+  // ລັອກການເລື່ອນຂອງ body ຕອນ drawer ເປີດ (ກັນໜ້າຫຼັງເລື່ອນຕາມ)
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileNavOpen]);
+
+  // ກົດ Esc ເພື່ອປິດ drawer
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileNavOpen]);
+
+  // ປິດ drawer ອັດຕະໂນມັດເມື່ອປ່ຽນໄປຈໍໃຫຍ່ (≥ lg) — ກັນບໍ່ໃຫ້ body ຄ້າງສະຖານະລັອກສະຄຣອນ
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const desktopQuery = window.matchMedia('(min-width: 1024px)');
+    const handleDesktopChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setMobileNavOpen(false);
+    };
+    desktopQuery.addEventListener('change', handleDesktopChange);
+    return () => desktopQuery.removeEventListener('change', handleDesktopChange);
+  }, []);
+
   useEffect(() => {
     const handleLevelChanged = (e: Event) => {
       const custom = e as CustomEvent<{ level: string }>;
@@ -381,15 +424,33 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   }
 
   return (
-    <div
-      className="flex h-screen bg-gray-50 text-gray-800 font-sans"
-    >
+    <div className="flex h-dvh w-full overflow-hidden bg-gray-50 font-sans text-gray-800">
+      {/* Backdrop ມືຖື — ແຕະເພື່ອປິດ drawer */}
+      <div
+        aria-hidden={!mobileNavOpen}
+        onClick={() => setMobileNavOpen(false)}
+        className={`fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden ${
+          mobileNavOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      />
 
-      {/* Sidebar */}
-      <aside className="flex w-72 flex-col justify-between overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl">
+      {/* Sidebar — ຈໍໃຫຍ່ (lg+) ສະແດງຄົງທີ່ · ຈໍນ້ອຍ ເປັນ drawer ເລື່ອນເຂົ້າ-ອອກ */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col justify-between overscroll-contain overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0 ${
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div>
-          <div className="mb-6 border-b border-slate-800 px-2 pb-4">
+          <div className="mb-6 flex items-center justify-between gap-2 border-b border-slate-800 px-2 pb-4">
             <BrandLogo variant="dark" subtitle="ລະບົບເອກກະສານ" />
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(false)}
+              className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white lg:hidden"
+              aria-label="ປິດເມນູ"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
           <nav className="space-y-5">
@@ -501,6 +562,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                         setActiveArchiveLevel(childLevel);
                                         window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
                                         window.dispatchEvent(new CustomEvent('dms:archive-level-changed', { detail: { level: childLevel } }));
+                                        setMobileNavOpen(false);
                                       }}
                                       className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
                                         isChildActive
@@ -523,6 +585,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                         <Link
                           key={item.name}
                           href={item.href}
+                          onClick={() => setMobileNavOpen(false)}
                           className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                             isParentActive
                               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-700/30'
@@ -572,39 +635,71 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
-          <div className="flex min-w-0 items-center gap-3">
-            <BrandLogo size="sm" variant="light" />
-            <h1 className="truncate text-lg font-semibold text-gray-800">{title}</h1>
-          </div>
+      {/* Main content */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {/* Header — sticky + ແຖວຄົ້ນຫາແຍກສຳລັບມືຖື, ບໍ່ໃຫ້ລົ້ນຂອບຈໍ */}
+        <header className="sticky top-0 z-30 shrink-0 border-b border-gray-200/70 bg-white/90 backdrop-blur">
+          <div className="flex h-16 items-center gap-1.5 px-3 sm:gap-3 sm:px-4 lg:px-6">
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(true)}
+              className="-ml-1 shrink-0 rounded-xl p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 active:bg-gray-200 lg:hidden"
+              aria-label="ເປີດເມນູນຳທາງ"
+              aria-expanded={mobileNavOpen}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+              <BrandLogo size="sm" variant="light" className="hidden shrink-0 min-[420px]:block" />
+              <h1 className="truncate text-sm font-semibold text-gray-800 min-[420px]:text-base sm:text-lg">
+                {title}
+              </h1>
+            </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Global Search Input in Header (visible only when shouldShowSearch is true) */}
-            {shouldShowSearch && (
-            <form onSubmit={handleSearchSubmit} className="relative">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ຄົ້ນຫາເອກະສານ, ລະຫັດ, ຜູ້ໃຊ້..."
-                className="w-44 sm:w-60 md:w-72 rounded-xl border border-slate-200 bg-slate-50/80 py-2 pl-9 pr-8 text-xs sm:text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
-              />
-              {searchQuery && (
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+              {/* ປຸ່ມຄົ້ນຫາມືຖື — ເປີດແຖວຄົ້ນຫາແຖວທີສອງ (ສະແດງເຉພາະຈໍ < sm) */}
+              {shouldShowSearch && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
-                  aria-label="ລຶບຂໍ້ຄວາມຄົ້ນຫາ"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  onClick={() => {
+                    setMobileSearchOpen((open) => !open);
+                    setNotifOpen(false);
+                    setProfileOpen(false);
+                  }}
+                  className={`rounded-full p-2.5 transition-all sm:hidden ${
+                    mobileSearchOpen ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  aria-label="ຄົ້ນຫາເອກະສານ"
+                  aria-expanded={mobileSearchOpen}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <Search className="h-5 w-5" />
                 </button>
               )}
-            </form>
-            )}
+
+              {/* Global Search — ເດສກ໌ທັອບ/ແທັບເລັດ (≥ sm) */}
+              {shouldShowSearch && (
+                <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
+                  <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="ຄົ້ນຫາເອກະສານ, ລະຫັດ, ຜູ້ໃຊ້..."
+                    aria-label="ຄົ້ນຫາເອກະສານ"
+                    className="w-44 rounded-xl border border-slate-200 bg-slate-50/80 py-2 pl-9 pr-8 text-xs text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 md:w-72 md:text-sm lg:w-80"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      aria-label="ລຶບຂໍ້ຄວາມຄົ້ນຫາ"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </form>
+              )}
 
             {/* Notification Bell Dropdown */}
             <div className="relative" ref={notifRef}>
@@ -613,6 +708,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                 onClick={() => {
                   setNotifOpen((prev) => !prev);
                   setProfileOpen(false);
+                  setMobileSearchOpen(false);
                 }}
                 className={`relative rounded-full p-2.5 text-gray-600 transition-all ${
                   notifOpen ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-gray-100'
@@ -627,9 +723,9 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                 )}
               </button>
 
-              {/* Notification Dropdown Menu */}
+              {/* Notification Dropdown Menu — ກວ້າງເຕັມເກືອບເຕັມຈໍໃນມືຖື, ກັນລົ້ນຂອບຂວາ */}
               <div
-                className={`absolute right-0 top-full z-50 mt-2 w-80 sm:w-96 origin-top-right rounded-2xl border border-gray-200 bg-white shadow-xl transition-all duration-200 ease-out ${
+                className={`fixed left-3 right-3 top-[68px] z-50 max-h-[calc(100dvh-5rem)] w-auto origin-top-right overflow-y-auto overscroll-contain rounded-2xl border border-gray-200 bg-white shadow-xl transition-all duration-200 ease-out sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 ${
                   notifOpen
                     ? 'pointer-events-auto scale-100 opacity-100'
                     : 'pointer-events-none scale-95 opacity-0'
@@ -720,15 +816,17 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
               </div>
             </div>
 
-            {/* Profile Dropdown */}
-            <div className="relative border-l border-gray-200 pl-3" ref={profileRef}>
+            {/* Profile Dropdown — ມືຖືໂຊສະເພາະ avatar, ຊ່ອງຊື່ຊ່ອນເພື່ອປະຢັດພື້ນທີ່ */}
+            <div className="relative shrink-0 border-l border-gray-200 pl-1.5 sm:pl-3" ref={profileRef}>
               <button
                 type="button"
                 onClick={() => {
                   setProfileOpen((open) => !open);
                   setNotifOpen(false);
                 }}
-                className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-gray-50"
+                aria-label="ເມນູຜູ້ໃຊ້ງານ"
+                aria-expanded={profileOpen}
+                className="flex items-center gap-2 rounded-xl px-1.5 py-1.5 transition-colors hover:bg-gray-50 sm:gap-3 sm:px-2"
               >
                 <UserAvatar
                   name={currentUser?.name || 'ຜູ້ໃຊ້ງານ'}
@@ -736,19 +834,19 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                   avatarClassName="h-9 w-9 bg-indigo-100 text-indigo-700"
                   textClassName="text-sm font-bold"
                 />
-                <div className="hidden text-left sm:block">
-                  <p className="text-sm font-semibold leading-none text-gray-900">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</p>
+                <div className="hidden text-left md:block">
+                  <p className="max-w-32 truncate text-sm font-semibold leading-none text-gray-900 lg:max-w-44">{currentUser?.name || 'ຜູ້ໃຊ້ງານ'}</p>
                   <p className="mt-1 text-xs text-gray-500">{roleLabel(currentUser?.role ?? 'DepartmentAdmin')}</p>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-gray-400 transition-transform duration-300 ${
+                  className={`hidden h-4 w-4 text-gray-400 transition-transform duration-300 sm:block ${
                     profileOpen ? 'rotate-180' : ''
                   }`}
                 />
               </button>
 
               <div
-                className={`absolute right-0 top-full z-50 mt-2 w-64 origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 ease-out ${
+                className={`fixed right-4 top-[68px] z-50 w-64 max-w-[calc(100vw-2rem)] origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200 ease-out sm:absolute sm:right-0 sm:top-full sm:mt-2 ${
                   profileOpen
                     ? 'pointer-events-auto scale-100 opacity-100'
                     : 'pointer-events-none scale-95 opacity-0'
@@ -813,10 +911,40 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                 </div>
               </div>
             </div>
+            </div>
           </div>
+
+          {/* ແຖວຄົ້ນຫາມືຖືແຖວທີສອງ — ຂະຫຍາຍລົງໃຕ້ header ເມື່ອກົດປຸ່ມແວ່ນຂະຫຍາຍ (ຈໍ < sm) */}
+          {shouldShowSearch && mobileSearchOpen && (
+            <div className="border-t border-gray-100 px-3 pb-3 pt-2 sm:hidden">
+              <form onSubmit={handleSearchSubmit} className="relative">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="ຄົ້ນຫາເອກະສານ, ລະຫັດ, ຜູ້ໃຊ້..."
+                  aria-label="ຄົ້ນຫາເອກະສານ"
+                  enterKeyHint="search"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/80 py-2.5 pl-10 pr-9 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="ລຶບຂໍ້ຄວາມຄົ້ນຫາ"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </form>
+            </div>
+          )}
         </header>
 
-        <main className="w-full min-w-0 flex-1 overflow-y-auto">
+        <main className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overscroll-contain">
           {children}
         </main>
       </div>

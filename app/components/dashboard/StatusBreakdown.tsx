@@ -29,9 +29,9 @@ export function StatusBreakdown() {
 
   return (
     <section className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+      <div className="flex items-start justify-between gap-3 sm:items-center">
+        <div className="flex min-w-0 items-start gap-3 sm:items-center">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
             <Layers className="h-5 w-5" />
           </span>
           <div>

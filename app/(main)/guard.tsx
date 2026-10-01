@@ -90,7 +90,7 @@ export default function Guard({ children }: Props) {
   }
 
   return (
-    <div className="min-h-screen w-full bg-white">
+    <div className="min-h-dvh w-full bg-white">
       {children}
     </div>
   )
