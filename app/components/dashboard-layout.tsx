@@ -443,7 +443,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
 
       {/* Sidebar — ຈໍໃຫຍ່ (lg+) ສະແດງຄົງທີ່ · ຈໍນ້ອຍ ເປັນ drawer ເລື່ອນເຂົ້າ-ອອກ */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] flex-col justify-between overscroll-contain overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0 ${
+        className={`no-scrollbar fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] flex-col justify-between overscroll-contain overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0 ${
           mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
