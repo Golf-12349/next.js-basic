@@ -17,19 +17,19 @@ export default function Modal({
   /**
    * true  (default): the body scrolls itself (overflow-y-auto) — good for forms/lists.
    * false: the body never scrolls (overflow-hidden) and the dialog becomes a
-   *        fixed-height h-[92vh] flex column, so children (e.g. a PDF iframe)
-   *        can fill the space and scroll independently while the footer stays
-   *        permanently pinned at the bottom of the dialog.
+   *        fixed-height (100dvh on mobile / 92dvh on sm+) flex column, so children
+   *        (e.g. a PDF iframe) can fill the space and scroll independently while the
+   *        footer stays permanently pinned at the bottom of the dialog.
    */
   scrollBody?: boolean
 }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-0 sm:p-4">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <div
-        className={`relative w-full max-w-[min(48rem,calc(100vw-2rem))] bg-white rounded-lg shadow-lg p-6 flex flex-col ${
-          scrollBody ? 'max-h-[92vh]' : 'h-[92vh]'
+        className={`relative flex w-full max-w-full flex-col bg-white p-4 shadow-lg sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-lg sm:p-6 ${
+          scrollBody ? 'max-h-dvh sm:max-h-[92dvh]' : 'h-dvh sm:h-[92dvh]'
         }`}
       >
         {/* Header: title & close — never scrolls away */}

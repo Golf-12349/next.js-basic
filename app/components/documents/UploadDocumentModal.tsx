@@ -195,6 +195,16 @@ export default function UploadDocumentModal({
     }
   }, [filePreviewUrl])
 
+  // ລັອກການເລື່ອນຂອງ body ຕອນເປີດໂມດັນ — ກັນໜ້າຫຼັງມືຖືເລື່ອນຕາມຂະນະທີ່ຢູ່ໃນຟອມ
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
+
   function applyFile(file: File) {
     if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl)
     setSelectedFile(file)
@@ -365,14 +375,14 @@ export default function UploadDocumentModal({
 
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
+    <div className="fixed inset-0 z-50 flex justify-center overflow-hidden sm:items-center sm:overflow-y-auto sm:p-4">
       <div className="fixed inset-0 bg-black/70" onClick={onClose} />
       <div
-        className="relative flex h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl"
+        className="relative flex h-dvh w-full max-w-5xl flex-col overflow-hidden border-0 border-slate-700 bg-slate-900 text-slate-100 shadow-2xl sm:h-[92dvh] sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl sm:border"
         style={{ colorScheme: 'dark' }}
       >
         {/* Header: title & close — never scrolls away */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 px-5 py-3.5">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-800 px-4 py-3 sm:px-5 sm:py-3.5">
           <div>
             <h2 className="text-lg font-semibold text-slate-100">ອັບໂຫຼດເອກະສານ</h2>
             <p className="mt-0.5 text-xs text-slate-400">PDF, DOC, PNG, JPG — ໄຟລ໌ + ຂໍ້ມູນເອກະສານ</p>
@@ -389,17 +399,17 @@ export default function UploadDocumentModal({
 
         {/* Offline Banner if disconnected */}
         {!isOnline && (
-          <div className="flex shrink-0 items-center gap-2.5 bg-amber-500/15 border-b border-amber-500/30 px-5 py-2 text-xs text-amber-300 font-medium">
+          <div className="flex shrink-0 items-center gap-2.5 bg-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-xs text-amber-300 font-medium sm:px-5">
             <WifiOff className="h-4 w-4 shrink-0 text-amber-400" />
             <span>ອຸປະກອນຂອງທ່ານຂາດການເຊື່ອມຕໍ່ອິນເຕີເນັດ (Offline) — ກະລຸນາກວດສອບສັນຍານເຄືອຂ່າຍ</span>
           </div>
         )}
 
         {/* Body: 2 columns (left dropzone/file card fills full height, right metadata form scrolls independently) */}
-        <div className="min-h-0 flex-1 overflow-hidden px-5 py-4">
-          <div className="grid h-full min-h-0 gap-6 lg:grid-cols-2">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 lg:overflow-hidden">
+          <div className="grid min-h-0 gap-6 lg:h-full lg:grid-cols-2">
             {/* ── LEFT: dropzone + file card (Full height, pinned) ── */}
-            <div className="flex h-full min-h-0 flex-col gap-2.5 overflow-hidden">
+            <div className="flex flex-col gap-2.5 lg:h-full lg:min-h-0 lg:overflow-hidden">
               <label className="mb-0.5 block text-sm font-medium text-slate-300 shrink-0">
                 ໄຟລ໌ <span className="text-rose-500">*</span>
               </label>
@@ -490,7 +500,7 @@ export default function UploadDocumentModal({
                     const file = e.dataTransfer?.files?.[0]
                     if (file) applyFile(file)
                   }}
-                  className={`flex flex-1 h-full min-h-0 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 text-center transition ${
+                  className={`flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-10 text-center transition sm:py-12 lg:h-full lg:min-h-0 lg:flex-1 ${
                     dragActive
                       ? 'border-indigo-400 bg-indigo-500/15 ring-4 ring-indigo-500/20'
                       : 'border-slate-600/80 bg-slate-800/30 hover:border-indigo-400/80 hover:bg-slate-800/50'
@@ -526,7 +536,7 @@ export default function UploadDocumentModal({
             </div>
 
             {/* ── RIGHT: metadata form (Independently scrollable) ── */}
-            <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto pr-1.5">
+            <div className="flex flex-col gap-3 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1.5">
               <h3 className="text-sm font-bold text-slate-200 shrink-0">ຂໍ້ມູນເອກະສານ</h3>
               <div className="space-y-3.5 rounded-xl border border-slate-700 bg-slate-800/60 p-4">
                 <div>
@@ -729,7 +739,7 @@ export default function UploadDocumentModal({
         </div>
 
         {/* Footer: fixed at bottom, never scrolls away */}
-        <div className="flex shrink-0 flex-col gap-2.5 border-t border-slate-800 px-5 py-3.5">
+        <div className="flex shrink-0 flex-col gap-2.5 border-t border-slate-800 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 sm:py-3.5">
           {/* Real-time upload progress bar */}
           {isSubmitting && (
             <div className="w-full space-y-1.5 rounded-lg border border-slate-700/80 bg-slate-800/60 p-2.5">
@@ -763,7 +773,7 @@ export default function UploadDocumentModal({
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <div className="min-w-0 flex-1">
               {error && (
                 <p className="flex items-center gap-1.5 text-xs font-medium text-rose-400">
@@ -772,12 +782,12 @@ export default function UploadDocumentModal({
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-center text-sm font-medium whitespace-nowrap text-slate-300 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 ຍົກເລີກ
               </button>
@@ -785,7 +795,7 @@ export default function UploadDocumentModal({
                 type="button"
                 onClick={() => handleSubmit('draft')}
                 disabled={isSubmitting || loading || !isOnline}
-                className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-center text-sm font-medium whitespace-nowrap text-slate-200 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting
                   ? uploadStep === 'uploading'
@@ -797,7 +807,7 @@ export default function UploadDocumentModal({
                 type="button"
                 onClick={() => handleSubmit('approved')}
                 disabled={isSubmitting || loading || !isOnline}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-900/60"
+                className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium whitespace-nowrap text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-900/60 sm:col-span-1"
               >
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isSubmitting
