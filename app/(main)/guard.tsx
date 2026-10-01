@@ -44,6 +44,16 @@ export default function Guard({ children }: Props) {
           }
         }
 
+        // Check access to /audit-logs route
+        if (pathname === '/audit-logs' || pathname.startsWith('/audit-logs/')) {
+          if (role !== 'SuperAdmin') {
+            pushToast({ title: 'ສະເພາະ SuperAdmin ເທົ່ານັ້ນທີ່ມີສິດເຂົ້າເຖິງໜ້າບັນທຶກຄວາມປອດໄພ' })
+            setAuthorized(false)
+            router.replace('/dashboard')
+            return
+          }
+        }
+
         setAuthorized(true)
       } catch (err) {
         console.error('Guard auth check error:', err)
