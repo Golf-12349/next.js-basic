@@ -45,6 +45,7 @@ function addYears(years: number): string {
 interface UploadDocumentModalProps {
   open: boolean
   onClose: () => void
+  initialWarehouseId?: string
   initialCabinetId?: string
   initialShelfId?: string
   initialFolderId?: string
@@ -53,6 +54,7 @@ interface UploadDocumentModalProps {
 export default function UploadDocumentModal({
   open,
   onClose,
+  initialWarehouseId,
   initialCabinetId,
   initialShelfId,
   initialFolderId,
@@ -74,6 +76,16 @@ export default function UploadDocumentModal({
     }
     return ''
   }, [initialCabinetId, initialFolderId, initialShelfId, folders, shelves])
+
+  // ດຶງຄ່າ warehouse ອັດຕະໂນມັດ ຖ້າມີການສົ່ງ cabinetId ຫຼື folderId ເຂົ້າມາ
+  const resolvedWarehouseId = useMemo(() => {
+    if (initialWarehouseId) return initialWarehouseId
+    if (resolvedCabinetId) {
+      const c = cabinets.find((item) => item.id === resolvedCabinetId)
+      if (c?.warehouseId) return c.warehouseId
+    }
+    return ''
+  }, [initialWarehouseId, resolvedCabinetId, cabinets])
 
   const resolvedShelfId = useMemo(() => {
     if (initialShelfId) return initialShelfId
@@ -118,6 +130,7 @@ export default function UploadDocumentModal({
   const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
   const [pdfLoading, setPdfLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [warehouseId, setWarehouseId] = useState(resolvedWarehouseId)
   const [cabinetId, setCabinetId] = useState(resolvedCabinetId)
   const [shelfId, setShelfId] = useState(resolvedShelfId)
   const [folderId, setFolderId] = useState(initialFolderId || '')
@@ -132,16 +145,37 @@ export default function UploadDocumentModal({
     [categories],
   )
 
-  const visibleCabinets = useMemo(() => {
-    if (currentUser?.role === 'DepartmentAdmin' && currentUser.department) {
-      const userDept = currentUser.department.trim().toLowerCase();
-      return cabinets.filter((c) => c.department?.trim().toLowerCase() === userDept);
-    }
+  const visibleWarehouses = useMemo(() => {
+    if (currentUser?.role === 'SuperAdmin') return warehouses
     if (currentUser?.role === 'DivisionAdmin' && currentUser.division) {
-      return cabinets.filter((c) => !c.division || c.division === currentUser.division);
+      const userDiv = currentUser.division.trim().toLowerCase()
+      return warehouses.filter(
+        (w) => !w.division || w.division.trim().toLowerCase() === userDiv,
+      )
     }
-    return cabinets;
-  }, [cabinets, currentUser]);
+    if (currentUser?.division) {
+      const userDiv = currentUser.division.trim().toLowerCase()
+      const divWarehouses = warehouses.filter(
+        (w) => !w.division || w.division.trim().toLowerCase() === userDiv,
+      )
+      if (divWarehouses.length > 0) return divWarehouses
+    }
+    return warehouses
+  }, [warehouses, currentUser])
+
+  const visibleCabinets = useMemo(() => {
+    let list = cabinets
+    if (currentUser?.role === 'DepartmentAdmin' && currentUser.department) {
+      const userDept = currentUser.department.trim().toLowerCase()
+      list = list.filter((c) => c.department?.trim().toLowerCase() === userDept)
+    } else if (currentUser?.role === 'DivisionAdmin' && currentUser.division) {
+      list = list.filter((c) => !c.division || c.division === currentUser.division)
+    }
+    if (warehouseId) {
+      list = list.filter((c) => c.warehouseId === warehouseId)
+    }
+    return list
+  }, [cabinets, currentUser, warehouseId])
 
   // Shelf ຂອງຕູ້ທີເລືອກ
   const visibleShelves = useMemo(() => {
@@ -164,10 +198,12 @@ export default function UploadDocumentModal({
 
   const selectedWarehouse = useMemo(
     () =>
-      selectedCabinet?.warehouseId
-        ? warehouses.find((w) => w.id === selectedCabinet.warehouseId)
-        : undefined,
-    [selectedCabinet, warehouses],
+      warehouseId
+        ? warehouses.find((w) => w.id === warehouseId)
+        : selectedCabinet?.warehouseId
+          ? warehouses.find((w) => w.id === selectedCabinet.warehouseId)
+          : undefined,
+    [warehouseId, selectedCabinet, warehouses],
   )
 
   // ຖ້າມີການເລືອກຕູ້ (ຫຼື ສ້າງຢູ່ໃນຕູ້) -> ດຶງຂໍ້ມູນພະແນກ ແລະ ຝ່າຍ ຕາມຕູ້ເອກະສານນັ້ນ
@@ -227,11 +263,32 @@ export default function UploadDocumentModal({
     setError(null)
   }
 
+  function handleWarehouseChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.target.value
+    setWarehouseId(value)
+    // ຖ້າຕູ້ທີ່ເລືອກໄວ້ບໍ່ໄດ້ຢູ່ໃນຄັງນີ້ ໃຫ້ລ້າງຕູ້, ຊັ້ນ, ແລະ ແຟ້ມ
+    if (cabinetId) {
+      const currentCab = cabinets.find((c) => c.id === cabinetId)
+      if (value && currentCab?.warehouseId !== value) {
+        setCabinetId('')
+        setShelfId('')
+        setFolderId('')
+      }
+    }
+  }
+
   function handleCabinetChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.target.value
     setCabinetId(value)
     setShelfId('')
     setFolderId('')
+    // ຖ້າຕູ້ທີ່ເລືອກສັງກັດຢູ່ຄັງໃດໜຶ່ງ ໃຫ້ຊິ້ງຄັງອັດຕະໂນມັດ
+    if (value) {
+      const cab = cabinets.find((c) => c.id === value)
+      if (cab?.warehouseId) {
+        setWarehouseId(cab.warehouseId)
+      }
+    }
   }
 
   function handleShelfChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -324,7 +381,7 @@ export default function UploadDocumentModal({
         fileUrl: uploaded.fileUrl,
         fileName: uploaded.fileName,
         // 5-Level archive: save warehouse + cabinet + shelf + folder
-        warehouseId: selectedWarehouse?.id || undefined,
+        warehouseId: selectedWarehouse?.id || warehouseId || undefined,
         warehouseName: selectedWarehouse?.name,
         cabinetId: cabinetId || undefined,
         cabinetName: selectedCabinet?.name,
@@ -586,7 +643,25 @@ export default function UploadDocumentModal({
                   </p>
                 </div>
 
-                {/* 5-Level archive: Cabinet + Shelf + Folder dropdowns */}
+                {/* 5-Level archive: Warehouse + Cabinet + Shelf + Folder dropdowns */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">
+                    ຄັງເອກະສານ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
+                  </label>
+                  <select
+                    value={warehouseId}
+                    onChange={handleWarehouseChange}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400"
+                  >
+                    <option value="">— ເລືອກຄັງເອກະສານ (ບໍ່ບັງຄັບ) —</option>
+                    {visibleWarehouses.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        🏢 {w.name}{w.division ? ` (${w.division})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">
                     ຕູ້ເອກະສານ <span className="text-xs text-slate-400">(ເລືອກໄດ້)</span>
@@ -596,11 +671,18 @@ export default function UploadDocumentModal({
                     onChange={handleCabinetChange}
                     className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-indigo-400"
                   >
-                    <option value="">— ເລືອກຕູ້ເອກະສານ (ບໍ່ບັງຄັບ) —</option>
+                    <option value="">
+                      {warehouseId ? '— ເລືອກຕູ້ເອກະສານ (ໃນຄັງນີ້) —' : '— ເລືອກຕູ້ເອກະສານ (ບໍ່ບັງຄັບ) —'}
+                    </option>
                     {visibleCabinets.map((c) => (
                       <option key={c.id} value={c.id}>🗄️ {c.name}</option>
                     ))}
                   </select>
+                  {warehouseId && visibleCabinets.length === 0 && (
+                    <p className="mt-1 text-xs text-amber-400">
+                      ຄັງນີ້ຍັງບໍ່ມີຕູ້ເອກະສານ — ສາມາດສ້າງຕູ້ໄດ້ທີ່ໜ້າ ຄັງເກັບເອກະສານ
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-300">
@@ -637,7 +719,7 @@ export default function UploadDocumentModal({
                     <p className="mt-1 text-xs text-amber-400">ຕູ້ນີ້ຍັງບໍ່ມີແຟ້ມ — ສາມາດສ້າງແຟ້ມໄດ້ທີ່ໜ້າ ຄັງເກັບເອກະສານ</p>
                   )}
                 </div>
-                {/* ຂໍ້ມູນພະແນກ ແລະ ຝ່າຍ (ດຶງຕາມຕູ້ເອກະສານ ຖ້າມີການເລືອກຕູ້, ຖ້າບໍ່ມີໃຫ້ດຶງຕາມຜູ້ໃຊ້) */}
+                {/* ຂໍ້ມູນພະແນກ ແລະ ຝ່າຍ (ດຶງຕາມຕູ້ເອກະສານ ຖ້າມີການເລືອກຕູ້, ຖ້າບໍ່ມີໃຫ້ດຶງຕາມຄັງ ຫຼື ຜູ້ໃຊ້) */}
                 <div className="rounded-lg border border-slate-700/80 bg-slate-800/60 p-3 text-xs text-slate-300">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 font-medium text-slate-200">
@@ -647,6 +729,10 @@ export default function UploadDocumentModal({
                     {selectedCabinet ? (
                       <span className="rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400 border border-indigo-500/20">
                         ຕາມຕູ້: {selectedCabinet.name}
+                      </span>
+                    ) : selectedWarehouse ? (
+                      <span className="rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400 border border-indigo-500/20">
+                        ຕາມຄັງ: {selectedWarehouse.name}
                       </span>
                     ) : (
                       <span className="rounded bg-slate-700/50 px-1.5 py-0.5 text-[10px] text-slate-400">

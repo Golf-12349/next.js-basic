@@ -4,6 +4,7 @@ import React, { createContext, useContext, useMemo, useState, type ReactNode } f
 import UploadDocumentModal from '@/app/components/documents/UploadDocumentModal'
 
 export interface UploadInitialLocation {
+  warehouseId?: string
   cabinetId?: string
   shelfId?: string
   folderId?: string
@@ -58,6 +59,7 @@ export function UploadModalProvider({ children }: { children: ReactNode }) {
         key={openCount}
         open={uploadOpen}
         onClose={value.closeUpload}
+        initialWarehouseId={initialLocation?.warehouseId}
         initialCabinetId={initialLocation?.cabinetId}
         initialShelfId={initialLocation?.shelfId}
         initialFolderId={initialLocation?.folderId}
