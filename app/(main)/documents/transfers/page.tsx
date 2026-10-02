@@ -131,7 +131,7 @@ export default function TransferHistoryPage() {
       map.set(t.id, {
         ...existing,
         ...t,
-        document: matchedDoc || existing?.document,
+        document: t.document || matchedDoc || existing?.document,
       })
     }
 
@@ -142,7 +142,7 @@ export default function TransferHistoryPage() {
       map.set(t.id, {
         ...existing,
         ...t,
-        document: matchedDoc || t.document || existing?.document,
+        document: t.document || matchedDoc || existing?.document,
       })
     }
 
@@ -151,6 +151,7 @@ export default function TransferHistoryPage() {
 
   // Current user's department & division
   const userDept = currentUser?.department?.trim().toLowerCase()
+  const userDiv = currentUser?.division?.trim().toLowerCase()
 
   // Filtered transfers
   const filtered = useMemo(() => {
@@ -165,6 +166,10 @@ export default function TransferHistoryPage() {
         const toDept = (typeof item.toDepartment === 'object' && item.toDepartment !== null ? (item.toDepartment as any).name : item.toDepartment || '').toLowerCase()
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings
         const fromDept = (typeof item.fromDepartment === 'object' && item.fromDepartment !== null ? (item.fromDepartment as any).name : item.fromDepartment || '').toLowerCase()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings
+        const toDiv = (typeof item.toDivision === 'object' && item.toDivision !== null ? (item.toDivision as any).name : item.toDivision || '').toLowerCase()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings
+        const fromDiv = (typeof item.fromDivision === 'object' && item.fromDivision !== null ? (item.fromDivision as any).name : item.fromDivision || '').toLowerCase()
 
         // Text query
         if (q && !(title.includes(q) || docNum.includes(q) || sender.includes(q) || note.includes(q) || toDept.includes(q) || fromDept.includes(q))) {
@@ -175,9 +180,11 @@ export default function TransferHistoryPage() {
         if (directionFilter === 'incoming') {
           // Sent to current user's department/division
           if (userDept && !toDept.includes(userDept)) return false
+          if (!userDept && userDiv && !toDiv.includes(userDiv)) return false
         } else if (directionFilter === 'outgoing') {
-          // Sent by current user or from user's department
-          if (userDept && !fromDept.includes(userDept)) return false
+          // Sent by current user or from user's department/division
+          if (userDept && !fromDept.includes(userDept) && item.senderId !== currentUser?.id) return false
+          if (!userDept && userDiv && !fromDiv.includes(userDiv) && item.senderId !== currentUser?.id) return false
         }
 
         // Status filter
