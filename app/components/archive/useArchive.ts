@@ -13,6 +13,9 @@ export type ViewState =
   | { level: 'folders'; warehouseId?: string; cabinetId?: string; shelfId?: string }
   | { level: 'documents'; warehouseId?: string; cabinetId?: string; shelfId?: string; folderId?: string };
 
+/** ມຸມມອງການສະແດງຜົນຂອງທຸກລະດັບໃນຄັງເກັບເອກະສານ — ບັດ (grid) ຫຼື ລາຍການ (list) */
+export type ViewMode = 'grid' | 'list';
+
 interface ArchiveActions {
   createWarehouse?: (data: { name: string; division?: string; description?: string; color?: string }) => Promise<unknown> | void;
   createCabinet: (data: { name: string; color: string; department: string; description: string; warehouseId?: string | null; division?: string | null }) => Promise<unknown> | void;
@@ -42,6 +45,8 @@ export function useArchive(
   const queryCabinetId = searchParams.get('cabinetId') || undefined;
   const queryShelfId = searchParams.get('shelfId') || undefined;
   const queryFolderId = searchParams.get('folderId') || undefined;
+  // ມຸມມອງ ບັດ/ລາຍການ ເກັບໃນ URL ເພື່ອໃຫ້ຄ່າຄົງຢູ່ເມື່ອເຂົ້າ-ອອກລະດັບ ແລະ ແຊຣ໌ລິ້ງຫາກັນໄດ້
+  const viewMode: ViewMode = searchParams.get('view') === 'list' ? 'list' : 'grid';
 
   const view: ViewState = useMemo(() => {
     if (queryLevel === 'documents') {
@@ -93,6 +98,10 @@ export function useArchive(
       if ('folderId' in nextView && nextView.folderId) {
         params.set('folderId', nextView.folderId);
       }
+      // ຮັກສາມຸມມອງ (grid/list) ໄວ້ຄືເກົ່າ ເມື່ອຍ້າຍໄປລະດັບອື່ນ
+      if (viewMode === 'list') {
+        params.set('view', 'list');
+      }
       const query = params.toString();
       const newUrl = query ? `/documents/archive?${query}` : '/documents/archive';
       router.push(newUrl);
@@ -105,7 +114,21 @@ export function useArchive(
         );
       }
     },
-    [router]
+    [router, viewMode]
+  );
+
+  const setViewMode = useCallback(
+    (mode: ViewMode) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (mode === 'list') {
+        params.set('view', 'list');
+      } else {
+        params.delete('view');
+      }
+      const query = params.toString();
+      router.push(query ? `/documents/archive?${query}` : '/documents/archive');
+    },
+    [router, searchParams]
   );
 
   const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
@@ -330,6 +353,8 @@ export function useArchive(
   return {
     view,
     setView,
+    viewMode,
+    setViewMode,
     warehouseModalOpen,
     setWarehouseModalOpen,
     cabinetModalOpen,

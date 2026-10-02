@@ -1,9 +1,12 @@
 "use client"
 import { useState, useMemo } from 'react'
 import { Building2, Plus, Trash2, Search, RotateCcw } from 'lucide-react'
-import type { Cabinet, Document, Warehouse } from '@/types/document'
+import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
+import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import type { ArchiveColumn } from './ArchiveListView'
+import type { ViewMode } from './useArchive'
 
 interface WarehouseCardProps {
   warehouse: Warehouse;
@@ -95,18 +98,28 @@ function WarehouseCard({
 interface WarehouseViewProps {
   warehouses: Warehouse[];
   cabinets: Cabinet[];
+  folders?: Folder[];
   documents: Document[];
   canManage: boolean;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
   onCreate: () => void;
   onOpen: (warehouseId: string) => void;
   onDelete: (warehouse: Warehouse) => void;
 }
 
+/** ຄ່າສະຖິຕິເລີ່ມຕົ້ນ ສຳລັບຄັງທີ່ຍັງບໍ່ມີຂໍ້ມູນ */
+type WarehouseStats = { cabinets: number; folders: number; docs: number };
+const EMPTY_STATS: WarehouseStats = { cabinets: 0, folders: 0, docs: 0 };
+
 export default function WarehouseView({
   warehouses = [],
   cabinets = [],
+  folders = [],
   documents = [],
   canManage,
+  viewMode = 'grid',
+  onViewModeChange,
   onCreate,
   onOpen,
   onDelete,
@@ -150,11 +163,121 @@ export default function WarehouseView({
     setCurrentPage(1);
   };
 
+  // ── ສະຖິຕິຕໍ່ຄັງ (ຕູ້ / ແຟ້ມ / ເອກະສານ) — ຄຳນວນຄັ້ງດຽວ ໃຊ້ທັງມຸມມອງບັດ ແລະ ລາຍການ
+  const cabinetWarehouse = useMemo(() => {
+    const map = new Map<string, string>();
+    cabinets.forEach((c) => {
+      if (c.warehouseId) map.set(c.id, c.warehouseId);
+    });
+    return map;
+  }, [cabinets]);
+
+  const warehouseStats = useMemo(() => {
+    const stats = new Map<string, WarehouseStats>();
+    warehouses.forEach((w) => stats.set(w.id, { cabinets: 0, folders: 0, docs: 0 }));
+    const bump = (warehouseId: string | undefined, field: keyof WarehouseStats) => {
+      const entry = warehouseId ? stats.get(warehouseId) : undefined;
+      if (entry) entry[field] += 1;
+    };
+    cabinets.forEach((c) => bump(c.warehouseId ?? undefined, 'cabinets'));
+    folders.forEach((f) => bump(cabinetWarehouse.get(f.cabinetId), 'folders'));
+    documents.forEach((d) => {
+      if (d.deleted) return;
+      const targets = new Set<string>();
+      if (d.warehouseId) targets.add(d.warehouseId);
+      const viaCabinet = d.cabinetId ? cabinetWarehouse.get(d.cabinetId) : undefined;
+      if (viaCabinet) targets.add(viaCabinet);
+      targets.forEach((id) => bump(id, 'docs'));
+    });
+    return stats;
+  }, [warehouses, cabinets, folders, documents, cabinetWarehouse]);
+
   const totalPages = Math.ceil(filteredWarehouses.length / PAGE_SIZE) || 1;
+  // ── ຄໍລໍາຂອງມຸມມອງລາຍການ (list view)
+  const columns = useMemo<ArchiveColumn<Warehouse>[]>(
+    () => [
+      {
+        key: 'name',
+        header: 'ຊື່ຄັງເອກະສານ',
+        sortValue: (w) => w.name ?? '',
+        render: (w) => (
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-base">
+              🏛️
+            </span>
+            <div className="min-w-0">
+              <div className="truncate font-semibold text-gray-900">{w.name}</div>
+              {w.description && <div className="truncate text-xs text-gray-400">{w.description}</div>}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'division',
+        header: 'ຝ່າຍ / ຫ້ອງການ',
+        className: 'hidden md:table-cell',
+        sortValue: (w) => w.division ?? '',
+        render: (w) => (
+          <span className="inline-flex items-center gap-1 rounded-md border border-purple-100 bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700">
+            <Building2 size={11} />
+            {w.division || 'ຄັງເອກະສານສູນກາງ'}
+          </span>
+        ),
+      },
+      {
+        key: 'cabinets',
+        header: 'ຕູ້',
+        align: 'center',
+        sortValue: (w) => (warehouseStats.get(w.id) ?? EMPTY_STATS).cabinets,
+        render: (w) => (
+          <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
+            {(warehouseStats.get(w.id) ?? EMPTY_STATS).cabinets}
+          </span>
+        ),
+      },
+      {
+        key: 'folders',
+        header: 'ແຟ້ມ',
+        align: 'center',
+        className: 'hidden lg:table-cell',
+        sortValue: (w) => (warehouseStats.get(w.id) ?? EMPTY_STATS).folders,
+        render: (w) => (
+          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+            {(warehouseStats.get(w.id) ?? EMPTY_STATS).folders}
+          </span>
+        ),
+      },
+      {
+        key: 'docs',
+        header: 'ເອກະສານ',
+        align: 'center',
+        sortValue: (w) => (warehouseStats.get(w.id) ?? EMPTY_STATS).docs,
+        render: (w) => (
+          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+            {(warehouseStats.get(w.id) ?? EMPTY_STATS).docs} ເອກະສານ
+          </span>
+        ),
+      },
+      {
+        key: 'createdAt',
+        header: 'ສ້າງເມື່ອ',
+        className: 'hidden xl:table-cell',
+        sortValue: (w) => w.createdAt ?? '',
+        render: (w) => <span className="text-xs text-gray-400">{formatDate(w.createdAt)}</span>,
+      },
+    ],
+    [warehouseStats],
+  );
+
+  const { sortKey, sortDir, toggleSort, sortRows } = useArchiveSort(columns);
+
+  // ຈັດລຳດັບກ່ອນ ແລ້ວຈຶ່ງຕັດໜ້າ
+  const sortedWarehouses = useMemo(() => sortRows(filteredWarehouses), [filteredWarehouses, sortRows]);
+
   const paginatedWarehouses = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredWarehouses.slice(start, start + PAGE_SIZE);
-  }, [filteredWarehouses, currentPage]);
+    return sortedWarehouses.slice(start, start + PAGE_SIZE);
+  }, [sortedWarehouses, currentPage]);
 
   return (
     <>
@@ -219,6 +342,7 @@ export default function WarehouseView({
           </div>
 
           <div className="flex items-center gap-2">
+            {onViewModeChange && <ViewToggle mode={viewMode} onChange={onViewModeChange} />}
             <span className="text-xs text-gray-500">
               ພົບ <strong className="font-semibold text-gray-800">{filteredWarehouses.length}</strong> ຄັງ
             </span>
@@ -266,29 +390,39 @@ export default function WarehouseView({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {paginatedWarehouses.map((warehouse) => {
-              const whCabinets = cabinets.filter((c) => c.warehouseId === warehouse.id);
-              const whCabinetIds = whCabinets.map((c) => c.id);
-              const whDocs = documents.filter(
-                (d) =>
-                  (d.warehouseId === warehouse.id || (d.cabinetId && whCabinetIds.includes(d.cabinetId))) &&
-                  !d.deleted,
-              );
+          {viewMode === 'list' ? (
+            <ArchiveListView
+              rows={paginatedWarehouses}
+              columns={columns}
+              rowKey={(w) => w.id}
+              onOpen={(w) => onOpen(w.id)}
+              canManage={canManage}
+              onDelete={(w) => onDelete(w)}
+              deleteTitle="ລຶບຄັງ"
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              indexOffset={(currentPage - 1) * PAGE_SIZE}
+            />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {paginatedWarehouses.map((warehouse) => {
+                const stat = warehouseStats.get(warehouse.id) ?? EMPTY_STATS;
 
-              return (
-                <WarehouseCard
-                  key={warehouse.id}
-                  warehouse={warehouse}
-                  cabinetCount={whCabinets.length}
-                  docCount={whDocs.length}
-                  canManage={canManage}
-                  onOpen={() => onOpen(warehouse.id)}
-                  onDelete={() => onDelete(warehouse)}
-                />
-              );
-            })}
-          </div>
+                return (
+                  <WarehouseCard
+                    key={warehouse.id}
+                    warehouse={warehouse}
+                    cabinetCount={stat.cabinets}
+                    docCount={stat.docs}
+                    canManage={canManage}
+                    onOpen={() => onOpen(warehouse.id)}
+                    onDelete={() => onDelete(warehouse)}
+                  />
+                );
+              })}
+            </div>
+          )}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

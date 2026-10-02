@@ -135,8 +135,11 @@ export default function ArchivePage() {
           <WarehouseView
             warehouses={warehouses}
             cabinets={archive.visibleCabinets}
+            folders={folders}
             documents={documents}
             canManage={canManage}
+            viewMode={archive.viewMode}
+            onViewModeChange={archive.setViewMode}
             onCreate={() => archive.setWarehouseModalOpen(true)}
             onOpen={(warehouseId) => archive.setView({ level: 'cabinets', warehouseId })}
             onDelete={(wh) => archive.handleDelete('warehouse', wh.id, wh.name)}
@@ -152,6 +155,8 @@ export default function ArchivePage() {
             folders={folders}
             documents={documents}
             canManage={canManage}
+            viewMode={archive.viewMode}
+            onViewModeChange={archive.setViewMode}
             onCreate={() => archive.setCabinetModalOpen(true)}
             onOpen={(cabinetId) =>
               archive.setView({
