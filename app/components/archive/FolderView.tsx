@@ -3,6 +3,9 @@ import { useState, useMemo } from 'react'
 import { FileText, Plus, Trash2, Search, RotateCcw } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
+import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import type { ArchiveColumn } from './ArchiveListView'
+import type { ViewMode } from './useArchive'
 
 // ── Folder Card (ແຟ້ມເກັບເອກະສານ) ──────────────────────────────
 interface FolderCardProps {
@@ -22,6 +25,10 @@ function formatDate(dateStr: string): string {
   if (isNaN(d.getTime())) return dateStr
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
+
+/** ຄ່າສະຖິຕິເລີ່ມຕົ້ນ ສຳລັບແຟ້ມທີ່ຍັງບໍ່ມີຂໍ້ມູນ */
+type FolderStats = { docs: number };
+const EMPTY_FOLDER_STATS: FolderStats = { docs: 0 };
 
 function FolderCard({
   folder,
@@ -137,6 +144,8 @@ interface FolderViewProps {
   folders: Folder[];
   documents: Document[];
   canManage?: boolean;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
   onCreate: () => void;
   onOpen: (folderId: string) => void;
   onDelete: (folder: Folder) => void;
@@ -151,6 +160,8 @@ export default function FolderView({
   folders = [],
   documents = [],
   canManage = true,
+  viewMode = 'grid',
+  onViewModeChange,
   onCreate,
   onOpen,
   onDelete,
@@ -227,11 +238,147 @@ export default function FolderView({
     setCurrentPage(1);
   };
 
+  // ── ແຜນທີ່ອ້າງອີງ ສຳລັບສະແດງຊື່ຄັງ / ຕູ້ / ຊັ້ນວາງ
+  const cabinetById = useMemo(() => {
+    const map = new Map<string, Cabinet>();
+    cabinets.forEach((c) => map.set(c.id, c));
+    return map;
+  }, [cabinets]);
+
+  const warehouseById = useMemo(() => {
+    const map = new Map<string, Warehouse>();
+    warehouses.forEach((w) => map.set(w.id, w));
+    return map;
+  }, [warehouses]);
+
+  const shelfById = useMemo(() => {
+    const map = new Map<string, Shelf>();
+    shelves.forEach((s) => map.set(s.id, s));
+    return map;
+  }, [shelves]);
+
+  // ── ສະຖິຕິຈຳນວນເອກະສານຕໍ່ແຟ້ມ — ໃຊ້ຮ່ວມທັງມຸມມອງບັດ ແລະ ລາຍການ
+  const folderStats = useMemo(() => {
+    const stats = new Map<string, FolderStats>();
+    folders.forEach((f) => stats.set(f.id, { docs: 0 }));
+
+    // ແຟ້ມອາດຖືກອ້າງອີງດ້ວຍຊື່ (folderName) ໃນເອກະສານເກົ່າ
+    const byName = new Map<string, string[]>();
+    folders.forEach((f) => {
+      if (!f.name) return;
+      const list = byName.get(f.name) ?? [];
+      list.push(f.id);
+      byName.set(f.name, list);
+    });
+
+    documents.forEach((d) => {
+      if (d.deleted) return;
+      const targets = new Set<string>();
+      if (d.folderId && stats.has(d.folderId)) targets.add(d.folderId);
+      if (d.folderName) (byName.get(d.folderName) ?? []).forEach((id) => targets.add(id));
+      targets.forEach((id) => {
+        const entry = stats.get(id);
+        if (entry) entry.docs += 1;
+      });
+    });
+
+    return stats;
+  }, [folders, documents]);
+
+  // ── ຄໍລໍາຂອງມຸມມອງລາຍການ (list view)
+  const columns = useMemo<ArchiveColumn<Folder>[]>(
+    () => [
+      {
+        key: 'name',
+        header: 'ຊື່ແຟ້ມ',
+        sortValue: (f) => f.name ?? '',
+        render: (f) => (
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-base">
+              📁
+            </span>
+            <div className="min-w-0">
+              <div className="truncate font-semibold text-gray-900">{f.name}</div>
+              {f.description && <div className="truncate text-xs text-gray-400">{f.description}</div>}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'warehouse',
+        header: 'ຄັງເອກະສານ',
+        className: 'hidden md:table-cell',
+        sortValue: (f) => {
+          const cab = cabinetById.get(f.cabinetId);
+          return cab?.warehouseId ? warehouseById.get(cab.warehouseId)?.name ?? '' : '';
+        },
+        render: (f) => {
+          const cab = cabinetById.get(f.cabinetId);
+          const wh = cab?.warehouseId ? warehouseById.get(cab.warehouseId) : undefined;
+          return (
+            <span className="inline-flex items-center gap-1 rounded-md border border-purple-100 bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700">
+              🏛️ {wh?.name || 'ຄັງທົ່ວໄປ'}
+            </span>
+          );
+        },
+      },
+      {
+        key: 'cabinet',
+        header: 'ຕູ້ເອກະສານ',
+        className: 'hidden lg:table-cell',
+        sortValue: (f) => cabinetById.get(f.cabinetId)?.name ?? '',
+        render: (f) => (
+          <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+            🗄️ {cabinetById.get(f.cabinetId)?.name || 'ບໍ່ມີຕູ້'}
+          </span>
+        ),
+      },
+      {
+        key: 'shelf',
+        header: 'ຊັ້ນວາງ',
+        className: 'hidden lg:table-cell',
+        sortValue: (f) => (f.shelfId ? shelfById.get(f.shelfId)?.name ?? '' : ''),
+        render: (f) => {
+          const sh = f.shelfId ? shelfById.get(f.shelfId) : undefined;
+          return (
+            <span className="inline-flex items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+              🪜 {sh?.name || 'ບໍ່ມີຊັ້ນວາງ'}
+            </span>
+          );
+        },
+      },
+      {
+        key: 'docs',
+        header: 'ເອກະສານ',
+        align: 'center',
+        sortValue: (f) => (folderStats.get(f.id) ?? EMPTY_FOLDER_STATS).docs,
+        render: (f) => (
+          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+            {(folderStats.get(f.id) ?? EMPTY_FOLDER_STATS).docs} ເອກະສານ
+          </span>
+        ),
+      },
+      {
+        key: 'createdAt',
+        header: 'ສ້າງເມື່ອ',
+        className: 'hidden xl:table-cell',
+        sortValue: (f) => f.createdAt ?? '',
+        render: (f) => <span className="text-xs text-gray-400">{formatDate(f.createdAt)}</span>,
+      },
+    ],
+    [cabinetById, warehouseById, shelfById, folderStats],
+  );
+
+  const { sortKey, sortDir, toggleSort, sortRows } = useArchiveSort(columns);
+
+  // ຈັດລຳດັບກ່ອນ ແລ້ວຈຶ່ງຕັດໜ້າ
+  const sortedFolders = useMemo(() => sortRows(filteredFolders), [filteredFolders, sortRows]);
+
   const totalPages = Math.ceil(filteredFolders.length / PAGE_SIZE) || 1;
   const paginatedFolders = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredFolders.slice(start, start + PAGE_SIZE);
-  }, [filteredFolders, currentPage]);
+    return sortedFolders.slice(start, start + PAGE_SIZE);
+  }, [sortedFolders, currentPage]);
 
   const viewTitle = shelf ? `ແຟ້ມໃນ ${shelf.name}` : cabinet ? `ແຟ້ມໃນຕູ້ ${cabinet.name}` : 'ແຟ້ມເກັບເອກະສານທັງໝົດ';
   const viewSubtitle = shelf
@@ -353,6 +500,7 @@ export default function FolderView({
           </div>
 
           <div className="flex items-center gap-2">
+            {onViewModeChange && <ViewToggle mode={viewMode} onChange={onViewModeChange} />}
             <span className="text-xs text-gray-500">
               ພົບ <strong className="font-semibold text-gray-800">{filteredFolders.length}</strong> ແຟ້ມ
             </span>
@@ -387,17 +535,27 @@ export default function FolderView({
         />
       ) : (
         <div className="space-y-4">
+          {viewMode === 'list' ? (
+            <ArchiveListView
+              rows={paginatedFolders}
+              columns={columns}
+              rowKey={(f) => f.id}
+              onOpen={(f) => onOpen(f.id)}
+              canManage={canManage}
+              onDelete={(f) => onDelete(f)}
+              deleteTitle="ລຶບແຟ້ມ"
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              indexOffset={(currentPage - 1) * PAGE_SIZE}
+            />
+          ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {paginatedFolders.map((folder) => {
-              const cab = cabinets.find((c) => c.id === folder.cabinetId);
-              const sh = shelves.find((s) => s.id === folder.shelfId);
-              const wh = cab?.warehouseId ? warehouses.find((w) => w.id === cab.warehouseId) : undefined;
-              const docCount = documents.filter(
-                (d) =>
-                  !d.deleted &&
-                  (d.folderId === folder.id ||
-                    (Boolean(folder.name) && Boolean(d.folderName) && d.folderName === folder.name))
-              ).length;
+              const cab = cabinetById.get(folder.cabinetId);
+              const sh = folder.shelfId ? shelfById.get(folder.shelfId) : undefined;
+              const wh = cab?.warehouseId ? warehouseById.get(cab.warehouseId) : undefined;
+              const stat = folderStats.get(folder.id) ?? EMPTY_FOLDER_STATS;
 
               return (
                 <FolderCard
@@ -407,13 +565,14 @@ export default function FolderView({
                   cabinetName={cab?.name}
                   shelfName={sh?.name}
                   canManage={canManage}
-                  docCount={docCount}
+                  docCount={stat.docs}
                   onOpen={() => onOpen(folder.id)}
                   onDelete={() => onDelete(folder)}
                 />
               );
             })}
           </div>
+          )}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

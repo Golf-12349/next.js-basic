@@ -178,6 +178,8 @@ export default function ArchivePage() {
             folders={folders}
             documents={documents}
             canManage={canManage}
+            viewMode={archive.viewMode}
+            onViewModeChange={archive.setViewMode}
             onCreate={() => archive.setShelfModalOpen(true)}
             onOpen={(shelfId) => {
               const sh = shelves.find((s) => s.id === shelfId);
@@ -202,6 +204,8 @@ export default function ArchivePage() {
             folders={archive.shelfFolders}
             documents={documents}
             canManage={canManage}
+            viewMode={archive.viewMode}
+            onViewModeChange={archive.setViewMode}
             onCreate={() => archive.setFolderModalOpen(true)}
             onOpen={(folderId) => {
               const fol = folders.find((f) => f.id === folderId);

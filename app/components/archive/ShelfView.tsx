@@ -3,6 +3,9 @@ import { useState, useMemo } from 'react'
 import { FileText, FolderArchive, Plus, Trash2, Search, RotateCcw } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
+import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import type { ArchiveColumn } from './ArchiveListView'
+import type { ViewMode } from './useArchive'
 
 // ── Shelf Card (ຊັ້ນວາງເອກະສານ) ──────────────────────────────
 interface ShelfCardProps {
@@ -22,6 +25,10 @@ function formatDate(dateStr: string): string {
   if (isNaN(d.getTime())) return dateStr
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
+
+/** ຄ່າສະຖິຕິເລີ່ມຕົ້ນ ສຳລັບຊັ້ນວາງທີ່ຍັງບໍ່ມີຂໍ້ມູນ */
+type ShelfStats = { folders: number; docs: number };
+const EMPTY_SHELF_STATS: ShelfStats = { folders: 0, docs: 0 };
 
 function ShelfCard({
   shelf,
@@ -136,6 +143,8 @@ interface ShelfViewProps {
   folders: Folder[];
   documents: Document[];
   canManage?: boolean;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
   onCreate: () => void;
   onOpen: (shelfId: string) => void;
   onDelete: (shelf: Shelf) => void;
@@ -149,6 +158,8 @@ export default function ShelfView({
   folders = [],
   documents = [],
   canManage = true,
+  viewMode = 'grid',
+  onViewModeChange,
   onCreate,
   onOpen,
   onDelete,
@@ -201,11 +212,139 @@ export default function ShelfView({
     setCurrentPage(1);
   };
 
+  // ── ແຜນທີ່ອ້າງອີງ ສຳລັບສະແດງຊື່ຄັງ / ຕູ້
+  const cabinetById = useMemo(() => {
+    const map = new Map<string, Cabinet>();
+    cabinets.forEach((c) => map.set(c.id, c));
+    return map;
+  }, [cabinets]);
+
+  const warehouseById = useMemo(() => {
+    const map = new Map<string, Warehouse>();
+    warehouses.forEach((w) => map.set(w.id, w));
+    return map;
+  }, [warehouses]);
+
+  // ── ສະຖິຕິຕໍ່ຊັ້ນວາງ (ແຟ້ມ / ເອກະສານ) — ໃຊ້ຮ່ວມທັງມຸມມອງບັດ ແລະ ລາຍການ
+  const shelfStats = useMemo(() => {
+    const stats = new Map<string, ShelfStats>();
+    shelves.forEach((s) => stats.set(s.id, { folders: 0, docs: 0 }));
+
+    // ແຟ້ມ → ຊັ້ນວາງ ເພື່ອນັບເອກະສານທີ່ອ້າງອີງເຖິງແຟ້ມ
+    const folderShelf = new Map<string, string>();
+    folders.forEach((f) => {
+      if (!f.shelfId) return;
+      const entry = stats.get(f.shelfId);
+      if (entry) entry.folders += 1;
+      folderShelf.set(f.id, f.shelfId);
+    });
+
+    documents.forEach((d) => {
+      if (d.deleted) return;
+      const targets = new Set<string>();
+      if (d.shelfId) targets.add(d.shelfId);
+      const viaFolder = d.folderId ? folderShelf.get(d.folderId) : undefined;
+      if (viaFolder) targets.add(viaFolder);
+      targets.forEach((id) => {
+        const entry = stats.get(id);
+        if (entry) entry.docs += 1;
+      });
+    });
+
+    return stats;
+  }, [shelves, folders, documents]);
+
+  // ── ຄໍລໍາຂອງມຸມມອງລາຍການ (list view)
+  const columns = useMemo<ArchiveColumn<Shelf>[]>(
+    () => [
+      {
+        key: 'name',
+        header: 'ຊື່ຊັ້ນວາງ',
+        sortValue: (s) => s.name ?? '',
+        render: (s) => (
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-base">
+              🪜
+            </span>
+            <div className="min-w-0">
+              <div className="truncate font-semibold text-gray-900">{s.name}</div>
+              {s.description && <div className="truncate text-xs text-gray-400">{s.description}</div>}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'warehouse',
+        header: 'ຄັງເອກະສານ',
+        className: 'hidden md:table-cell',
+        sortValue: (s) => {
+          const cab = cabinetById.get(s.cabinetId);
+          return cab?.warehouseId ? warehouseById.get(cab.warehouseId)?.name ?? '' : '';
+        },
+        render: (s) => {
+          const cab = cabinetById.get(s.cabinetId);
+          const wh = cab?.warehouseId ? warehouseById.get(cab.warehouseId) : undefined;
+          return (
+            <span className="inline-flex items-center gap-1 rounded-md border border-purple-100 bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700">
+              🏛️ {wh?.name || 'ຄັງທົ່ວໄປ'}
+            </span>
+          );
+        },
+      },
+      {
+        key: 'cabinet',
+        header: 'ຕູ້ເອກະສານ',
+        className: 'hidden lg:table-cell',
+        sortValue: (s) => cabinetById.get(s.cabinetId)?.name ?? '',
+        render: (s) => (
+          <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+            🗄️ {cabinetById.get(s.cabinetId)?.name || 'ບໍ່ມີຕູ້'}
+          </span>
+        ),
+      },
+      {
+        key: 'folders',
+        header: 'ແຟ້ມ',
+        align: 'center',
+        sortValue: (s) => (shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).folders,
+        render: (s) => (
+          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+            {(shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).folders}
+          </span>
+        ),
+      },
+      {
+        key: 'docs',
+        header: 'ເອກະສານ',
+        align: 'center',
+        sortValue: (s) => (shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).docs,
+        render: (s) => (
+          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+            {(shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).docs} ເອກະສານ
+          </span>
+        ),
+      },
+      {
+        key: 'createdAt',
+        header: 'ສ້າງເມື່ອ',
+        className: 'hidden xl:table-cell',
+        sortValue: (s) => s.createdAt ?? '',
+        render: (s) => <span className="text-xs text-gray-400">{formatDate(s.createdAt)}</span>,
+      },
+    ],
+    [cabinetById, warehouseById, shelfStats],
+  );
+
+  const { sortKey, sortDir, toggleSort, sortRows } = useArchiveSort(columns);
+
+  // ຈັດລຳດັບກ່ອນ ແລ້ວຈຶ່ງຕັດໜ້າ
+  const sortedShelves = useMemo(() => sortRows(filteredShelves), [filteredShelves, sortRows]);
+
   const totalPages = Math.ceil(filteredShelves.length / PAGE_SIZE) || 1;
   const paginatedShelves = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredShelves.slice(start, start + PAGE_SIZE);
-  }, [filteredShelves, currentPage]);
+    return sortedShelves.slice(start, start + PAGE_SIZE);
+  }, [sortedShelves, currentPage]);
 
   const viewTitle = cabinet ? `ຊັ້ນວາງໃນຕູ້ ${cabinet.name}` : 'ຊັ້ນວາງເອກະສານທັງໝົດ';
   const viewSubtitle = cabinet
@@ -304,6 +443,7 @@ export default function ShelfView({
           </div>
 
           <div className="flex items-center gap-2">
+            {onViewModeChange && <ViewToggle mode={viewMode} onChange={onViewModeChange} />}
             <span className="text-xs text-gray-500">
               ພົບ <strong className="font-semibold text-gray-800">{filteredShelves.length}</strong> ຊັ້ນວາງ
             </span>
@@ -336,17 +476,26 @@ export default function ShelfView({
         />
       ) : (
         <div className="space-y-4">
+          {viewMode === 'list' ? (
+            <ArchiveListView
+              rows={paginatedShelves}
+              columns={columns}
+              rowKey={(s) => s.id}
+              onOpen={(s) => onOpen(s.id)}
+              canManage={canManage}
+              onDelete={(s) => onDelete(s)}
+              deleteTitle="ລຶບຊັ້ນວາງ"
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              indexOffset={(currentPage - 1) * PAGE_SIZE}
+            />
+          ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {paginatedShelves.map((shelf) => {
-              const cab = cabinets.find((c) => c.id === shelf.cabinetId);
-              const wh = cab?.warehouseId ? warehouses.find((w) => w.id === cab.warehouseId) : undefined;
-              const shelfFolderList = folders.filter((f) => f.shelfId === shelf.id);
-              const shelfFolderIds = new Set(shelfFolderList.map((f) => f.id));
-              const docCount = documents.filter(
-                (d) =>
-                  !d.deleted &&
-                  (d.shelfId === shelf.id || (d.folderId && shelfFolderIds.has(d.folderId)))
-              ).length;
+              const cab = cabinetById.get(shelf.cabinetId);
+              const wh = cab?.warehouseId ? warehouseById.get(cab.warehouseId) : undefined;
+              const stat = shelfStats.get(shelf.id) ?? EMPTY_SHELF_STATS;
 
               return (
                 <ShelfCard
@@ -355,14 +504,15 @@ export default function ShelfView({
                   warehouseName={wh?.name}
                   cabinetName={cab?.name}
                   canManage={canManage}
-                  folderCount={shelfFolderList.length}
-                  docCount={docCount}
+                  folderCount={stat.folders}
+                  docCount={stat.docs}
                   onOpen={() => onOpen(shelf.id)}
                   onDelete={() => onDelete(shelf)}
                 />
               );
             })}
           </div>
+          )}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
