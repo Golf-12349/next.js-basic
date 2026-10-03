@@ -158,7 +158,7 @@ export default function ShelfView({
   folders = [],
   documents = [],
   canManage = true,
-  viewMode = 'grid',
+  viewMode = 'list',
   onViewModeChange,
   onCreate,
   onOpen,

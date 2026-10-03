@@ -178,7 +178,7 @@ export default function CabinetView({
   folders = [],
   documents = [],
   canManage = true,
-  viewMode = 'grid',
+  viewMode = 'list',
   onViewModeChange,
   onCreate,
   onOpen,

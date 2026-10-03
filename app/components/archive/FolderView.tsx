@@ -160,7 +160,7 @@ export default function FolderView({
   folders = [],
   documents = [],
   canManage = true,
-  viewMode = 'grid',
+  viewMode = 'list',
   onViewModeChange,
   onCreate,
   onOpen,

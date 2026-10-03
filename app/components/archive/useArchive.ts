@@ -46,7 +46,8 @@ export function useArchive(
   const queryShelfId = searchParams.get('shelfId') || undefined;
   const queryFolderId = searchParams.get('folderId') || undefined;
   // ມຸມມອງ ບັດ/ລາຍການ ເກັບໃນ URL ເພື່ອໃຫ້ຄ່າຄົງຢູ່ເມື່ອເຂົ້າ-ອອກລະດັບ ແລະ ແຊຣ໌ລິ້ງຫາກັນໄດ້
-  const viewMode: ViewMode = searchParams.get('view') === 'list' ? 'list' : 'grid';
+  // ຄ່າເລີ່ມຕົ້ນແມ່ນ ລາຍການ (list) — ຈະເປັນ ບັດ (grid) ກໍ່ຕໍ່ເມື່ອມີ ?view=grid ໃນ URL ເທົ່ານັ້ນ
+  const viewMode: ViewMode = searchParams.get('view') === 'grid' ? 'grid' : 'list';
 
   const view: ViewState = useMemo(() => {
     if (queryLevel === 'documents') {
@@ -98,9 +99,9 @@ export function useArchive(
       if ('folderId' in nextView && nextView.folderId) {
         params.set('folderId', nextView.folderId);
       }
-      // ຮັກສາມຸມມອງ (grid/list) ໄວ້ຄືເກົ່າ ເມື່ອຍ້າຍໄປລະດັບອື່ນ
-      if (viewMode === 'list') {
-        params.set('view', 'list');
+      // ຮັກສາມຸມມອງ (grid/list) ໄວ້ຄືເກົ່າ ເມື່ອຍ້າຍໄປລະດັບອື່ນ — list ເປັນຄ່າເລີ່ມຕົ້ນ ຈຶ່ງເກັບສະເພາະ grid
+      if (viewMode === 'grid') {
+        params.set('view', 'grid');
       }
       const query = params.toString();
       const newUrl = query ? `/documents/archive?${query}` : '/documents/archive';
@@ -120,8 +121,8 @@ export function useArchive(
   const setViewMode = useCallback(
     (mode: ViewMode) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (mode === 'list') {
-        params.set('view', 'list');
+      if (mode === 'grid') {
+        params.set('view', 'grid');
       } else {
         params.delete('view');
       }

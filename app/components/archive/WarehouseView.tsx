@@ -118,7 +118,7 @@ export default function WarehouseView({
   folders = [],
   documents = [],
   canManage,
-  viewMode = 'grid',
+  viewMode = 'list',
   onViewModeChange,
   onCreate,
   onOpen,
