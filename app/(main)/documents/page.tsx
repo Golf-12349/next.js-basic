@@ -401,38 +401,20 @@ export default function DocumentsPage() {
                 {paginatedDocs.map((doc, idx) => (
                   <tr key={doc.id} className="border-t border-gray-100 align-top">
                     <td className="px-3 py-2.5">
-                      <div className="font-semibold text-gray-900">{doc.title}</div>
-                      {(doc.department || doc.division) && (
-                        <div
-                          className="mt-0.5 max-w-xs truncate text-xs text-gray-500"
-                          title={[doc.division, doc.department].filter(Boolean).join(' • ')}
-                        >
-                          🏢 {doc.department || doc.division}
-                        </div>
-                      )}
-                      {doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName ? (
-                        <span className="mt-1 inline-flex max-w-full items-center gap-1 truncate rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-medium text-indigo-700">
-                          {[
-                            doc.warehouseName && `🏛️ ${doc.warehouseName}`,
-                            doc.cabinetName && `🗄️ ${doc.cabinetName}`,
-                            doc.shelfName && `🪜 ${doc.shelfName}`,
-                            doc.folderName && `📁 ${doc.folderName}`,
-                          ].filter(Boolean).join(' > ')}
-                        </span>
-                      ) : (
-                        <div className="mt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">{doc.title}</span>
+                        {!(doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName) && (
                           <button
                             type="button"
                             onClick={() => setStorageDoc(doc)}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-300 px-2.5 py-0.5 text-[11px] font-medium text-amber-800 hover:bg-amber-100 hover:border-amber-400 transition shadow-xs"
                             title="ກົດເພື່ອເລືອກບ່ອນຈັດເກັບໃນຄັງ"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 transition hover:bg-amber-100"
                           >
                             <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            <span>⚠️ ຍັງບໍ່ມີບ່ອນເກັບ</span>
-                            <span className="text-[10px] text-amber-900 underline font-semibold">+ ລະບຸບ່ອນເກັບ</span>
+                            <span>ບໍ່ມີບ່ອນເກັບ</span>
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                       {doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending' && (
                         <div className="mt-1">
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
@@ -636,19 +618,57 @@ export default function DocumentsPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">ບ່ອນຈັດເກັບ</div>
-                  <div className="font-semibold text-xs mt-0.5">
-                    {previewDoc.warehouseName || previewDoc.cabinetName || previewDoc.shelfName || previewDoc.folderName ? (
-                      <span className="text-indigo-700">
-                        {[previewDoc.warehouseName, previewDoc.cabinetName, previewDoc.shelfName, previewDoc.folderName].filter(Boolean).join(' > ')}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-200 px-2 py-0.5 font-medium text-amber-800">
-                        ⚠️ ຍັງບໍ່ມີບ່ອນເກັບ
-                      </span>
-                    )}
-                  </div>
+                  <div className="text-sm text-gray-500">ຝ່າຍ</div>
+                  <div className="font-semibold">{previewDoc.division || '—'}</div>
                 </div>
+                <div>
+                  <div className="text-sm text-gray-500">ພະແນກ</div>
+                  <div className="font-semibold">{previewDoc.department || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ຜູ້ອັບໂຫຼດ</div>
+                  <div className="font-semibold">{previewDoc.uploadedBy || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-gray-500">ວັນທີອັບໂຫຼດ</div>
+                  <div className="font-semibold">{previewDoc.uploadDate || '—'}</div>
+                </div>
+              </div>
+              <div className="shrink-0 rounded-xl bg-gray-50 p-3">
+                <div className="mb-1.5 text-xs font-medium text-gray-400">ບ່ອນຈັດເກັບໃນຄັງ</div>
+                {previewDoc.warehouseName || previewDoc.cabinetName || previewDoc.shelfName || previewDoc.folderName ? (
+                  <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-gray-800">
+                    {[
+                      previewDoc.warehouseName && { icon: '🏛️', label: previewDoc.warehouseName },
+                      previewDoc.cabinetName && { icon: '🗄️', label: previewDoc.cabinetName },
+                      previewDoc.shelfName && { icon: '🪜', label: previewDoc.shelfName },
+                      previewDoc.folderName && { icon: '📁', label: previewDoc.folderName },
+                    ]
+                      .filter(Boolean)
+                      .map((p, i) => (
+                        <span key={i} className="inline-flex items-center gap-1.5">
+                          {i > 0 && <span className="text-gray-300">›</span>}
+                          <span className="inline-flex items-center gap-1">
+                            {(p as { icon: string; label: string }).icon}{' '}
+                            {(p as { icon: string; label: string }).label}
+                          </span>
+                        </span>
+                      ))}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewDoc(null)
+                      setStorageDoc(previewDoc)
+                    }}
+                    title="ກົດເພື່ອເລືອກບ່ອນຈັດເກັບໃນຄັງ"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+                  >
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span>ບໍ່ມີບ່ອນເກັບ — ກົດເພື່ອລະບຸ</span>
+                  </button>
+                )}
               </div>
               {/* PDF/image viewer fills the remaining space and scrolls independently inside the modal body */}
               <DocumentPreview doc={previewDoc} heightClassName="min-h-0 flex-1" />
