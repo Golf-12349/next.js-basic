@@ -1,10 +1,12 @@
-"use client"
+﻿"use client"
 import { useState, useMemo } from 'react'
 import { Plus, Trash2, Search, RotateCcw } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import { ArchiveDetailModal, toCabinetDetail } from './ArchiveDetailModal'
+import type { ArchiveDetailTarget } from './ArchiveDetailModal'
 import type { ArchiveColumn } from './ArchiveListView'
 import type { ViewMode } from './useArchive'
 
@@ -189,6 +191,7 @@ export default function CabinetView({
   const [filterDepartment, setFilterDepartment] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [detail, setDetail] = useState<ArchiveDetailTarget | null>(null);
   const PAGE_SIZE = 30;
 
   // Unique divisions from edlStructure + cabinets
@@ -333,56 +336,26 @@ export default function CabinetView({
       },
       {
         key: 'division',
-        header: 'ຝ່າຍ / ພະແນກ',
-        className: 'hidden lg:table-cell',
-        sortValue: (c) => `${c.division ?? ''} ${c.department ?? ''}`,
+        header: 'ຝ່າຢ',
+        sortValue: (c) => c.division ?? '',
         render: (c) => (
-          <div className="text-xs">
-            <div className="font-medium text-gray-800">{c.division || '—'}</div>
-            {c.department && <div className="text-gray-400">{c.department}</div>}
-          </div>
-        ),
-      },
-      {
-        key: 'shelves',
-        header: 'ຊັ້ນວາງ',
-        align: 'center',
-        sortValue: (c) => (cabinetStats.get(c.id) ?? EMPTY_CABINET_STATS).shelves,
-        render: (c) => (
-          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-            {(cabinetStats.get(c.id) ?? EMPTY_CABINET_STATS).shelves}
+          <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-600">
+            {c.division || '—'}
           </span>
         ),
       },
       {
-        key: 'folders',
-        header: 'ແຟ້ມ',
-        align: 'center',
-        className: 'hidden lg:table-cell',
-        sortValue: (c) => (cabinetStats.get(c.id) ?? EMPTY_CABINET_STATS).folders,
-        render: (c) => (
-          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-            {(cabinetStats.get(c.id) ?? EMPTY_CABINET_STATS).folders}
-          </span>
-        ),
-      },
-      {
-        key: 'docs',
-        header: 'ເອກະສານ',
-        align: 'center',
+        key: 'inside',
+        header: 'ຂ້າງໃນ',
         sortValue: (c) => (cabinetStats.get(c.id) ?? EMPTY_CABINET_STATS).docs,
-        render: (c) => (
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-            {(cabinetStats.get(c.id) ?? EMPTY_CABINET_STATS).docs} ເອກະສານ
-          </span>
-        ),
-      },
-      {
-        key: 'createdAt',
-        header: 'ສ້າງເມື່ອ',
-        className: 'hidden xl:table-cell',
-        sortValue: (c) => c.createdAt ?? '',
-        render: (c) => <span className="text-xs text-gray-400">{formatDate(c.createdAt)}</span>,
+        render: (c) => {
+          const stat = cabinetStats.get(c.id) ?? EMPTY_CABINET_STATS;
+          return (
+            <span className="whitespace-nowrap text-xs text-gray-500">
+              {stat.shelves} ຊັ້ນ · {stat.folders} ແຟ້ມ · {stat.docs} ເອກກະສານ
+            </span>
+          );
+        },
       },
     ],
     [warehouseById, cabinetStats],
@@ -542,6 +515,7 @@ export default function CabinetView({
               columns={columns}
               rowKey={(c) => c.id}
               onOpen={(c) => onOpen(c.id)}
+              onView={(cab) => setDetail(toCabinetDetail(cab, cabinetStats.get(cab.id) ?? EMPTY_CABINET_STATS, cab.warehouseId ? warehouseById.get(cab.warehouseId)?.name : undefined))}
               canManage={canManage}
               onDelete={(c) => onDelete(c)}
               deleteTitle="ລຶບຕູ້"
@@ -572,6 +546,15 @@ export default function CabinetView({
               })}
             </div>
           )}
+          <ArchiveDetailModal
+            target={detail}
+            onClose={() => setDetail(null)}
+            onOpen={() => {
+              const found = detail ? cabinets.find((x) => x.name === detail.name) : undefined;
+              setDetail(null);
+              if (found) onOpen(found.id);
+            }}
+          />
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

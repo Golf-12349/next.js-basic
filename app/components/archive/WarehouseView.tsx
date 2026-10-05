@@ -5,6 +5,8 @@ import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import { ArchiveDetailModal, toWarehouseDetail } from './ArchiveDetailModal'
+import type { ArchiveDetailTarget } from './ArchiveDetailModal'
 import type { ArchiveColumn } from './ArchiveListView'
 import type { ViewMode } from './useArchive'
 
@@ -127,6 +129,7 @@ export default function WarehouseView({
   const [filterDivision, setFilterDivision] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [detail, setDetail] = useState<ArchiveDetailTarget | null>(null);
   const PAGE_SIZE = 30;
 
   // Division options from edlStructure + warehouses
@@ -207,7 +210,6 @@ export default function WarehouseView({
             </span>
             <div className="min-w-0">
               <div className="truncate font-semibold text-gray-900">{w.name}</div>
-              {w.description && <div className="truncate text-xs text-gray-400">{w.description}</div>}
             </div>
           </div>
         ),
@@ -225,45 +227,17 @@ export default function WarehouseView({
         ),
       },
       {
-        key: 'cabinets',
-        header: 'ຕູ້',
-        align: 'center',
-        sortValue: (w) => (warehouseStats.get(w.id) ?? EMPTY_STATS).cabinets,
-        render: (w) => (
-          <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
-            {(warehouseStats.get(w.id) ?? EMPTY_STATS).cabinets}
-          </span>
-        ),
-      },
-      {
-        key: 'folders',
-        header: 'ແຟ້ມ',
-        align: 'center',
-        className: 'hidden lg:table-cell',
-        sortValue: (w) => (warehouseStats.get(w.id) ?? EMPTY_STATS).folders,
-        render: (w) => (
-          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-            {(warehouseStats.get(w.id) ?? EMPTY_STATS).folders}
-          </span>
-        ),
-      },
-      {
-        key: 'docs',
-        header: 'ເອກະສານ',
-        align: 'center',
+        key: 'inside',
+        header: 'ຂ້າງໃນ',
         sortValue: (w) => (warehouseStats.get(w.id) ?? EMPTY_STATS).docs,
-        render: (w) => (
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-            {(warehouseStats.get(w.id) ?? EMPTY_STATS).docs} ເອກະສານ
-          </span>
-        ),
-      },
-      {
-        key: 'createdAt',
-        header: 'ສ້າງເມື່ອ',
-        className: 'hidden xl:table-cell',
-        sortValue: (w) => w.createdAt ?? '',
-        render: (w) => <span className="text-xs text-gray-400">{formatDate(w.createdAt)}</span>,
+        render: (w) => {
+          const stat = warehouseStats.get(w.id) ?? EMPTY_STATS;
+          return (
+            <span className="whitespace-nowrap text-xs text-gray-500">
+              {stat.cabinets} ຕູ້ · {stat.folders} ແຟ້ມ · {stat.docs} ເອກກະສານ
+            </span>
+          );
+        },
       },
     ],
     [warehouseStats],
@@ -396,6 +370,7 @@ export default function WarehouseView({
               columns={columns}
               rowKey={(w) => w.id}
               onOpen={(w) => onOpen(w.id)}
+              onView={(wh) => setDetail(toWarehouseDetail(wh, warehouseStats.get(wh.id) ?? EMPTY_STATS))}
               canManage={canManage}
               onDelete={(w) => onDelete(w)}
               deleteTitle="ລຶບຄັງ"
@@ -423,6 +398,24 @@ export default function WarehouseView({
               })}
             </div>
           )}
+          <ArchiveDetailModal
+            target={detail}
+            onClose={() => setDetail(null)}
+            onOpen={() => {
+              const id = detail ? warehouses.find((x) => x.name === detail.name)?.id : undefined;
+              setDetail(null);
+              if (id) onOpen(id);
+            }}
+          />
+          <ArchiveDetailModal
+            target={detail}
+            onClose={() => setDetail(null)}
+            onOpen={() => {
+              const found = detail ? warehouses.find((x) => x.name === detail.name) : undefined;
+              setDetail(null);
+              if (found) onOpen(found.id);
+            }}
+          />
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

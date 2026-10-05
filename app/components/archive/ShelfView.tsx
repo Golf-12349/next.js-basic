@@ -1,9 +1,11 @@
-"use client"
+﻿"use client"
 import { useState, useMemo } from 'react'
 import { FileText, FolderArchive, Plus, Trash2, Search, RotateCcw } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
 import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import { ArchiveDetailModal, toShelfDetail } from './ArchiveDetailModal'
+import type { ArchiveDetailTarget } from './ArchiveDetailModal'
 import type { ArchiveColumn } from './ArchiveListView'
 import type { ViewMode } from './useArchive'
 
@@ -168,6 +170,7 @@ export default function ShelfView({
   const [filterCabinetId, setFilterCabinetId] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [detail, setDetail] = useState<ArchiveDetailTarget | null>(null);
   const PAGE_SIZE = 30;
 
   // Available cabinets for dropdown (cascading from warehouse)
@@ -254,6 +257,16 @@ export default function ShelfView({
     return stats;
   }, [shelves, folders, documents]);
 
+    const buildShelfPath = (sh: Shelf) => {
+    const cab = cabinetById.get(sh.cabinetId);
+    const wh = cab?.warehouseId ? warehouseById.get(cab.warehouseId) : undefined;
+    return [
+      { label: wh?.name || '—', icon: '🏛️' },
+      { label: cab?.name || '—', icon: '🗄️' },
+      { label: sh.name, icon: '🪜' },
+    ];
+  };
+
   // ── ຄໍລໍາຂອງມຸມມອງລາຍການ (list view)
   const columns = useMemo<ArchiveColumn<Shelf>[]>(
     () => [
@@ -274,65 +287,31 @@ export default function ShelfView({
         ),
       },
       {
-        key: 'warehouse',
-        header: 'ຄັງເອກະສານ',
+        key: 'cabinet',
+        header: 'ຕູ້ເອກກະສານ',
         className: 'hidden md:table-cell',
-        sortValue: (s) => {
-          const cab = cabinetById.get(s.cabinetId);
-          return cab?.warehouseId ? warehouseById.get(cab.warehouseId)?.name ?? '' : '';
-        },
+        sortValue: (s) => cabinetById.get(s.cabinetId)?.name ?? '',
+        render: (s) => (
+          <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+            🗄️ {cabinetById.get(s.cabinetId)?.name || 'ໄມ່ມີຕູ້'}
+          </span>
+        ),
+      },
+      {
+        key: 'inside',
+        header: 'ຂ້າງໃນ',
+        sortValue: (s) => (shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).docs,
         render: (s) => {
-          const cab = cabinetById.get(s.cabinetId);
-          const wh = cab?.warehouseId ? warehouseById.get(cab.warehouseId) : undefined;
+          const stat = shelfStats.get(s.id) ?? EMPTY_SHELF_STATS;
           return (
-            <span className="inline-flex items-center gap-1 rounded-md border border-purple-100 bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700">
-              🏛️ {wh?.name || 'ຄັງທົ່ວໄປ'}
+            <span className="whitespace-nowrap text-xs text-gray-500">
+              {stat.folders} ແຟ້ມ · {stat.docs} ເອກກະສານ
             </span>
           );
         },
       },
-      {
-        key: 'cabinet',
-        header: 'ຕູ້ເອກະສານ',
-        className: 'hidden lg:table-cell',
-        sortValue: (s) => cabinetById.get(s.cabinetId)?.name ?? '',
-        render: (s) => (
-          <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-            🗄️ {cabinetById.get(s.cabinetId)?.name || 'ບໍ່ມີຕູ້'}
-          </span>
-        ),
-      },
-      {
-        key: 'folders',
-        header: 'ແຟ້ມ',
-        align: 'center',
-        sortValue: (s) => (shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).folders,
-        render: (s) => (
-          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-            {(shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).folders}
-          </span>
-        ),
-      },
-      {
-        key: 'docs',
-        header: 'ເອກະສານ',
-        align: 'center',
-        sortValue: (s) => (shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).docs,
-        render: (s) => (
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-            {(shelfStats.get(s.id) ?? EMPTY_SHELF_STATS).docs} ເອກະສານ
-          </span>
-        ),
-      },
-      {
-        key: 'createdAt',
-        header: 'ສ້າງເມື່ອ',
-        className: 'hidden xl:table-cell',
-        sortValue: (s) => s.createdAt ?? '',
-        render: (s) => <span className="text-xs text-gray-400">{formatDate(s.createdAt)}</span>,
-      },
     ],
-    [cabinetById, warehouseById, shelfStats],
+    [cabinetById, shelfStats],
   );
 
   const { sortKey, sortDir, toggleSort, sortRows } = useArchiveSort(columns);
@@ -482,6 +461,7 @@ export default function ShelfView({
               columns={columns}
               rowKey={(s) => s.id}
               onOpen={(s) => onOpen(s.id)}
+              onView={(sh) => setDetail(toShelfDetail(sh, shelfStats.get(sh.id) ?? EMPTY_SHELF_STATS, buildShelfPath(sh)))}
               canManage={canManage}
               onDelete={(s) => onDelete(s)}
               deleteTitle="ລຶບຊັ້ນວາງ"
@@ -513,6 +493,15 @@ export default function ShelfView({
             })}
           </div>
           )}
+          <ArchiveDetailModal
+            target={detail}
+            onClose={() => setDetail(null)}
+            onOpen={() => {
+              const found = detail ? shelves.find((x) => x.name === detail.name) : undefined;
+              setDetail(null);
+              if (found) onOpen(found.id);
+            }}
+          />
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

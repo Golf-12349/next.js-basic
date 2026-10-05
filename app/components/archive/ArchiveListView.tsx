@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowUpDown, ChevronRight, LayoutGrid, List, Trash2 } from 'lucide-react'
+import { ArrowUpDown, ChevronRight, Eye, LayoutGrid, List, Trash2 } from 'lucide-react'
 import type { ViewMode } from './useArchive'
 
 // ── Column definition ────────────────────────────────────────
@@ -98,6 +98,7 @@ interface ArchiveListViewProps<T> {
   columns: ArchiveColumn<T>[]
   rowKey: (item: T) => string
   onOpen: (item: T) => void
+  onView?: (item: T) => void
   canManage?: boolean
   onDelete?: (item: T) => void
   deleteTitle?: string
@@ -113,6 +114,7 @@ export default function ArchiveListView<T>({
   columns,
   rowKey,
   onOpen,
+  onView,
   canManage = false,
   onDelete,
   deleteTitle = 'ລຶບ',
@@ -181,6 +183,19 @@ export default function ArchiveListView<T>({
                 ))}
                 <td className="px-3 py-2.5 text-center">
                   <div className="flex items-center justify-center gap-1">
+                    {onView && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onView(row);
+                        }}
+                        title="ເບິ່ງລາຍລະອຽດ"
+                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-indigo-50 hover:text-indigo-600"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={(e) => {

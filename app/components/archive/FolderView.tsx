@@ -1,9 +1,11 @@
-"use client"
+﻿"use client"
 import { useState, useMemo } from 'react'
 import { FileText, Plus, Trash2, Search, RotateCcw } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
 import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import { ArchiveDetailModal, toFolderDetail } from './ArchiveDetailModal'
+import type { ArchiveDetailTarget } from './ArchiveDetailModal'
 import type { ArchiveColumn } from './ArchiveListView'
 import type { ViewMode } from './useArchive'
 
@@ -171,6 +173,7 @@ export default function FolderView({
   const [filterShelfId, setFilterShelfId] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [detail, setDetail] = useState<ArchiveDetailTarget | null>(null);
   const PAGE_SIZE = 30;
 
   // Available cabinets for dropdown (cascading from warehouse)
@@ -285,6 +288,18 @@ export default function FolderView({
     return stats;
   }, [folders, documents]);
 
+    const buildFolderPath = (fol: Folder) => {
+    const cab = cabinetById.get(fol.cabinetId);
+    const wh = cab?.warehouseId ? warehouseById.get(cab.warehouseId) : undefined;
+    const sh = fol.shelfId ? shelfById.get(fol.shelfId) : undefined;
+    const out = [];
+    if (wh || cab) out.push({ label: wh?.name || '—', icon: '🏛️' });
+    if (cab) out.push({ label: cab.name, icon: '🗄️' });
+    if (sh) out.push({ label: sh.name, icon: '🪜' });
+    out.push({ label: fol.name, icon: '📁' });
+    return out;
+  };
+
   // ── ຄໍລໍາຂອງມຸມມອງລາຍການ (list view)
   const columns = useMemo<ArchiveColumn<Folder>[]>(
     () => [
@@ -305,65 +320,31 @@ export default function FolderView({
         ),
       },
       {
-        key: 'warehouse',
-        header: 'ຄັງເອກະສານ',
+        key: 'location',
+        header: 'ທີ່ຕັ້ງ',
         className: 'hidden md:table-cell',
-        sortValue: (f) => {
-          const cab = cabinetById.get(f.cabinetId);
-          return cab?.warehouseId ? warehouseById.get(cab.warehouseId)?.name ?? '' : '';
-        },
+        sortValue: (f) => cabinetById.get(f.cabinetId)?.name ?? '',
         render: (f) => {
           const cab = cabinetById.get(f.cabinetId);
           const wh = cab?.warehouseId ? warehouseById.get(cab.warehouseId) : undefined;
-          return (
-            <span className="inline-flex items-center gap-1 rounded-md border border-purple-100 bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700">
-              🏛️ {wh?.name || 'ຄັງທົ່ວໄປ'}
-            </span>
-          );
-        },
-      },
-      {
-        key: 'cabinet',
-        header: 'ຕູ້ເອກະສານ',
-        className: 'hidden lg:table-cell',
-        sortValue: (f) => cabinetById.get(f.cabinetId)?.name ?? '',
-        render: (f) => (
-          <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-            🗄️ {cabinetById.get(f.cabinetId)?.name || 'ບໍ່ມີຕູ້'}
-          </span>
-        ),
-      },
-      {
-        key: 'shelf',
-        header: 'ຊັ້ນວາງ',
-        className: 'hidden lg:table-cell',
-        sortValue: (f) => (f.shelfId ? shelfById.get(f.shelfId)?.name ?? '' : ''),
-        render: (f) => {
           const sh = f.shelfId ? shelfById.get(f.shelfId) : undefined;
           return (
-            <span className="inline-flex items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-              🪜 {sh?.name || 'ບໍ່ມີຊັ້ນວາງ'}
+            <span className="block max-w-[280px] truncate text-xs text-gray-500">
+              {[wh?.name, cab?.name, sh?.name].filter(Boolean).join(' › ') || '—'}
             </span>
           );
         },
       },
       {
         key: 'docs',
-        header: 'ເອກະສານ',
+        header: 'ເອກກະສານ',
         align: 'center',
         sortValue: (f) => (folderStats.get(f.id) ?? EMPTY_FOLDER_STATS).docs,
         render: (f) => (
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-            {(folderStats.get(f.id) ?? EMPTY_FOLDER_STATS).docs} ເອກະສານ
+          <span className="text-xs text-gray-500">
+            {(folderStats.get(f.id) ?? EMPTY_FOLDER_STATS).docs} ເອກກະສານ
           </span>
         ),
-      },
-      {
-        key: 'createdAt',
-        header: 'ສ້າງເມື່ອ',
-        className: 'hidden xl:table-cell',
-        sortValue: (f) => f.createdAt ?? '',
-        render: (f) => <span className="text-xs text-gray-400">{formatDate(f.createdAt)}</span>,
       },
     ],
     [cabinetById, warehouseById, shelfById, folderStats],
@@ -541,6 +522,7 @@ export default function FolderView({
               columns={columns}
               rowKey={(f) => f.id}
               onOpen={(f) => onOpen(f.id)}
+              onView={(fol) => setDetail(toFolderDetail(fol, folderStats.get(fol.id) ?? EMPTY_FOLDER_STATS, buildFolderPath(fol)))}
               canManage={canManage}
               onDelete={(f) => onDelete(f)}
               deleteTitle="ລຶບແຟ້ມ"
@@ -573,6 +555,15 @@ export default function FolderView({
             })}
           </div>
           )}
+          <ArchiveDetailModal
+            target={detail}
+            onClose={() => setDetail(null)}
+            onOpen={() => {
+              const found = detail ? folders.find((x) => x.name === detail.name) : undefined;
+              setDetail(null);
+              if (found) onOpen(found.id);
+            }}
+          />
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
