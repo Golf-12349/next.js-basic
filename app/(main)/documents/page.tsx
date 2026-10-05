@@ -99,6 +99,7 @@ export default function DocumentsPage() {
   const [filterDivision, setFilterDivision] = useState('ທັງໝົດ')
   const [filterDepartment, setFilterDepartment] = useState('ທັງໝົດ')
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
+  const [detailDoc, setDetailDoc] = useState<Document | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
   const [manageCategoryOpen, setManageCategoryOpen] = useState(false)
   const debouncedQuery = useDebounce(query, 250)
@@ -399,7 +400,7 @@ export default function DocumentsPage() {
               </thead>
               <tbody>
                 {paginatedDocs.map((doc, idx) => (
-                  <tr key={doc.id} className="border-t border-gray-100 align-top">
+                  <tr key={doc.id} className="border-t border-gray-200 align-top hover:bg-gray-50/60 transition-colors">
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-gray-900">{doc.title}</span>
@@ -497,7 +498,7 @@ export default function DocumentsPage() {
                                 type="button"
                                 onClick={() => {
                                   setActiveDropdownId(null)
-                                  setPreviewDoc(doc)
+                                  setDetailDoc(doc)
                                 }}
                                 className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
                               >
@@ -586,63 +587,148 @@ export default function DocumentsPage() {
           />
         </div>
 
+        {/* Preview Modal: ສະແດງສະເພາະໄຟລ໌ ບໍ່ມີລາຍລະອຽດ */}
         <Modal
           open={!!previewDoc}
           onClose={() => setPreviewDoc(null)}
-          title={previewDoc?.title}
+          title={previewDoc ? `ເບິ່ງໄຟລ໌: ${previewDoc.title}` : undefined}
           scrollBody={false}
           footer={
             previewDoc && (
-              /* Right group: close / download — ml-auto keeps it pinned right */
               <div className="ml-auto flex items-center gap-2">
-                <button onClick={() => { setPreviewDoc(null); pushToast({ title: 'ປິດການເບິ່ງ' }) }} className="px-3 py-2 rounded bg-gray-100">ປິດ</button>
-                <button onClick={() => handleDownload(previewDoc)} className="px-3 py-2 rounded bg-indigo-600 text-white">ດາວໂຫຼດ</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewDoc(null)
+                    pushToast({ title: 'ປິດການເບິ່ງ' })
+                  }}
+                  className="px-3 py-2 rounded-lg bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 transition"
+                >
+                  ປິດ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownload(previewDoc)}
+                  className="px-3 py-2 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 transition"
+                >
+                  ດາວໂຫຼດໄຟລ໌
+                </button>
               </div>
             )
           }
         >
           {previewDoc && (
-            <div className="flex min-h-0 flex-1 flex-col gap-4">
-              <div className="grid shrink-0 grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="flex min-h-0 flex-1 flex-col">
+              <DocumentPreview doc={previewDoc} heightClassName="min-h-0 flex-1" />
+            </div>
+          )}
+        </Modal>
+
+        {/* Detail Modal: ສະແດງສະເພາະລາຍລະອຽດຂໍ້ມູນ ບໍ່ສະແດງໄຟລ໌ */}
+        <Modal
+          open={!!detailDoc}
+          onClose={() => setDetailDoc(null)}
+          title={detailDoc ? `ລາຍລະອຽດເອກະສານ: ${detailDoc.title}` : undefined}
+          footer={
+            detailDoc && (
+              <div className="flex w-full items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = detailDoc
+                    setDetailDoc(null)
+                    setPreviewDoc(target)
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-indigo-200 bg-indigo-50 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>ເປີດເບິ່ງໄຟລ໌</span>
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDetailDoc(null)}
+                    className="px-3 py-2 rounded-lg bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 transition"
+                  >
+                    ປິດ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(detailDoc)}
+                    className="px-3 py-2 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 transition"
+                  >
+                    ດາວໂຫຼດໄຟລ໌
+                  </button>
+                </div>
+              </div>
+            )
+          }
+        >
+          {detailDoc && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-4">
                 <div>
-                  <div className="text-sm text-gray-500">ເລກທີ</div>
-                  <div className="font-semibold">{previewDoc.docNumber}</div>
+                  <div className="text-xs text-gray-500">ເລກທີເອກະສານ</div>
+                  <div className="mt-0.5 font-semibold text-gray-900">{detailDoc.docNumber || '—'}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">ໝວດໝູ່</div>
-                  <div className="font-semibold">
-                    {typeof previewDoc.category === 'object' && previewDoc.category !== null
+                  <div className="text-xs text-gray-500">ໝວດໝູ່</div>
+                  <div className="mt-0.5 font-semibold text-gray-900">
+                    {typeof detailDoc.category === 'object' && detailDoc.category !== null
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy category field may arrive as an object
-                      ? ((previewDoc.category as any).name || '—')
-                      : (previewDoc.category || '—')}
+                      ? ((detailDoc.category as any).name || '—')
+                      : (detailDoc.category || '—')}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">ຝ່າຍ</div>
-                  <div className="font-semibold">{previewDoc.division || '—'}</div>
+                  <div className="text-xs text-gray-500">ສະຖານະ</div>
+                  <div className="mt-0.5">
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[detailDoc.status]}`}>
+                      {statusLabels[detailDoc.status]}
+                    </span>
+                  </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">ພະແນກ</div>
-                  <div className="font-semibold">{previewDoc.department || '—'}</div>
+                  <div className="text-xs text-gray-500">ຝ່າຍ</div>
+                  <div className="mt-0.5 font-semibold text-gray-900">{detailDoc.division || '—'}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">ຜູ້ອັບໂຫຼດ</div>
-                  <div className="font-semibold">{previewDoc.uploadedBy || '—'}</div>
+                  <div className="text-xs text-gray-500">ພະແນກ</div>
+                  <div className="mt-0.5 font-semibold text-gray-900">{detailDoc.department || '—'}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">ວັນທີອັບໂຫຼດ</div>
-                  <div className="font-semibold">{previewDoc.uploadDate || '—'}</div>
+                  <div className="text-xs text-gray-500">ຜູ້ອັບໂຫຼດ</div>
+                  <div className="mt-0.5 font-semibold text-gray-900">{detailDoc.uploadedBy || '—'}</div>
                 </div>
+                <div>
+                  <div className="text-xs text-gray-500">ວັນທີອັບໂຫຼດ</div>
+                  <div className="mt-0.5 font-semibold text-gray-900">{detailDoc.uploadDate || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">ຮູບແບບໄຟລ໌</div>
+                  <div className="mt-0.5 font-semibold uppercase text-gray-900">{detailDoc.fileType || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">ຂະໜາດໄຟລ໌</div>
+                  <div className="mt-0.5 font-semibold text-gray-900">{detailDoc.fileSize || '—'}</div>
+                </div>
+                {detailDoc.expiresAt && (
+                  <div>
+                    <div className="text-xs text-gray-500">ວັນໝົດອາຍຸ</div>
+                    <div className="mt-0.5 font-semibold text-amber-700">{detailDoc.expiresAt}</div>
+                  </div>
+                )}
               </div>
-              <div className="shrink-0 rounded-xl bg-gray-50 p-3">
-                <div className="mb-1.5 text-xs font-medium text-gray-400">ບ່ອນຈັດເກັບໃນຄັງ</div>
-                {previewDoc.warehouseName || previewDoc.cabinetName || previewDoc.shelfName || previewDoc.folderName ? (
+
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">ບ່ອນຈັດເກັບໃນຄັງ</div>
+                {detailDoc.warehouseName || detailDoc.cabinetName || detailDoc.shelfName || detailDoc.folderName ? (
                   <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-gray-800">
                     {[
-                      previewDoc.warehouseName && { icon: '🏛️', label: previewDoc.warehouseName },
-                      previewDoc.cabinetName && { icon: '🗄️', label: previewDoc.cabinetName },
-                      previewDoc.shelfName && { icon: '🪜', label: previewDoc.shelfName },
-                      previewDoc.folderName && { icon: '📁', label: previewDoc.folderName },
+                      detailDoc.warehouseName && { icon: '🏛️', label: detailDoc.warehouseName },
+                      detailDoc.cabinetName && { icon: '🗄️', label: detailDoc.cabinetName },
+                      detailDoc.shelfName && { icon: '🪜', label: detailDoc.shelfName },
+                      detailDoc.folderName && { icon: '📁', label: detailDoc.folderName },
                     ]
                       .filter(Boolean)
                       .map((p, i) => (
@@ -659,8 +745,9 @@ export default function DocumentsPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setPreviewDoc(null)
-                      setStorageDoc(previewDoc)
+                      const target = detailDoc
+                      setDetailDoc(null)
+                      setStorageDoc(target)
                     }}
                     title="ກົດເພື່ອເລືອກບ່ອນຈັດເກັບໃນຄັງ"
                     className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
@@ -670,8 +757,6 @@ export default function DocumentsPage() {
                   </button>
                 )}
               </div>
-              {/* PDF/image viewer fills the remaining space and scrolls independently inside the modal body */}
-              <DocumentPreview doc={previewDoc} heightClassName="min-h-0 flex-1" />
             </div>
           )}
         </Modal>

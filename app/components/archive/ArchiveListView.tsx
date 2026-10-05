@@ -168,7 +168,7 @@ export default function ArchiveListView<T>({
               <tr
                 key={rowKey(row)}
                 onClick={() => onOpen(row)}
-                className="cursor-pointer border-t border-gray-100 align-top transition hover:bg-indigo-50/40"
+                className="cursor-pointer border-t border-gray-200 align-top transition hover:bg-indigo-50/40"
               >
                 <td className="px-3 py-2.5 text-center text-xs text-gray-400">
                   {String(indexOffset + index + 1).padStart(2, '0')}
