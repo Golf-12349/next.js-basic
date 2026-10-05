@@ -140,9 +140,9 @@ const menuSections: MenuSection[] = [
   {
     title: 'SYSTEM',
     items: [
-      { name: 'ປະເພດເອກະສານ', href: '/master-data/categories', icon: Tag, roles: ['SuperAdmin', 'DivisionAdmin'] },
-      { name: 'ຈັດການຝ່າຍ', href: '/master-data/divisions', icon: Building2, roles: ['SuperAdmin', 'DivisionAdmin'] },
-      { name: 'ຈັດການພະແນກ', href: '/master-data/departments', icon: Users, roles: ['SuperAdmin', 'DivisionAdmin'] },
+      { name: 'ປະເພດເອກະສານ', href: '/master-data/categories', icon: Tag, roles: ['SuperAdmin'] },
+      { name: 'ຈັດການຝ່າຍ', href: '/master-data/divisions', icon: Building2, roles: ['SuperAdmin'] },
+      { name: 'ຈັດການພະແນກ', href: '/master-data/departments', icon: Users, roles: ['SuperAdmin'] },
       { name: 'ຈັດການຜູ້ໃຊ້ງານ', href: '/users', icon: Users },
       { name: 'ເອກະສານໝົດອາຍຸ', href: '/documents/expired', icon: CalendarX },
       {

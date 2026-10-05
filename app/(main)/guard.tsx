@@ -44,6 +44,16 @@ export default function Guard({ children }: Props) {
           }
         }
 
+        // Check access to /master-data routes (categories, divisions, departments) - SuperAdmin only
+        if (pathname === '/master-data' || pathname.startsWith('/master-data/')) {
+          if (role !== 'SuperAdmin') {
+            pushToast({ title: 'ສະເພາະ SuperAdmin ເທົ່ານັ້ນທີ່ມີສິດເຂົ້າເຖິງໜ້ານີ້' })
+            setAuthorized(false)
+            router.replace('/dashboard')
+            return
+          }
+        }
+
         // Check access to /audit-logs route
         if (pathname === '/audit-logs' || pathname.startsWith('/audit-logs/')) {
           if (role !== 'SuperAdmin') {
