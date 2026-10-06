@@ -197,7 +197,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 ${className}`}>
       {/* CARD 1: Key Stats */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between h-full">
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-slate-800">Key Stats</span>
@@ -208,9 +208,9 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           </span>
         </div>
 
-        <div className="flex-1 flex flex-col justify-between divide-y divide-slate-100/80 py-2">
+        <div className="divide-y divide-slate-100 py-1">
           {keyStatsRows.map((row, i) => (
-            <div key={i} className="flex items-center justify-between py-1.5 sm:py-2">
+            <div key={i} className="flex items-center justify-between py-1.5">
               <span className="text-slate-500 text-xs truncate max-w-[170px]">{row.label}</span>
               <span className="font-semibold text-slate-700 text-xs font-mono">{row.val}</span>
             </div>
@@ -224,7 +224,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
       </div>
 
       {/* CARD 2: Allocation Overview */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between h-full">
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-slate-800">Allocation Overview</span>
@@ -249,18 +249,18 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           </div>
         </div>
 
-        <div className="py-3 sm:py-4 flex-1 flex items-center justify-center">
+        <div className="py-2.5 flex justify-center">
           <ElegantDonut
             data={formatAllocation.items}
             centerVal={formatAllocation.topVal}
             centerLabel={formatAllocation.topLabel}
             centerColor="#8b5cf6"
-            size={155}
-            strokeWidth={18}
+            size={135}
+            strokeWidth={16}
           />
         </div>
 
-        <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
+        <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
           {formatAllocation.items.map((item, idx) => (
             <div key={idx} className="flex items-center justify-between">
               <div className="flex items-center gap-2 truncate max-w-[140px]">
@@ -274,7 +274,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
       </div>
 
       {/* CARD 3: Department Class */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between h-full">
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-slate-800">Department Class</span>
@@ -299,18 +299,18 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           </div>
         </div>
 
-        <div className="py-3 sm:py-4 flex-1 flex items-center justify-center">
+        <div className="py-2.5 flex justify-center">
           <ElegantDonut
             data={deptAllocation.items}
             centerVal={deptAllocation.topVal}
             centerLabel={deptAllocation.topLabel}
             centerColor="#a855f7"
-            size={155}
-            strokeWidth={18}
+            size={135}
+            strokeWidth={16}
           />
         </div>
 
-        <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
+        <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
           {deptAllocation.items.map((item, idx) => (
             <div key={idx} className="flex items-center justify-between">
               <div className="flex items-center gap-2 truncate max-w-[140px]">
@@ -324,7 +324,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
       </div>
 
       {/* CARD 4: Archive Exposure */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between h-full">
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-slate-800">Archive Exposure</span>
@@ -349,18 +349,18 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           </div>
         </div>
 
-        <div className="py-3 sm:py-4 flex-1 flex items-center justify-center">
+        <div className="py-2.5 flex justify-center">
           <ElegantDonut
             data={warehouseAllocation.items}
             centerVal={warehouseAllocation.topVal}
             centerLabel={warehouseAllocation.topLabel}
             centerColor="#f43f5e"
-            size={155}
-            strokeWidth={18}
+            size={135}
+            strokeWidth={16}
           />
         </div>
 
-        <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
+        <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
           {warehouseAllocation.items.map((item, idx) => (
             <div key={idx} className="flex items-center justify-between">
               <div className="flex items-center gap-2 truncate max-w-[140px]">

@@ -8,16 +8,10 @@ import { AnalyticsOverviewCards } from '@/app/components/dashboard/AnalyticsOver
 export default function DashboardPage() {
   return (
     <DashboardLayout title="ໜ້າຫຼັກ">
-      <div className="w-full min-h-full flex flex-col gap-4 p-3 sm:p-4 lg:p-5">
-        <div className="shrink-0">
-          <GreetingHeader />
-        </div>
-        <div className="shrink-0">
-          <MetricCards />
-        </div>
-        <div className="flex-1 flex flex-col min-h-0">
-          <AnalyticsOverviewCards className="flex-1 h-full" />
-        </div>
+      <div className="w-full space-y-4 p-3 sm:p-4 lg:p-5">
+        <GreetingHeader />
+        <MetricCards />
+        <AnalyticsOverviewCards />
       </div>
     </DashboardLayout>
   );
