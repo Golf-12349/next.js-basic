@@ -5,9 +5,6 @@ import Link from 'next/link';
 import {
   AlertTriangle,
   Archive,
-  ArrowDownRight,
-  ArrowRightLeft,
-  ArrowUpRight,
   BarChart3,
   Building2,
   Calendar,
@@ -15,7 +12,6 @@ import {
   CheckCircle2,
   Clock,
   Download,
-  ExternalLink,
   Eye,
   FileSpreadsheet,
   FileText,
@@ -25,10 +21,7 @@ import {
   Printer,
   RefreshCw,
   Search,
-  ShieldAlert,
-  Sparkles,
   TrendingUp,
-  Users,
 } from 'lucide-react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
@@ -39,12 +32,13 @@ import { pushToast } from '@/app/components/ui/Toast';
 
 type TabKey = 'monthly' | 'division' | 'expiry' | 'archive' | 'details';
 
+// Classic corporate status badges (Stripe / IBM Carbon style: sharp 3-4px rounded, crisp border, high contrast)
 const statusBadgeClasses: Record<string, string> = {
-  approved: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  pending: 'bg-amber-50 text-amber-700 border border-amber-200',
-  draft: 'bg-slate-100 text-slate-700 border border-slate-200',
-  archived: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
-  expired: 'bg-rose-50 text-rose-700 border border-rose-200',
+  approved: 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-medium',
+  pending: 'bg-amber-50 text-amber-800 border border-amber-300 font-medium',
+  draft: 'bg-slate-100 text-slate-700 border border-slate-300 font-medium',
+  archived: 'bg-blue-50 text-blue-800 border border-blue-300 font-medium',
+  expired: 'bg-rose-50 text-rose-800 border border-rose-300 font-medium',
 };
 
 const statusLabels: Record<string, string> = {
@@ -56,9 +50,15 @@ const statusLabels: Record<string, string> = {
 };
 
 const directionLabels: Record<string, string> = {
-  inbound: 'ຂາເຂົ້າ (IN)',
-  outbound: 'ຂາອອກ (OUT)',
-  internal: 'ພາຍໃນ (INTERNAL)',
+  inbound: 'ຂາເຂົ້າ (Inbound)',
+  outbound: 'ຂາອອກ (Outbound)',
+  internal: 'ພາຍໃນ (Internal)',
+};
+
+const directionBadgeClasses: Record<string, string> = {
+  inbound: 'bg-blue-50 text-blue-800 border border-blue-200',
+  outbound: 'bg-slate-100 text-slate-800 border border-slate-300',
+  internal: 'bg-stone-50 text-stone-700 border border-stone-200',
 };
 
 function getDocDirection(direction?: string): 'inbound' | 'outbound' | 'internal' {
@@ -163,16 +163,28 @@ export default function ReportsPage() {
 
     const maxTotal = Math.max(1, ...months.map((m) => m.total));
 
-    return { months, maxTotal };
+    // Calculate totals across all months
+    const totals = months.reduce(
+      (acc, m) => ({
+        total: acc.total + m.total,
+        inDocs: acc.inDocs + m.inDocs,
+        outDocs: acc.outDocs + m.outDocs,
+        internalDocs: acc.internalDocs + m.internalDocs,
+        approved: acc.approved + m.approved,
+        pending: acc.pending + m.pending,
+      }),
+      { total: 0, inDocs: 0, outDocs: 0, internalDocs: 0, approved: 0, pending: 0 }
+    );
+
+    return { months, maxTotal, totals };
   }, [filteredDocs]);
 
   // ---------- 2. Division & Department Breakdown ----------
   const divisionBreakdown = useMemo(() => {
     const divList = divisions.length > 0 ? divisions : [
-      'ຫ້ອງການໄຟຟ້າລາວ',
-      'ຝ່າຍກວດກາ',
-      'ຝ່າຍບຸກຄະລາກອນ',
-      'ຝ່າຍກົດໝາຍ-ສັນຍາ',
+      'ຫ້ອງການສຳນັກງານໃຫຍ່',
+      'ຝ່າຍຈັດຕັ້ງ ແລະ ບໍລິຫານ',
+      'ຝ່າຍແຜນການ ແລະ ການລົງທຶນ',
       'ຝ່າຍການເງິນ',
       'ຝ່າຍເຕັກໂນໂລຊີ',
     ];
@@ -185,7 +197,6 @@ export default function ReportsPage() {
       const expired = docs.filter((d) => d.status === 'expired').length;
       const approvalRate = total > 0 ? Math.round((approved / total) * 100) : 100;
 
-      // Group departments under this division
       const deptsInDiv = getDepartments(divName);
 
       return {
@@ -205,7 +216,6 @@ export default function ReportsPage() {
   // ---------- 3. Expiry & Retention Risk Breakdown ----------
   const expiryRiskData = useMemo(() => {
     const now = new Date();
-    const today = toDateKey(now);
 
     const expiredList: any[] = [];
     const soon7DaysList: any[] = [];
@@ -254,7 +264,7 @@ export default function ReportsPage() {
       return {
         id: wh.id,
         name: wh.name,
-        color: wh.color || '#4f46e5',
+        color: wh.color || '#334155',
         total: docsInWh.length,
         cabinetsCount: whCabinets.length,
       };
@@ -300,7 +310,7 @@ export default function ReportsPage() {
         { wch: 18 },
         { wch: 36 },
         { wch: 16 },
-        { wch: 16 },
+        { wch: 14 },
         { wch: 22 },
         { wch: 20 },
         { wch: 14 },
@@ -332,111 +342,166 @@ export default function ReportsPage() {
     setSearchQuery('');
   }
 
+  const currentDateText = useMemo(() => {
+    const d = new Date();
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  }, []);
+
   return (
     <DashboardLayout title="ລາຍງານ & ສະຖິຕິ">
-      <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 p-3 sm:p-5 lg:p-6 space-y-6">
+      <div className="w-full min-h-screen bg-[#f1f5f9] text-slate-900 p-4 sm:p-6 lg:p-8 space-y-6">
         
-        {/* HEADER SECTION */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
-                <BarChart3 className="w-5 h-5" />
-              </span>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                ສູນລາຍງານ &amp; ສະຖິຕິເອກະສານ
-              </h1>
+        {/* =========================================================================
+            CLASSIC ENTERPRISE HEADER BANNER
+            Clean, formal executive styling with corporate metadata and standard actions
+           ========================================================================= */}
+        <div className="bg-white border border-slate-300 rounded-md p-5 shadow-sm">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded border border-slate-300 bg-slate-900 text-white shadow-sm">
+                <BarChart3 className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">
+                    ລັດວິສາຫະກິດໄຟຟ້າລາວ • EDL-DMS
+                  </span>
+                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-300">
+                    OFFICIAL REPORT
+                  </span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-0.5">
+                  ບົດລາຍງານ ແລະ ສະຖິຕິເອກະສານປະຈຳງວດ
+                </h1>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  ສະຫຼຸບການເຄື່ອນໄຫວເອກະສານທາງການ, ສັດສ່ວນການອະນຸມັດ, ພາລະງານແຕ່ລະຝ່າຍ ແລະ ຄວາມສ່ຽງດ້ານອາຍຸການຈັດເກັບ
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              ລາຍງານສະຫຼຸບຂໍ້ມູນເອກະສານລະດັບອົງກອນ (EDL DMS) ແຍກຕາມເດືອນ, ຝ່າຍ, ພະແນກ, ແລະ ອາຍຸການຈັດເກັບ
-            </p>
+
+            {/* ACTION BUTTONS (Classic high-contrast buttons) */}
+            <div className="flex flex-wrap items-center gap-2 print:hidden">
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-3 py-1.5 rounded-md bg-white border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5"
+                title="ລ້າງຕົວກອງທັງໝົດ"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                <span>ລ້າງຕົວກອງ</span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="px-3.5 py-1.5 rounded-md bg-white border border-slate-300 text-slate-800 text-xs font-medium hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5"
+                title="ພິມລາຍງານ"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-600" />
+                <span>ພິມລາຍງານ (Print)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleExportExcel()}
+                className="px-4 py-1.5 rounded-md bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition shadow-sm flex items-center gap-1.5 border border-slate-900"
+                title="ສົ່ງອອກໄຟລ໌ Excel"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Export Excel (.xlsx)</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 print:hidden">
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5"
-              title="ລ້າງຕົວກອງ"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-              <span>ລ້າງຕົວກອງ</span>
-            </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5"
-              title="ພິມລາຍງານ"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-500" />
-              <span>ພິມລາຍງານ</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleExportExcel()}
-              className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5"
-              title="ສົ່ງອອກໄຟລ໌ Excel"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Export Excel (.xlsx)</span>
-            </button>
+          {/* REPORT METADATA STRIP (Classic government / corporate detail strip) */}
+          <div className="pt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-600">
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">ວັນທີອອກບົດລາຍງານ</span>
+              <span className="font-mono font-medium text-slate-800">{currentDateText}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">ຂອບເຂດປີທີ່ວິເຄາະ</span>
+              <span className="font-mono font-medium text-slate-800">
+                {selectedYear === 'all' ? 'ທຸກປີ (All Years)' : `ປີ ${selectedYear}`}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">ຈຳນວນເອກະສານທີ່ພົບ</span>
+              <span className="font-mono font-bold text-slate-900">{filteredDocs.length} ສະບັບ</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-semibold block">ສະຖານະລະບົບ</span>
+              <span className="inline-flex items-center gap-1 font-medium text-emerald-700">
+                <span className="w-2 h-2 rounded-full bg-emerald-600" /> ຂໍ້ມູນອັບເດດສົດ
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* FILTER TOOLBAR */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-3 print:hidden">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-            <Filter className="w-3.5 h-3.5 text-violet-600" />
-            <span>ຕົວກອງລາຍງານ (Report Filters)</span>
-            <span className="text-[11px] font-normal text-slate-400">
-              (ພົບ {filteredDocs.length} ລາຍການ ຈາກທັງໝົດ {activeDocs.length})
-            </span>
+        {/* =========================================================================
+            FILTER CRITERIA TOOLBAR (Classic Enterprise Query Box)
+           ========================================================================= */}
+        <div className="bg-white rounded-md border border-slate-300 p-4 shadow-sm space-y-3 print:hidden">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+              <Filter className="w-4 h-4 text-slate-600" />
+              <span>ເງື່ອນໄຂການກັ່ນຕອງຂໍ້ມູນ (Filter Criteria)</span>
+            </div>
+            <div className="text-[11px] font-mono text-slate-500">
+              ກັ່ນຕອງໄດ້ {filteredDocs.length} / {activeDocs.length} ລາຍການ
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
             {/* Filter Year */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase mb-1">ປີ (Year)</label>
+              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">
+                ປີ (Year)
+              </label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-700 focus:bg-white focus:outline-violet-500"
+                className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
               >
-                <option value="all">ທຸກປີ (All Years)</option>
+                <option value="all">ທຸກປີ (All)</option>
                 <option value="2026">2026</option>
                 <option value="2025">2025</option>
-                <option value="2024">2024</option>
               </select>
             </div>
 
             {/* Filter Month */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase mb-1">ເດືອນ (Month)</label>
+              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">
+                ເດືອນ (Month)
+              </label>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-700 focus:bg-white focus:outline-violet-500"
+                className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
               >
-                <option value="all">ທຸກເດືອນ (All Months)</option>
-                {LAO_MONTHS.map((m, idx) => (
-                  <option key={idx} value={String(idx + 1).padStart(2, '0')}>
-                    {m} (ເດືອນ {idx + 1})
-                  </option>
-                ))}
+                <option value="all">ທຸກເດືອນ (All)</option>
+                {LAO_MONTHS.map((m, idx) => {
+                  const mVal = String(idx + 1).padStart(2, '0');
+                  return (
+                    <option key={mVal} value={mVal}>
+                      {idx + 1}. {m}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
             {/* Filter Division */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase mb-1">ຝ່າຍ (Division)</label>
+              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">
+                ຝ່າຍ (Division)
+              </label>
               <select
                 value={selectedDivision}
                 onChange={(e) => setSelectedDivision(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-700 focus:bg-white focus:outline-violet-500"
+                className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
               >
-                <option value="all">ທຸກຝ່າຍ (All Divisions)</option>
-                {divisions.map((div, i) => (
-                  <option key={i} value={div}>
+                <option value="all">ທຸກຝ່າຍ (All)</option>
+                {divisions.map((div) => (
+                  <option key={div} value={div}>
                     {div}
                   </option>
                 ))}
@@ -445,46 +510,52 @@ export default function ReportsPage() {
 
             {/* Filter Direction */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase mb-1">ທິດທາງ (Direction)</label>
+              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">
+                ທິດທາງ (Direction)
+              </label>
               <select
                 value={selectedDirection}
                 onChange={(e) => setSelectedDirection(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-700 focus:bg-white focus:outline-violet-500"
+                className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
               >
                 <option value="all">ທັງໝົດ (All)</option>
-                <option value="inbound">ຂາເຂົ້າ (IN)</option>
-                <option value="outbound">ຂາອອກ (OUT)</option>
-                <option value="internal">ພາຍໃນ (INTERNAL)</option>
+                <option value="inbound">ຂາເຂົ້າ (Inbound)</option>
+                <option value="outbound">ຂາອອກ (Outbound)</option>
+                <option value="internal">ພາຍໃນ (Internal)</option>
               </select>
             </div>
 
             {/* Filter Status */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase mb-1">ສະຖານະ (Status)</label>
+              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">
+                ສະຖານະ (Status)
+              </label>
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-700 focus:bg-white focus:outline-violet-500"
+                className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
               >
-                <option value="all">ທຸກສະຖານະ (All Statuses)</option>
+                <option value="all">ທຸກສະຖານະ (All)</option>
                 <option value="approved">ອະນຸມັດແລ້ວ</option>
                 <option value="pending">ລໍຖ້າອະນຸມັດ</option>
+                <option value="draft">ຮ່າງເອກະສານ</option>
                 <option value="archived">ເກັບເຂົ້າຄັງ</option>
                 <option value="expired">ໝົດອາຍຸ</option>
-                <option value="draft">ຮ່າງເອກະສານ</option>
               </select>
             </div>
 
-            {/* Search Input */}
+            {/* Search Query */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase mb-1">ຄົ້ນຫາ (Search)</label>
+              <label className="block text-[11px] font-semibold text-slate-600 uppercase mb-1">
+                ຄົ້ນຫາ (Keyword)
+              </label>
               <div className="relative">
                 <input
                   type="text"
+                  placeholder="ເລກທີ, ຊື່, ໝວດໝູ່..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ເລກທີ ຫຼື ຊື່..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-8 pr-3 py-2 text-xs text-slate-700 focus:bg-white focus:outline-violet-500"
+                  className="w-full rounded-md border border-slate-300 bg-white pl-8 pr-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900"
                 />
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               </div>
@@ -492,137 +563,196 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* PRINTABLE REPORT CONTAINER */}
+        {/* =========================================================================
+            PRINTABLE / REPORT CONTAINER
+           ========================================================================= */}
         <div id="print-area" ref={printRef} className="space-y-6">
           
-          {/* TOP KPI CARDS */}
+          {/* EXECUTIVE METRIC TILES (Classic Top Accent Bar Pattern) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-sm">
-              <span className="text-[10px] font-semibold text-slate-400 uppercase">ເອກະສານໃນຊ່ວງນີ້</span>
-              <div className="mt-1 text-xl font-bold text-slate-900">{kpiStats.total}</div>
-              <span className="text-[10px] text-slate-400">ສະບັບທັງໝົດ</span>
+            
+            {/* 1. Total */}
+            <div className="bg-white rounded-md border border-slate-300 border-t-[3px] border-t-slate-900 p-3.5 shadow-sm">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                ເອກະສານທັງໝົດ
+              </span>
+              <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-slate-900">
+                {kpiStats.total}
+              </div>
+              <span className="text-[11px] text-slate-500 block mt-0.5">ສະບັບໃນງວດນີ້</span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-sm">
-              <span className="text-[10px] font-semibold text-emerald-600 uppercase">ອະນຸມັດແລ້ວ</span>
-              <div className="mt-1 text-xl font-bold text-emerald-700">{kpiStats.approved}</div>
-              <span className="text-[10px] text-emerald-600 font-medium">{kpiStats.approvalRate}% ຂອງທັງໝົດ</span>
+
+            {/* 2. Approved */}
+            <div className="bg-white rounded-md border border-slate-300 border-t-[3px] border-t-emerald-700 p-3.5 shadow-sm">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                ອະນຸມັດແລ້ວ
+              </span>
+              <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-emerald-800">
+                {kpiStats.approved}
+              </div>
+              <span className="text-[11px] text-emerald-700 font-medium block mt-0.5">
+                {kpiStats.approvalRate}% ຂອງທັງໝົດ
+              </span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-sm">
-              <span className="text-[10px] font-semibold text-amber-600 uppercase">ລໍຖ້າອະນຸມັດ</span>
-              <div className="mt-1 text-xl font-bold text-amber-700">{kpiStats.pending}</div>
-              <span className="text-[10px] text-amber-600">ລໍຖ້າດຳເນີນການ</span>
+
+            {/* 3. Pending */}
+            <div className="bg-white rounded-md border border-slate-300 border-t-[3px] border-t-amber-600 p-3.5 shadow-sm">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                ລໍຖ້າອະນຸມັດ
+              </span>
+              <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-amber-800">
+                {kpiStats.pending}
+              </div>
+              <span className="text-[11px] text-amber-700 block mt-0.5">ລໍຖ້າການດຳເນີນງານ</span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-sm">
-              <span className="text-[10px] font-semibold text-sky-600 uppercase">ເອກະສານຂາເຂົ້າ</span>
-              <div className="mt-1 text-xl font-bold text-sky-700">{kpiStats.inCount}</div>
-              <span className="text-[10px] text-sky-600">ຂາເຂົ້າ (IN)</span>
+
+            {/* 4. Inbound */}
+            <div className="bg-white rounded-md border border-slate-300 border-t-[3px] border-t-blue-700 p-3.5 shadow-sm">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                ເອກະສານຂາເຂົ້າ
+              </span>
+              <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-blue-900">
+                {kpiStats.inCount}
+              </div>
+              <span className="text-[11px] text-blue-700 block mt-0.5">ຂາເຂົ້າ (Inbound)</span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-sm">
-              <span className="text-[10px] font-semibold text-purple-600 uppercase">ເອກະສານຂາອອກ</span>
-              <div className="mt-1 text-xl font-bold text-purple-700">{kpiStats.outCount}</div>
-              <span className="text-[10px] text-purple-600">ຂາອອກ (OUT)</span>
+
+            {/* 5. Outbound */}
+            <div className="bg-white rounded-md border border-slate-300 border-t-[3px] border-t-slate-600 p-3.5 shadow-sm">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                ເອກະສານຂາອອກ
+              </span>
+              <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-slate-800">
+                {kpiStats.outCount}
+              </div>
+              <span className="text-[11px] text-slate-600 block mt-0.5">ຂາອອກ (Outbound)</span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-sm">
-              <span className="text-[10px] font-semibold text-rose-600 uppercase">ໝົດອາຍຸແລ້ວ</span>
-              <div className="mt-1 text-xl font-bold text-rose-700">{kpiStats.expired}</div>
-              <span className="text-[10px] text-rose-600">ຕ້ອງຕໍ່ອາຍຸ</span>
+
+            {/* 6. Expired */}
+            <div className="bg-white rounded-md border border-slate-300 border-t-[3px] border-t-rose-600 p-3.5 shadow-sm">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                ໝົດອາຍຸແລ້ວ
+              </span>
+              <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-rose-800">
+                {kpiStats.expired}
+              </div>
+              <span className="text-[11px] text-rose-700 block mt-0.5">ຕ້ອງຕໍ່ອາຍຸ ຫຼື ທຳລາຍ</span>
             </div>
+
           </div>
 
-          {/* TAB NAVIGATION */}
-          <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-1 scrollbar-none print:hidden">
+          {/* =========================================================================
+              CLASSIC ENTERPRISE TABS (Stripe / IBM Carbon Underline Style)
+             ========================================================================= */}
+          <div className="border-b border-slate-300 bg-white rounded-t-md px-3 pt-2 border-x border-t flex items-center gap-1 overflow-x-auto scrollbar-none print:hidden">
+            
             <button
               type="button"
               onClick={() => setActiveTab('monthly')}
-              className={`px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
                 activeTab === 'monthly'
-                  ? 'border-violet-600 text-violet-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-slate-900 text-slate-900 bg-slate-50/80'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>1. ລາຍງານລາຍເດືອນ (Monthly Trends)</span>
+              <Calendar className="w-3.5 h-3.5 text-slate-600" />
+              <span>1. ແນວໂນ້ມລາຍເດືອນ (Monthly Trends)</span>
             </button>
+
             <button
               type="button"
               onClick={() => setActiveTab('division')}
-              className={`px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
                 activeTab === 'division'
-                  ? 'border-violet-600 text-violet-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-slate-900 text-slate-900 bg-slate-50/80'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>2. ຕາມຝ່າຍ &amp; ພະແນກ (By Division)</span>
+              <Building2 className="w-3.5 h-3.5 text-slate-600" />
+              <span>2. ຕາມຝ່າຍ &amp; ພະແນກ (Divisions)</span>
             </button>
+
             <button
               type="button"
               onClick={() => setActiveTab('expiry')}
-              className={`px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
                 activeTab === 'expiry'
-                  ? 'border-violet-600 text-violet-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-slate-900 text-slate-900 bg-slate-50/80'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Clock className="w-3.5 h-3.5" />
-              <span>3. ອາຍຸເອກະສານ &amp; ຄວາມສ່ຽງ (Expiry &amp; Risk)</span>
+              <Clock className="w-3.5 h-3.5 text-slate-600" />
+              <span>3. ຄວາມສ່ຽງໝົດອາຍຸ (Expiry &amp; Retention)</span>
             </button>
+
             <button
               type="button"
               onClick={() => setActiveTab('archive')}
-              className={`px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
                 activeTab === 'archive'
-                  ? 'border-violet-600 text-violet-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-slate-900 text-slate-900 bg-slate-50/80'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <Archive className="w-3.5 h-3.5" />
-              <span>4. ຄັງຈັດເກັບກາຍະພາບ (Physical Archive)</span>
+              <Archive className="w-3.5 h-3.5 text-slate-600" />
+              <span>4. ຄັງຈັດເກັບ (Physical Archive)</span>
             </button>
+
             <button
               type="button"
               onClick={() => setActiveTab('details')}
-              className={`px-4 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
                 activeTab === 'details'
-                  ? 'border-violet-600 text-violet-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
+                  ? 'border-slate-900 text-slate-900 bg-slate-50/80'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-3.5 h-3.5 text-slate-600" />
               <span>5. ລາຍການເອກະສານລະອຽດ ({filteredDocs.length})</span>
             </button>
+
           </div>
 
-          {/* TAB 1: MONTHLY TRENDS */}
+          {/* =========================================================================
+              TAB 1: MONTHLY TRENDS (Classic Financial / Annual Report Style)
+             ========================================================================= */}
           {activeTab === 'monthly' && (
             <div className="space-y-5">
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+              <div className="bg-white rounded-b-md rounded-t-none border-x border-b border-slate-300 p-5 shadow-sm">
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900">
-                      ແນວໂນ້ມປະລິມານເອກະສານຕະຫຼອດປີ {selectedYear}
+                      ສະຖິຕິການເຄື່ອນໄຫວເອກະສານຕະຫຼອດປີ {selectedYear}
                     </h3>
-                    <p className="text-[11px] text-slate-400">
-                      ປຽບທຽບເອກະສານ ຂາເຂົ້າ (IN), ຂາອອກ (OUT) ແລະ ພາຍໃນ (INTERNAL) ທັງ 12 ເດືອນ
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      ປຽບທຽບເອກະສານ ຂາເຂົ້າ (Inbound), ຂາອອກ (Outbound) ແລະ ພາຍໃນ (Internal) ທັງ 12 ເດືອນ
                     </p>
                   </div>
-                  <div className="flex items-center gap-4 text-xs">
-                    <span className="flex items-center gap-1.5 text-sky-600 font-medium">
-                      <span className="w-2.5 h-2.5 rounded-full bg-sky-500" /> ຂາເຂົ້າ (IN)
+
+                  {/* Classic Solid Legend */}
+                  <div className="flex items-center gap-4 text-xs font-medium text-slate-700">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 bg-blue-700 rounded-sm" /> ขາເຂົ້າ (Inbound)
                     </span>
-                    <span className="flex items-center gap-1.5 text-purple-600 font-medium">
-                      <span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> ຂາອອກ (OUT)
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 bg-slate-600 rounded-sm" /> ຂາອອກ (Outbound)
                     </span>
-                    <span className="flex items-center gap-1.5 text-amber-600 font-medium">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> ພາຍໃນ (INTERNAL)
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 bg-slate-300 rounded-sm" /> ພາຍໃນ (Internal)
                     </span>
                   </div>
                 </div>
 
-                {/* MONTHLY BAR VISUALIZATION */}
+                {/* MONTHLY COLUMN VISUALIZATION (Clean Financial Chart) */}
                 <div className="mt-6">
-                  <div className="flex items-end gap-2 h-56 w-full pt-4 pb-2 border-b border-slate-100">
-                    <div className="flex-1 flex items-end justify-between gap-1.5 sm:gap-2 h-full">
+                  <div className="relative h-60 w-full pt-4 pb-2 border-b border-slate-300">
+                    
+                    {/* Horizontal Reference Grid Lines */}
+                    <div className="absolute inset-x-0 top-6 border-b border-dashed border-slate-200 pointer-events-none" />
+                    <div className="absolute inset-x-0 top-1/2 border-b border-dashed border-slate-200 pointer-events-none" />
+
+                    <div className="flex items-end justify-between gap-2 h-full">
                       {monthlyBreakdown.months.map((m) => {
                         const inPct = (m.inDocs / monthlyBreakdown.maxTotal) * 100;
                         const outPct = (m.outDocs / monthlyBreakdown.maxTotal) * 100;
@@ -633,28 +763,34 @@ export default function ReportsPage() {
                             key={m.monthNum}
                             className="flex-1 flex flex-col justify-end h-full items-center group relative cursor-pointer"
                           >
-                            {/* Tooltip */}
-                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center bg-slate-900 text-white text-[9px] py-1 px-2 rounded shadow-lg pointer-events-none z-20 whitespace-nowrap">
+                            {/* Hover Tooltip (Classic High-Contrast Box) */}
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center bg-slate-900 text-white text-[10px] py-1 px-2.5 rounded shadow-lg pointer-events-none z-20 whitespace-nowrap">
                               <span className="font-bold">{m.monthName}</span>
-                              <span>ທັງໝົດ: {m.total} (IN: {m.inDocs}, OUT: {m.outDocs}, INT: {m.internalDocs})</span>
+                              <span className="font-mono text-[9px]">
+                                ລວມ: {m.total} (IN: {m.inDocs}, OUT: {m.outDocs}, INT: {m.internalDocs})
+                              </span>
                             </div>
 
-                            {/* Stacked Bar */}
-                            <div className="w-full max-w-[28px] flex flex-col justify-end h-full rounded-t overflow-hidden transition-transform duration-200 group-hover:scale-y-105 origin-bottom">
+                            {/* Stacked Bar with subtle top rounded edge */}
+                            <div className="w-full max-w-[32px] flex flex-col justify-end h-full rounded-t-[2px] overflow-hidden transition-transform duration-150 group-hover:brightness-95">
                               <div
-                                className="w-full bg-amber-400 hover:bg-amber-500 transition-colors"
+                                className="w-full bg-slate-300"
                                 style={{ height: `${internalPct}%` }}
+                                title={`ພາຍໃນ: ${m.internalDocs}`}
                               />
                               <div
-                                className="w-full bg-purple-500 hover:bg-purple-600 transition-colors"
+                                className="w-full bg-slate-600"
                                 style={{ height: `${outPct}%` }}
+                                title={`ຂາອອກ: ${m.outDocs}`}
                               />
                               <div
-                                className="w-full bg-sky-500 hover:bg-sky-600 transition-colors"
+                                className="w-full bg-blue-700"
                                 style={{ height: `${inPct}%` }}
+                                title={`ຂາເຂົ້າ: ${m.inDocs}`}
                               />
                             </div>
-                            <span className="text-[10px] font-semibold text-slate-500 mt-2 truncate max-w-[36px]">
+
+                            <span className="text-[11px] font-mono font-medium text-slate-600 mt-2 truncate">
                               {m.monthName.slice(0, 3)}
                             </span>
                           </div>
@@ -664,99 +800,149 @@ export default function ReportsPage() {
                   </div>
                 </div>
 
-                {/* MONTHLY TABLE */}
+                {/* MONTHLY BREAKDOWN TABLE (Classic Financial Tabular Report) */}
                 <div className="overflow-x-auto mt-6">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs border border-slate-200">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                        <th className="py-2.5 pr-4">ເດືອນ</th>
-                        <th className="py-2.5 px-4 text-center">ເອກະສານທັງໝົດ</th>
-                        <th className="py-2.5 px-4 text-center">ຂາເຂົ້າ (IN)</th>
-                        <th className="py-2.5 px-4 text-center">ຂາອອກ (OUT)</th>
-                        <th className="py-2.5 px-4 text-center">ພາຍໃນ (INT)</th>
-                        <th className="py-2.5 px-4 text-center">ອະນຸມັດແລ້ວ</th>
-                        <th className="py-2.5 pl-4 text-center">ລໍຖ້າອະນຸມັດ</th>
+                      <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[11px] font-semibold uppercase tracking-wider">
+                        <th className="py-2.5 px-3">ງວດເດືອນ</th>
+                        <th className="py-2.5 px-3 text-right">ເອກະສານທັງໝົດ</th>
+                        <th className="py-2.5 px-3 text-right">ຂາເຂົ້າ (IN)</th>
+                        <th className="py-2.5 px-3 text-right">ຂາອອກ (OUT)</th>
+                        <th className="py-2.5 px-3 text-right">ພາຍໃນ (INT)</th>
+                        <th className="py-2.5 px-3 text-right">ອະນຸມັດແລ້ວ</th>
+                        <th className="py-2.5 px-3 text-right">ລໍຖ້າອະນຸມັດ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-600">
+                    <tbody className="divide-y divide-slate-200 text-slate-700">
                       {monthlyBreakdown.months.map((m) => (
-                        <tr key={m.monthNum} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-2.5 pr-4 font-semibold text-slate-800">
-                            {m.monthName} (ເດືອນ {m.monthNum})
+                        <tr key={m.monthNum} className="even:bg-slate-50/50 hover:bg-slate-100/60 transition-colors">
+                          <td className="py-2 px-3 font-medium text-slate-900">
+                            {m.monthName} ({m.monthNum})
                           </td>
-                          <td className="py-2.5 px-4 text-center font-bold text-slate-900">{m.total}</td>
-                          <td className="py-2.5 px-4 text-center text-sky-600 font-medium">{m.inDocs}</td>
-                          <td className="py-2.5 px-4 text-center text-purple-600 font-medium">{m.outDocs}</td>
-                          <td className="py-2.5 px-4 text-center text-amber-600 font-medium">{m.internalDocs}</td>
-                          <td className="py-2.5 px-4 text-center text-emerald-600 font-medium">{m.approved}</td>
-                          <td className="py-2.5 pl-4 text-center text-amber-600 font-medium">{m.pending}</td>
+                          <td className="py-2 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                            {m.total}
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums text-blue-800">
+                            {m.inDocs}
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums text-slate-700">
+                            {m.outDocs}
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums text-slate-600">
+                            {m.internalDocs}
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums text-emerald-800 font-semibold">
+                            {m.approved}
+                          </td>
+                          <td className="py-2 px-3 text-right font-mono tabular-nums text-amber-800">
+                            {m.pending}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
+
+                    {/* Classic Financial Summary Row at Bottom */}
+                    <tfoot>
+                      <tr className="bg-slate-200/80 border-t-2 border-slate-900 font-bold text-slate-900 text-xs">
+                        <td className="py-2.5 px-3">ລວມທັງໝົດ (TOTAL)</td>
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                          {monthlyBreakdown.totals.total}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-blue-900">
+                          {monthlyBreakdown.totals.inDocs}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-800">
+                          {monthlyBreakdown.totals.outDocs}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700">
+                          {monthlyBreakdown.totals.internalDocs}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-emerald-900">
+                          {monthlyBreakdown.totals.approved}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums text-amber-900">
+                          {monthlyBreakdown.totals.pending}
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
+
               </div>
             </div>
           )}
 
-          {/* TAB 2: DIVISION & DEPARTMENT BREAKDOWN */}
+          {/* =========================================================================
+              TAB 2: DIVISION & DEPARTMENT BREAKDOWN
+             ========================================================================= */}
           {activeTab === 'division' && (
             <div className="space-y-5">
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-                <div className="pb-4 border-b border-slate-100">
+              <div className="bg-white rounded-b-md rounded-t-none border-x border-b border-slate-300 p-5 shadow-sm">
+                
+                <div className="pb-3 border-b border-slate-200">
                   <h3 className="text-sm font-bold text-slate-900">
-                    ສະຖິຕິເອກະສານແຍກຕາມຝ່າຍ ແລະ ພະແນກ
+                    ສະຖິຕິພາລະງານເອກະສານແຍກຕາມແຕ່ລະຝ່າຍ (Divisions)
                   </h3>
-                  <p className="text-[11px] text-slate-400">
-                    ປຽບທຽບພາລະງານເອກະສານ ແລະ ປະສິດທິພາບການອະນຸມັດຂອງແຕ່ລະຝ່າຍໃນອົງກອນ
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ປຽບທຽບປະລິມານເອກະສານ, ອັດຕາການອະນຸມັດ ແລະ ຄວາມສ່ຽງເອກະສານໝົດອາຍຸແຕ່ລະພາກສ່ວນ
                   </p>
                 </div>
 
                 <div className="overflow-x-auto mt-4">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs border border-slate-200">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                        <th className="py-3 pr-4">ຊື່ຝ່າຍ (Division)</th>
-                        <th className="py-3 px-4 text-center">ຈຳນວນເອກະສານ</th>
-                        <th className="py-3 px-4 text-center">ສັດສ່ວນ (%)</th>
-                        <th className="py-3 px-4 text-center">ອະນຸມັດແລ້ວ</th>
-                        <th className="py-3 px-4 text-center">ລໍຖ້າອະນຸມັດ</th>
-                        <th className="py-3 px-4 text-center">ໝົດອາຍຸ</th>
-                        <th className="py-3 pl-4 text-center">ອັດຕາອະນຸມັດ</th>
+                      <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[11px] font-semibold uppercase tracking-wider">
+                        <th className="py-2.5 px-3">ຊື່ຝ່າຍ (Division)</th>
+                        <th className="py-2.5 px-3 text-center">ຈຳນວນພະແນກ</th>
+                        <th className="py-2.5 px-3 text-right">ເອກະສານທັງໝົດ</th>
+                        <th className="py-2.5 px-3 text-center">ສັດສ່ວນ (%)</th>
+                        <th className="py-2.5 px-3 text-right">ອະນຸມັດແລ້ວ</th>
+                        <th className="py-2.5 px-3 text-right">ລໍຖ້າອະນຸມັດ</th>
+                        <th className="py-2.5 px-3 text-right">ໝົດອາຍຸ</th>
+                        <th className="py-2.5 px-3 text-center">ອັດຕາອະນຸມັດ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-600">
+                    <tbody className="divide-y divide-slate-200 text-slate-700">
                       {divisionBreakdown.map((div, i) => {
                         const totalAll = filteredDocs.length || 1;
                         const pctOfTotal = Math.round((div.total / totalAll) * 100);
 
                         return (
-                          <tr key={i} className="hover:bg-slate-50/70 transition-colors">
-                            <td className="py-3 pr-4">
-                              <div className="font-semibold text-slate-800">{div.name}</div>
-                              <span className="text-[10px] text-slate-400">
-                                {div.departmentCount} ພະແນກພາຍໃຕ້ສັງກັດ
-                              </span>
+                          <tr key={i} className="even:bg-slate-50/50 hover:bg-slate-100/60 transition-colors">
+                            <td className="py-2.5 px-3 font-semibold text-slate-900">
+                              {div.name}
                             </td>
-                            <td className="py-3 px-4 text-center font-bold text-slate-900 text-sm">{div.total}</td>
-                            <td className="py-3 px-4 text-center">
-                              <div className="w-24 mx-auto">
-                                <div className="flex justify-between text-[10px] font-medium text-slate-500 mb-1">
-                                  <span>{pctOfTotal}%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <td className="py-2.5 px-3 text-center font-mono text-slate-600">
+                              {div.departmentCount}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                              {div.total}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <div className="w-24 mx-auto flex items-center gap-2">
+                                <div className="h-1.5 w-full bg-slate-200 overflow-hidden">
                                   <div
-                                    className="h-full bg-violet-600 rounded-full"
+                                    className="h-full bg-slate-800"
                                     style={{ width: `${pctOfTotal}%` }}
                                   />
                                 </div>
+                                <span className="text-[10px] font-mono text-slate-600 shrink-0">
+                                  {pctOfTotal}%
+                                </span>
                               </div>
                             </td>
-                            <td className="py-3 px-4 text-center text-emerald-600 font-semibold">{div.approved}</td>
-                            <td className="py-3 px-4 text-center text-amber-600 font-semibold">{div.pending}</td>
-                            <td className="py-3 px-4 text-center text-rose-600 font-semibold">{div.expired}</td>
-                            <td className="py-3 pl-4 text-center">
-                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-emerald-800 font-medium">
+                              {div.approved}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-amber-800 font-medium">
+                              {div.pending}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono tabular-nums text-rose-800 font-medium">
+                              {div.expired}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <span className="inline-block px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                                 {div.approvalRate}%
                               </span>
                             </td>
@@ -766,95 +952,124 @@ export default function ReportsPage() {
                     </tbody>
                   </table>
                 </div>
+
               </div>
             </div>
           )}
 
-          {/* TAB 3: EXPIRY & RETENTION RISK */}
+          {/* =========================================================================
+              TAB 3: EXPIRY & RETENTION RISK
+             ========================================================================= */}
           {activeTab === 'expiry' && (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-rose-50/50 rounded-2xl border border-rose-200 p-4">
-                  <div className="flex items-center gap-2 text-rose-700 font-bold text-xs">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span>ເອກະສານທີ່ໝົດອາຍຸແລ້ວ ({expiryRiskData.expiredList.length})</span>
+              
+              {/* 3 Callout Cards with Classic Enterprise Left Borders */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                
+                <div className="bg-white border border-slate-300 border-l-4 border-l-rose-700 rounded-md p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-rose-900 uppercase tracking-wide">
+                      ເອກະສານໝົດອາຍຸແລ້ວ
+                    </span>
+                    <AlertTriangle className="w-4 h-4 text-rose-700" />
                   </div>
-                  <p className="text-[11px] text-rose-600/80 mt-1">
-                    ເອກະສານທີ່ເກີນກຳນົດອາຍຸການຈັດເກັບ ຕ້ອງໄດ້ຮັບການຕໍ່ອາຍຸ ຫຼື ທຳລາຍຕາມລະບຽບ
+                  <div className="mt-2 text-2xl font-bold font-mono text-rose-800 tabular-nums">
+                    {expiryRiskData.expiredList.length} ສະບັບ
+                  </div>
+                  <p className="text-[11px] text-slate-600 mt-1">
+                    ເກີນກຳນົດອາຍຸການຈັດເກັບ ຕ້ອງດຳເນີນການຕໍ່ອາຍຸ ຫຼື ທຳລາຍຕາມລະບຽບ
                   </p>
                 </div>
-                <div className="bg-amber-50/50 rounded-2xl border border-amber-200 p-4">
-                  <div className="flex items-center gap-2 text-amber-700 font-bold text-xs">
-                    <Clock className="w-4 h-4" />
-                    <span>ໃກ້ໝົດອາຍຸໃນ 7 ວັນ ({expiryRiskData.soon7DaysList.length})</span>
+
+                <div className="bg-white border border-slate-300 border-l-4 border-l-amber-600 rounded-md p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                      ຈະໝົດອາຍຸໃນ 7 ວັນ
+                    </span>
+                    <Clock className="w-4 h-4 text-amber-600" />
                   </div>
-                  <p className="text-[11px] text-amber-600/80 mt-1">
+                  <div className="mt-2 text-2xl font-bold font-mono text-amber-800 tabular-nums">
+                    {expiryRiskData.soon7DaysList.length} ສະບັບ
+                  </div>
+                  <p className="text-[11px] text-slate-600 mt-1">
                     ເອກະສານດ່ວນທີ່ຕ້ອງກຽມຕໍ່ອາຍຸພາຍໃນອາທິດນີ້
                   </p>
                 </div>
-                <div className="bg-sky-50/50 rounded-2xl border border-sky-200 p-4">
-                  <div className="flex items-center gap-2 text-sky-700 font-bold text-xs">
-                    <CalendarDays className="w-4 h-4" />
-                    <span>ໃກ້ໝົດອາຍຸໃນ 30 ວັນ ({expiryRiskData.soon30DaysList.length})</span>
+
+                <div className="bg-white border border-slate-300 border-l-4 border-l-blue-700 rounded-md p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-900 uppercase tracking-wide">
+                      ຈະໝົດອາຍຸໃນ 30 ວັນ
+                    </span>
+                    <CalendarDays className="w-4 h-4 text-blue-700" />
                   </div>
-                  <p className="text-[11px] text-sky-600/80 mt-1">
-                    ເອກະສານທີ່ຢູ່ໃນໄລຍະເຝົ້າລະວັງພາຍໃນ 1 ເດືອນ
+                  <div className="mt-2 text-2xl font-bold font-mono text-blue-900 tabular-nums">
+                    {expiryRiskData.soon30DaysList.length} ສະບັບ
+                  </div>
+                  <p className="text-[11px] text-slate-600 mt-1">
+                    ເອກະສານໃນໄລຍະເຝົ້າລະວັງພາຍໃນ 1 ເດືອນ
                   </p>
                 </div>
+
               </div>
 
-              {/* LIST OF EXPIRED & EXPIRING DOCS */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-                <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-slate-900">
-                    ລາຍການເອກະສານທີ່ມີຄວາມສ່ຽງດ້ານອາຍຸການ
-                  </h3>
-                  <span className="text-xs text-slate-400">
-                    ທັງໝົດ {expiryRiskData.expiredList.length + expiryRiskData.soon7DaysList.length} ສະບັບ
+              {/* TABLE OF EXPIRING DOCS */}
+              <div className="bg-white rounded-md border border-slate-300 p-5 shadow-sm">
+                <div className="pb-3 border-b border-slate-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      ລາຍການເອກະສານທີ່ມີຄວາມສ່ຽງດ້ານອາຍຸການ (Risk Inventory)
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      ລາຍການເອກະສານທີ່ໝົດອາຍຸ ແລະ ໃກ້ໝົດອາຍຸພາຍໃນ 7 ວັນ
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono font-medium text-slate-600">
+                    ລວມ {expiryRiskData.expiredList.length + expiryRiskData.soon7DaysList.length} ລາຍການ
                   </span>
                 </div>
 
-                <div className="overflow-x-auto mt-2">
-                  <table className="w-full text-left text-xs">
+                <div className="overflow-x-auto mt-3">
+                  <table className="w-full text-left text-xs border border-slate-200">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                        <th className="py-2.5 pr-4">ເລກທີ / ຊື່ເອກະສານ</th>
-                        <th className="py-2.5 px-4">ຝ່າຍ / ພະແນກ</th>
-                        <th className="py-2.5 px-4">ວັນທີໝົດອາຍຸ</th>
-                        <th className="py-2.5 px-4 text-center">ສະຖານະຄວາມສ່ຽງ</th>
-                        <th className="py-2.5 pl-4 text-right">ຈັດການ</th>
+                      <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[11px] font-semibold uppercase tracking-wider">
+                        <th className="py-2.5 px-3">ເລກທີ / ຊື່ເອກະສານ</th>
+                        <th className="py-2.5 px-3">ຝ່າຍ / ພະແນກ</th>
+                        <th className="py-2.5 px-3">ວັນທີໝົດອາຍຸ</th>
+                        <th className="py-2.5 px-3 text-center">ສະຖານະຄວາມສ່ຽງ</th>
+                        <th className="py-2.5 px-3 text-right">ຈັດການ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-600">
+                    <tbody className="divide-y divide-slate-200 text-slate-700">
                       {[...expiryRiskData.expiredList, ...expiryRiskData.soon7DaysList].map((doc, idx) => (
-                        <tr key={doc.id || idx} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 pr-4">
-                            <p className="font-semibold text-slate-800">{doc.title}</p>
-                            <p className="text-[10px] text-slate-400">{doc.docNumber}</p>
+                        <tr key={doc.id || idx} className="even:bg-slate-50/50 hover:bg-slate-100/60 transition-colors">
+                          <td className="py-2.5 px-3">
+                            <p className="font-semibold text-slate-900">{doc.title}</p>
+                            <p className="text-[10px] text-slate-500 font-mono">{doc.docNumber || '-'}</p>
                           </td>
-                          <td className="py-3 px-4 text-[11px]">
+                          <td className="py-2.5 px-3 text-slate-700">
                             {doc.division || 'ສູນກາງ'} {doc.department ? `• ${doc.department}` : ''}
                           </td>
-                          <td className="py-3 px-4 text-[11px] font-medium text-slate-700">
+                          <td className="py-2.5 px-3 font-mono text-slate-800">
                             {doc.expiresAt}
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="py-2.5 px-3 text-center">
                             {doc.daysRemaining <= 0 ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-300 font-mono">
                                 <AlertTriangle className="w-3 h-3" />
                                 ໝົດອາຍຸແລ້ວ
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 font-mono">
                                 <Clock className="w-3 h-3" />
-                                ເຫຼືອອີກ {doc.daysRemaining} ມື້
+                                ເຫຼືອ {doc.daysRemaining} ມື້
                               </span>
                             )}
                           </td>
-                          <td className="py-3 pl-4 text-right">
+                          <td className="py-2.5 px-3 text-right">
                             <Link
                               href="/documents/expired"
-                              className="text-[11px] font-semibold text-violet-600 hover:text-violet-800 underline"
+                              className="text-xs font-semibold text-blue-700 hover:text-blue-900 underline"
                             >
                               ຕໍ່ອາຍຸ
                             </Link>
@@ -864,77 +1079,95 @@ export default function ReportsPage() {
                     </tbody>
                   </table>
                 </div>
+
               </div>
             </div>
           )}
 
-          {/* TAB 4: PHYSICAL STORAGE ARCHIVE */}
+          {/* =========================================================================
+              TAB 4: PHYSICAL STORAGE ARCHIVE
+             ========================================================================= */}
           {activeTab === 'archive' && (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                
+                <div className="bg-white rounded-md border border-slate-300 border-t-[3px] border-t-slate-900 p-4 shadow-sm flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase">ອັດຕາການຈັດເກັບເຂົ້າຄັງ</span>
-                    <div className="mt-1 text-2xl font-bold text-slate-900">{archiveBreakdown.assignedRate}%</div>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                      ອັດຕາການຈັດເກັບເຂົ້າຄັງກາຍະພາບ
+                    </span>
+                    <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-slate-900">
+                      {archiveBreakdown.assignedRate}%
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5 font-mono">
                       {archiveBreakdown.assignedCount} ສະບັບ ໄດ້ລະບຸຕູ້/ຊັ້ນ/ແຟ້ມແລ້ວ
                     </p>
                   </div>
-                  <span className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                    <Archive className="w-7 h-7" />
-                  </span>
+                  <div className="w-12 h-12 rounded border border-slate-300 bg-slate-100 text-slate-700 flex items-center justify-center">
+                    <Archive className="w-6 h-6" />
+                  </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex items-center justify-between">
+                <div className="bg-white rounded-md border border-slate-300 border-t-[3px] border-t-amber-600 p-4 shadow-sm flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] font-semibold text-amber-600 uppercase">ເອກະສານທີ່ຍັງບໍ່ໄດ້ເຂົ້າຕູ້</span>
-                    <div className="mt-1 text-2xl font-bold text-amber-700">{archiveBreakdown.unassignedCount}</div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      ເອກະສານທີ່ຍັງລອຍຢູ່ ບໍ່ທັນໄດ້ລະບຸຕູ້ເກັບມ້ຽນ
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                      ເອກະສານທີ່ຍັງບໍ່ທັນເຂົ້າຕູ້ (Unassigned)
+                    </span>
+                    <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-amber-800">
+                      {archiveBreakdown.unassignedCount}
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      ເອກະສານທີ່ຍັງບໍ່ທັນໄດ້ກຳນົດຕູ້ຈັດເກັບ
                     </p>
                   </div>
-                  <span className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                    <FolderArchive className="w-7 h-7" />
-                  </span>
+                  <div className="w-12 h-12 rounded border border-amber-300 bg-amber-50 text-amber-700 flex items-center justify-center">
+                    <FolderArchive className="w-6 h-6" />
+                  </div>
                 </div>
+
               </div>
 
               {/* WAREHOUSE UTILIZATION TABLE */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-                <div className="pb-3 border-b border-slate-100">
+              <div className="bg-white rounded-md border border-slate-300 p-5 shadow-sm">
+                <div className="pb-3 border-b border-slate-200">
                   <h3 className="text-sm font-bold text-slate-900">
-                    ສະຖິຕິເອກະສານແຍກຕາມຄັງຈັດເກັບ (Warehouses)
+                    ສະຖິຕິເອກະສານແຍກຕາມຄັງຈັດເກັບ (Warehouse Utilization)
                   </h3>
-                  <p className="text-[11px] text-slate-400">
-                    ປະລິມານເອກະສານ ແລະ ຈຳນວນຕູ້ໃນແຕ່ລະຄັງ
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ປະລິມານເອກະສານ ແລະ ຈຳນວນຕູ້ໃນແຕ່ລະຄັງເອກະສານ
                   </p>
                 </div>
 
                 <div className="overflow-x-auto mt-3">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs border border-slate-200">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                        <th className="py-3 pr-4">ຊື່ຄັງເອກະສານ</th>
-                        <th className="py-3 px-4 text-center">ຈຳນວນຕູ້ເອກະສານ</th>
-                        <th className="py-3 px-4 text-center">ຈຳນວນເອກະສານພາຍໃນ</th>
-                        <th className="py-3 pl-4 text-right">ຈັດການ</th>
+                      <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[11px] font-semibold uppercase tracking-wider">
+                        <th className="py-2.5 px-3">ຊື່ຄັງເອກະສານ</th>
+                        <th className="py-2.5 px-3 text-center">ຈຳນວນຕູ້ເອກະສານ</th>
+                        <th className="py-2.5 px-3 text-right">ເອກະສານພາຍໃນຄັງ</th>
+                        <th className="py-2.5 px-3 text-right">ຈັດການ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-600">
+                    <tbody className="divide-y divide-slate-200 text-slate-700">
                       {archiveBreakdown.whStats.map((wh) => (
-                        <tr key={wh.id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 pr-4 font-semibold text-slate-800 flex items-center gap-2">
-                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: wh.color }} />
+                        <tr key={wh.id} className="even:bg-slate-50/50 hover:bg-slate-100/60 transition-colors">
+                          <td className="py-2.5 px-3 font-semibold text-slate-900 flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-sm bg-slate-700" />
                             <span>{wh.name}</span>
                           </td>
-                          <td className="py-3 px-4 text-center font-medium">{wh.cabinetsCount} ຕູ້</td>
-                          <td className="py-3 px-4 text-center font-bold text-slate-900">{wh.total} ສະບັບ</td>
-                          <td className="py-3 pl-4 text-right">
+                          <td className="py-2.5 px-3 text-center font-mono font-medium text-slate-800">
+                            {wh.cabinetsCount} ຕູ້
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 tabular-nums">
+                            {wh.total} ສະບັບ
+                          </td>
+                          <td className="py-2.5 px-3 text-right">
                             <Link
                               href={`/documents/archive?warehouseId=${wh.id}`}
-                              className="text-[11px] font-semibold text-violet-600 hover:text-violet-800"
+                              className="text-xs font-semibold text-blue-700 hover:text-blue-900 underline"
                             >
-                              ເບິ່ງຄັງ
+                              ເປີດເບິ່ງຄັງ
                             </Link>
                           </td>
                         </tr>
@@ -942,85 +1175,95 @@ export default function ReportsPage() {
                     </tbody>
                   </table>
                 </div>
+
               </div>
             </div>
           )}
 
-          {/* TAB 5: DOCUMENT DETAILS LIST */}
+          {/* =========================================================================
+              TAB 5: DOCUMENT DETAILS LIST (Classic Enterprise Data Grid)
+             ========================================================================= */}
           {activeTab === 'details' && (
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-              <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+            <div className="bg-white rounded-b-md rounded-t-none border-x border-b border-slate-300 p-5 shadow-sm">
+              
+              <div className="pb-3 border-b border-slate-200 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    ລາຍການເອກະສານລະອຽດຕາມຕົວກອງ
+                    ລາຍການເອກະສານລະອຽດ (Document Register)
                   </h3>
-                  <p className="text-[11px] text-slate-400">
-                    ສະແດງທັງໝົດ {filteredDocs.length} ລາຍການ
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    ສະແດງທັງໝົດ {filteredDocs.length} ລາຍການຕາມເງື່ອນໄຂຕົວກອງ
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => void handleExportExcel()}
-                  className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-md bg-white border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-3.5 h-3.5 text-slate-600" />
                   <span>ດາວໂຫຼດ Excel</span>
                 </button>
               </div>
 
-              <div className="overflow-x-auto mt-2">
-                <table className="w-full text-left text-xs">
+              <div className="overflow-x-auto mt-3">
+                <table className="w-full text-left text-xs border border-slate-200">
                   <thead>
-                    <tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                      <th className="py-2.5 pr-4">#</th>
-                      <th className="py-2.5 px-4">ເລກທີ / ຊື່ເອກະສານ</th>
-                      <th className="py-2.5 px-4">ໝວດໝູ່</th>
-                      <th className="py-2.5 px-4">ທິດທາງ</th>
-                      <th className="py-2.5 px-4">ຝ່າຍ / ພະແນກ</th>
-                      <th className="py-2.5 px-4">ສະຖານະ</th>
-                      <th className="py-2.5 px-4">ວັນທີອັບໂຫຼດ</th>
-                      <th className="py-2.5 pl-4 text-right">ເປີດເບິ່ງ</th>
+                    <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[11px] font-semibold uppercase tracking-wider">
+                      <th className="py-2.5 px-3 text-slate-500">#</th>
+                      <th className="py-2.5 px-3">ເລກທີ / ຊື່ເອກະສານ</th>
+                      <th className="py-2.5 px-3">ໝວດໝູ່</th>
+                      <th className="py-2.5 px-3">ທິດທາງ</th>
+                      <th className="py-2.5 px-3">ຝ່າຍ / ພະແນກ</th>
+                      <th className="py-2.5 px-3">ສະຖານະ</th>
+                      <th className="py-2.5 px-3">ວັນທີອັບໂຫຼດ</th>
+                      <th className="py-2.5 px-3 text-right">ເບິ່ງ</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-600">
+                  <tbody className="divide-y divide-slate-200 text-slate-700">
                     {filteredDocs.map((doc, i) => (
-                      <tr key={doc.id || i} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-3 pr-4 text-slate-400 font-mono text-[11px]">{i + 1}</td>
-                        <td className="py-3 px-4 font-medium text-slate-800">
+                      <tr key={doc.id || i} className="even:bg-slate-50/50 hover:bg-slate-100/60 transition-colors">
+                        <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{i + 1}</td>
+                        <td className="py-2.5 px-3 font-medium text-slate-900">
                           <p className="font-semibold text-slate-900 truncate max-w-xs">{doc.title}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">{doc.docNumber || '-'}</p>
+                          <p className="text-[10px] text-slate-500 font-mono">{doc.docNumber || '-'}</p>
                         </td>
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px]">
+                        <td className="py-2.5 px-3">
+                          <span className="px-1.5 py-0.5 rounded text-[11px] bg-slate-100 text-slate-700 border border-slate-200">
                             {doc.category || '-'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-[11px]">
-                          {directionLabels[getDocDirection(doc.direction)] || 'ພາຍໃນ'}
-                        </td>
-                        <td className="py-3 px-4 text-[11px]">
-                          <p className="text-slate-800 font-medium">{doc.division || 'ສູນກາງ'}</p>
-                          <p className="text-slate-400 text-[10px]">{doc.department || '-'}</p>
-                        </td>
-                        <td className="py-3 px-4">
+                        <td className="py-2.5 px-3">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              statusBadgeClasses[doc.status] || 'bg-slate-100 text-slate-600'
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                              directionBadgeClasses[getDocDirection(doc.direction)] || 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
+                          >
+                            {directionLabels[getDocDirection(doc.direction)] || 'ພາຍໃນ'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-[11px]">
+                          <p className="text-slate-900 font-medium">{doc.division || 'ສູນກາງ'}</p>
+                          <p className="text-slate-500 text-[10px]">{doc.department || '-'}</p>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] ${
+                              statusBadgeClasses[doc.status] || 'bg-slate-100 text-slate-700 border border-slate-300'
                             }`}
                           >
                             {statusLabels[doc.status] || doc.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-400 text-[11px]">
+                        <td className="py-2.5 px-3 font-mono text-slate-600 text-[11px]">
                           {doc.uploadDate || '-'}
                         </td>
-                        <td className="py-3 pl-4 text-right">
+                        <td className="py-2.5 px-3 text-right">
                           <Link
                             href="/documents"
-                            className="text-slate-400 hover:text-violet-600 transition p-1"
-                            title="ເບິ່ງເອກະສານ"
+                            className="inline-flex p-1 text-slate-500 hover:text-slate-900 transition"
+                            title="ເປີດເບິ່ງເອກະສານ"
                           >
-                            <Eye className="w-4 h-4 inline" />
+                            <Eye className="w-4 h-4" />
                           </Link>
                         </td>
                       </tr>
@@ -1028,6 +1271,7 @@ export default function ReportsPage() {
                   </tbody>
                 </table>
               </div>
+
             </div>
           )}
 
