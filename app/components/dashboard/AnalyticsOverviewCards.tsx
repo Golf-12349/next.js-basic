@@ -341,25 +341,65 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
   // --------------------------------------------------------------------------
   // CARD 4: Archive Exposure (3 Pages: Warehouses, Cabinets, Full Breakdown)
   // --------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
+  // CARD 4: Archive Exposure (Scalable to 100+ Warehouses & Cabinets via Top N + Others)
+  // --------------------------------------------------------------------------
   const maxPage3 = 3;
   const warehouseAllocation = useMemo(() => {
     if (donutPage3 === 1) {
-      // PAGE 1: Warehouses (Top 5)
-      const palette = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#cbd5e1'];
-      const whList = warehouses.length > 0 ? warehouses.map((w) => w.name) : ['ຄັງສູນກາງ', 'ຄັງດິຈິຕອນ', 'ສາງຫຼັກ A', 'ສາງສຳຮອງ B', 'ສາງເອກະສານດ່ວນ'];
+      // PAGE 1: Warehouses (Top 4 + Others if > 5)
+      const whCounts = warehouses.map((w) => ({
+        id: w.id,
+        name: w.name,
+        count: activeDocs.filter((d) => d.warehouseId === w.id).length,
+      }));
+      whCounts.sort((a, b) => b.count - a.count);
 
-      const items = whList.slice(0, 5).map((name, i) => {
-        const count = activeDocs.filter((d) => d.warehouseId === warehouses[i]?.id).length || (50 - i * 10);
-        return {
-          label: name,
-          value: count,
+      const totalDocsInWarehouses = whCounts.reduce((acc, w) => acc + w.count, 0) || activeDocs.length || 100;
+      const palette = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#cbd5e1'];
+
+      let items: { label: string; value: number; color: string; pct: number }[] = [];
+      if (whCounts.length <= 5 && whCounts.length > 0) {
+        items = whCounts.map((w, i) => ({
+          label: w.name,
+          value: w.count,
           color: palette[i % palette.length],
-          pct: Math.max(6, 46 - i * 9),
-        };
-      });
+          pct: Math.max(5, Math.round((w.count / totalDocsInWarehouses) * 100)),
+        }));
+      } else if (whCounts.length > 5) {
+        const top4 = whCounts.slice(0, 4);
+        const othersCount = whCounts.slice(4).reduce((acc, w) => acc + w.count, 0);
+        const othersNum = whCounts.length - 4;
+
+        items = top4.map((w, i) => ({
+          label: w.name,
+          value: w.count,
+          color: palette[i],
+          pct: Math.max(5, Math.round((w.count / totalDocsInWarehouses) * 100)),
+        }));
+        items.push({
+          label: `ອື່ນໆ (ອີກ ${othersNum} ຄັງ)`,
+          value: othersCount,
+          color: palette[4],
+          pct: 10,
+        });
+      } else {
+        items = [
+          { label: 'ຄັງສູນກາງ', value: 48, color: palette[0], pct: 48 },
+          { label: 'ຄັງດິຈິຕອນ', value: 30, color: palette[1], pct: 30 },
+          { label: 'ສາງຫຼັກ A', value: 14, color: palette[2], pct: 14 },
+          { label: 'ອື່ນໆ', value: 8, color: palette[3], pct: 8 },
+        ];
+      }
+
+      // Balance to exactly 100%
+      if (items.length > 1) {
+        const sumExceptLast = items.slice(0, items.length - 1).reduce((s, it) => s + it.pct, 0);
+        items[items.length - 1].pct = Math.max(2, 100 - sumExceptLast);
+      }
 
       return {
-        modeLabel: 'ຄັງເອກະສານ',
+        modeLabel: whCounts.length > 5 ? `Top 4/${whCounts.length} ຄັງ` : 'ຄັງເອກະສານ',
         items,
         topVal: `+${items[0]?.pct || 0}.00%`,
         topLabel: items[0]?.label || 'ຄັງເອກະສານ',
@@ -367,29 +407,66 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     }
 
     if (donutPage3 === 2) {
-      // PAGE 2: Top Cabinets (5 items)
-      const palette = ['#ef4444', '#f97316', '#eab308', '#06b6d4', '#6366f1'];
-      const cabList = cabinets.length > 0 ? cabinets.map((c) => c.name) : ['ຕູ້ເອກະສານດ່ວນ', 'ຕູ້ເອກະສານຊັ້ນ 2', 'ຕູ້ບຸກຄະລາກອນ', 'ຕູ້ສັນຍາ-ກົດໝາຍ', 'ຕູ້ບັນຊີ-ການເງິນ'];
+      // PAGE 2: Cabinets (Top 4 + Others if > 5, perfectly scales to 100+ cabinets)
+      const cabCounts = cabinets.map((c) => ({
+        id: c.id,
+        name: c.name,
+        count: activeDocs.filter((d) => d.cabinetId === c.id).length,
+      }));
+      cabCounts.sort((a, b) => b.count - a.count);
 
-      const items = cabList.slice(0, 5).map((name, i) => {
-        const count = activeDocs.filter((d) => d.cabinetId === cabinets[i]?.id).length || (35 - i * 6);
-        return {
-          label: name,
-          value: count,
+      const totalDocsInCabinets = cabCounts.reduce((acc, c) => acc + c.count, 0) || activeDocs.length || 100;
+      const palette = ['#ef4444', '#f97316', '#eab308', '#06b6d4', '#64748b'];
+
+      let items: { label: string; value: number; color: string; pct: number }[] = [];
+      if (cabCounts.length <= 5 && cabCounts.length > 0) {
+        items = cabCounts.map((c, i) => ({
+          label: c.name,
+          value: c.count,
           color: palette[i % palette.length],
-          pct: Math.max(8, 38 - i * 7),
-        };
-      });
+          pct: Math.max(5, Math.round((c.count / totalDocsInCabinets) * 100)),
+        }));
+      } else if (cabCounts.length > 5) {
+        const top4 = cabCounts.slice(0, 4);
+        const othersCount = cabCounts.slice(4).reduce((acc, c) => acc + c.count, 0);
+        const othersNum = cabCounts.length - 4;
+
+        items = top4.map((c, i) => ({
+          label: c.name,
+          value: c.count,
+          color: palette[i],
+          pct: Math.max(5, Math.round((c.count / totalDocsInCabinets) * 100)),
+        }));
+        items.push({
+          label: `ອື່ນໆ (ອີກ ${othersNum} ຕູ້)`,
+          value: othersCount,
+          color: palette[4],
+          pct: 10,
+        });
+      } else {
+        items = [
+          { label: 'ຕູ້ດ່ວນ', value: 42, color: palette[0], pct: 42 },
+          { label: 'ຕູ້ຊັ້ນ 2', value: 31, color: palette[1], pct: 31 },
+          { label: 'ຕູ້ບຸກຄະລາກອນ', value: 17, color: palette[2], pct: 17 },
+          { label: 'ອື່ນໆ', value: 10, color: palette[3], pct: 10 },
+        ];
+      }
+
+      // Balance to exactly 100%
+      if (items.length > 1) {
+        const sumExceptLast = items.slice(0, items.length - 1).reduce((s, it) => s + it.pct, 0);
+        items[items.length - 1].pct = Math.max(2, 100 - sumExceptLast);
+      }
 
       return {
-        modeLabel: 'ຕູ້ເອກະສານ',
+        modeLabel: cabCounts.length > 5 ? `Top 4/${cabCounts.length} ຕູ້` : 'ຕູ້ເອກະສານ',
         items,
         topVal: `+${items[0]?.pct || 0}.00%`,
         topLabel: items[0]?.label || 'ຕູ້ເອກະສານ',
       };
     }
 
-    // PAGE 3: Physical Storage Complete Breakdown (4 full items)
+    // PAGE 3: Physical Storage Complete Breakdown (4 full items, sum = 100%)
     const inCabinet = activeDocs.filter((d) => Boolean(d.cabinetId)).length || 58;
     const inShelf = activeDocs.filter((d) => Boolean(d.shelfId)).length || 32;
     const inFolder = activeDocs.filter((d) => Boolean(d.folderId)).length || 24;
@@ -397,11 +474,16 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     const total = inCabinet + inShelf + inFolder + unassigned;
 
     const palette = ['#10b981', '#3b82f6', '#f59e0b', '#f43f5e'];
+    const p1 = Math.round((inCabinet / total) * 100);
+    const p2 = Math.round((inShelf / total) * 100);
+    const p3 = Math.round((inFolder / total) * 100);
+    const p4 = Math.max(2, 100 - p1 - p2 - p3);
+
     const items = [
-      { label: 'ຈັດເກັບເຂົ້າຕູ້ແລ້ວ', value: inCabinet, color: palette[0], pct: Math.round((inCabinet / total) * 100) },
-      { label: 'ຈັດເກັບໃນຊັ້ນວາງ', value: inShelf, color: palette[1], pct: Math.round((inShelf / total) * 100) },
-      { label: 'ຈັດເກັບໃນແຟ້ມ', value: inFolder, color: palette[2], pct: Math.round((inFolder / total) * 100) },
-      { label: 'ຍັງບໍ່ທັນຈັດເກັບ', value: unassigned, color: palette[3], pct: Math.max(4, 100 - Math.round((inCabinet / total) * 100) - Math.round((inShelf / total) * 100) - Math.round((inFolder / total) * 100)) },
+      { label: 'ຈັດເກັບເຂົ້າຕູ້ແລ້ວ', value: inCabinet, color: palette[0], pct: p1 },
+      { label: 'ຈັດເກັບໃນຊັ້ນວາງ', value: inShelf, color: palette[1], pct: p2 },
+      { label: 'ຈັດເກັບໃນແຟ້ມ', value: inFolder, color: palette[2], pct: p3 },
+      { label: 'ຍັງບໍ່ທັນຈັດເກັບ', value: unassigned, color: palette[3], pct: p4 },
     ];
 
     return {
