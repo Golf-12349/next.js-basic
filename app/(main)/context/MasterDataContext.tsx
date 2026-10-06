@@ -2,12 +2,15 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { edlStructure } from '@/types/user'
+import * as orgService from '@/lib/dms/orgService'
+import type { ApiDivision } from '@/lib/dms/orgService'
 
 const STORAGE_KEY = 'dms_master_org_structure'
 
 export interface MasterDataContextValue {
   divisions: string[]
   departmentsByDivision: Record<string, string[]>
+  divisionObjects: ApiDivision[]
   addDivision: (name: string) => { success: boolean; message?: string }
   updateDivision: (oldName: string, newName: string) => { success: boolean; message?: string }
   deleteDivision: (name: string) => { success: boolean; message?: string }
@@ -16,6 +19,7 @@ export interface MasterDataContextValue {
   deleteDepartment: (division: string, name: string) => { success: boolean; message?: string }
   getDepartments: (division?: string) => string[]
   resetToDefaults: () => void
+  reloadFromBackend: () => Promise<void>
 }
 
 const MasterDataContext = createContext<MasterDataContextValue | undefined>(undefined)
@@ -35,6 +39,8 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
     return edlStructure
   })
 
+  const [divisionObjects, setDivisionObjects] = useState<ApiDivision[]>([])
+
   // Persist to storage
   useEffect(() => {
     try {
@@ -42,6 +48,31 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(departmentsByDivision))
     } catch {}
   }, [departmentsByDivision])
+
+  // Sync from backend
+  const reloadFromBackend = useCallback(async () => {
+    try {
+      const data = await orgService.fetchOrgStructure()
+      if (data && data.departmentsByDivision && Object.keys(data.departmentsByDivision).length > 0) {
+        setDepartmentsByDivision(data.departmentsByDivision)
+        setDivisionObjects(data.divisionObjects || [])
+      }
+    } catch (err) {
+      console.warn('Failed to fetch org structure from server, using local fallback:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    void reloadFromBackend()
+
+    const onDivisionsChanged = () => {
+      void reloadFromBackend()
+    }
+    window.addEventListener('dms:divisions-changed', onDivisionsChanged)
+    return () => {
+      window.removeEventListener('dms:divisions-changed', onDivisionsChanged)
+    }
+  }, [reloadFromBackend])
 
   const divisions = useMemo(() => Object.keys(departmentsByDivision), [departmentsByDivision])
 
@@ -69,8 +100,11 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       ...prev,
       [trimmed]: [],
     }))
+    void orgService.createDivision(trimmed).then(reloadFromBackend).catch((err) => {
+      console.error('Server createDivision failed:', err)
+    })
     return { success: true }
-  }, [departmentsByDivision])
+  }, [departmentsByDivision, reloadFromBackend])
 
   const updateDivision = useCallback((oldName: string, newName: string) => {
     const trimmedOld = oldName.trim()
@@ -91,8 +125,15 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       }
       return copy
     })
+
+    const targetObj = divisionObjects.find((d) => d.name === trimmedOld)
+    if (targetObj) {
+      void orgService.updateDivision(targetObj.id, trimmedNew).then(reloadFromBackend).catch((err) => {
+        console.error('Server updateDivision failed:', err)
+      })
+    }
     return { success: true }
-  }, [departmentsByDivision])
+  }, [departmentsByDivision, divisionObjects, reloadFromBackend])
 
   const deleteDivision = useCallback((name: string) => {
     const trimmed = name.trim()
@@ -104,8 +145,15 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       delete copy[trimmed]
       return copy
     })
+
+    const targetObj = divisionObjects.find((d) => d.name === trimmed)
+    if (targetObj) {
+      void orgService.deleteDivision(targetObj.id).then(reloadFromBackend).catch((err) => {
+        console.error('Server deleteDivision failed:', err)
+      })
+    }
     return { success: true }
-  }, [departmentsByDivision])
+  }, [departmentsByDivision, divisionObjects, reloadFromBackend])
 
   const addDepartment = useCallback((division: string, name: string) => {
     const trimmedDiv = division.trim()
@@ -122,8 +170,15 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       ...prev,
       [trimmedDiv]: [...(prev[trimmedDiv] || []), trimmedDept],
     }))
+
+    const divObj = divisionObjects.find((d) => d.name === trimmedDiv)
+    if (divObj) {
+      void orgService.createDepartment(divObj.id, trimmedDept).then(reloadFromBackend).catch((err) => {
+        console.error('Server createDepartment failed:', err)
+      })
+    }
     return { success: true }
-  }, [departmentsByDivision])
+  }, [departmentsByDivision, divisionObjects, reloadFromBackend])
 
   const updateDepartment = useCallback((division: string, oldName: string, newName: string) => {
     const trimmedDiv = division.trim()
@@ -140,8 +195,16 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       ...prev,
       [trimmedDiv]: (prev[trimmedDiv] || []).map((d) => (d === trimmedOld ? trimmedNew : d)),
     }))
+
+    const divObj = divisionObjects.find((d) => d.name === trimmedDiv)
+    const deptObj = divObj?.departments.find((d) => d.name === trimmedOld)
+    if (deptObj) {
+      void orgService.updateDepartment(deptObj.id, trimmedNew, divObj?.id).then(reloadFromBackend).catch((err) => {
+        console.error('Server updateDepartment failed:', err)
+      })
+    }
     return { success: true }
-  }, [departmentsByDivision])
+  }, [departmentsByDivision, divisionObjects, reloadFromBackend])
 
   const deleteDepartment = useCallback((division: string, name: string) => {
     const trimmedDiv = division.trim()
@@ -152,8 +215,16 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       ...prev,
       [trimmedDiv]: (prev[trimmedDiv] || []).filter((d) => d !== trimmedDept),
     }))
+
+    const divObj = divisionObjects.find((d) => d.name === trimmedDiv)
+    const deptObj = divObj?.departments.find((d) => d.name === trimmedDept)
+    if (deptObj) {
+      void orgService.deleteDepartment(deptObj.id).then(reloadFromBackend).catch((err) => {
+        console.error('Server deleteDepartment failed:', err)
+      })
+    }
     return { success: true }
-  }, [])
+  }, [divisionObjects, reloadFromBackend])
 
   const resetToDefaults = useCallback(() => {
     setDepartmentsByDivision(edlStructure)
@@ -167,6 +238,7 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
     () => ({
       divisions,
       departmentsByDivision,
+      divisionObjects,
       addDivision,
       updateDivision,
       deleteDivision,
@@ -175,10 +247,12 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       deleteDepartment,
       getDepartments,
       resetToDefaults,
+      reloadFromBackend,
     }),
     [
       divisions,
       departmentsByDivision,
+      divisionObjects,
       addDivision,
       updateDivision,
       deleteDivision,
@@ -187,6 +261,7 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       deleteDepartment,
       getDepartments,
       resetToDefaults,
+      reloadFromBackend,
     ]
   )
 

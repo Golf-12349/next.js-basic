@@ -23,6 +23,8 @@ import {
   Wifi,
 } from "lucide-react";
 
+import { fetchSystemSettings, updateSystemSettings } from "@/lib/dms/settingsService";
+
 export default function SystemSettingsPage() {
   const router = useRouter();
   const { user: currentUser } = useCurrentUser();
@@ -43,13 +45,40 @@ export default function SystemSettingsPage() {
   const [maxUploadSizeMB, setMaxUploadSizeMB] = useState("20");
   const [saving, setSaving] = useState(false);
 
-  function handleSaveSystemSettings(e: React.FormEvent) {
+  // Fetch settings from server on mount
+  useEffect(() => {
+    fetchSystemSettings()
+      .then((data) => {
+        if (data) {
+          if (data.orgName) setOrgName(data.orgName);
+          if (data.systemTitle) setSystemTitle(data.systemTitle);
+          if (data.contactEmail) setContactEmail(data.contactEmail);
+          if (data.docPrefix) setDocPrefix(data.docPrefix);
+          if (data.maxUploadSizeMB) setMaxUploadSizeMB(String(data.maxUploadSizeMB));
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load system settings from backend:", err);
+      });
+  }, []);
+
+  async function handleSaveSystemSettings(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      await updateSystemSettings({
+        orgName,
+        systemTitle,
+        contactEmail,
+        docPrefix,
+        maxUploadSizeMB: Number(maxUploadSizeMB) || 20,
+      });
       pushToast({ title: "ບັນທຶກການຕັ້ງຄ່າລະບົບສຳເລັດແລ້ວ" });
-    }, 400);
+    } catch {
+      pushToast({ title: "ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກການຕັ້ງຄ່າ" });
+    } finally {
+      setSaving(false);
+    }
   }
 
   const inputBase =

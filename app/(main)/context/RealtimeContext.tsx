@@ -66,6 +66,12 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
               case 'ARCHIVE_CHANGED':
                 window.dispatchEvent(new CustomEvent('dms:archive-changed', { detail: payload.payload }))
                 break
+              case 'DIVISIONS_CHANGED':
+                window.dispatchEvent(new CustomEvent('dms:divisions-changed', { detail: payload.payload }))
+                break
+              case 'SETTINGS_CHANGED':
+                window.dispatchEvent(new CustomEvent('dms:settings-changed', { detail: payload.payload }))
+                break
               default:
                 break
             }
