@@ -61,3 +61,4 @@ export async function updateDepartment(id: string, name: string, divisionId?: st
 export async function deleteDepartment(id: string): Promise<void> {
   await apiClient.delete(`/departments/${id}`)
 }
+

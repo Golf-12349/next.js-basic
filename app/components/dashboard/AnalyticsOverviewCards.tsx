@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
 import { useMasterData } from '@/app/(main)/context/MasterDataContext';
 import { useArchive } from '@/app/(main)/context/ArchiveContext';
 import { toDateKey, addDays } from './dashboard-utils';
+import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from '@/lib/dms/dashboardService';
 
 function ElegantDonut({
   data,
@@ -85,6 +86,28 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
   const [donutPage2, setDonutPage2] = useState(1);
   const [donutPage3, setDonutPage3] = useState(1);
 
+  const [serverData, setServerData] = useState<DashboardAnalyticsResponse | null>(null);
+
+  useEffect(() => {
+    fetchDashboardAnalytics()
+      .then((data) => {
+        if (data && data.overview) setServerData(data);
+      })
+      .catch((err) => {
+        console.warn('Dashboard analytics API fallback to local calculation:', err);
+      });
+
+    const refreshData = () => {
+      fetchDashboardAnalytics().then(setServerData).catch(() => {});
+    };
+    window.addEventListener('dms:documents-changed', refreshData);
+    window.addEventListener('dms:archive-changed', refreshData);
+    return () => {
+      window.removeEventListener('dms:documents-changed', refreshData);
+      window.removeEventListener('dms:archive-changed', refreshData);
+    };
+  }, []);
+
   const activeDocs = useMemo(() => documents.filter((d) => !d.deleted), [documents]);
 
   const stats = useMemo(() => {
@@ -121,19 +144,22 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
 
   const keyStatsRows = useMemo(
     () => [
-      { label: 'ອັດຕາການອະນຸມັດລວມ', val: `${stats.approvalRate}.00%` },
-      { label: 'ເອກະສານເຂົ້າເດືອນນີ້', val: `${stats.monthlyInflow} ລາຍການ` },
-      { label: 'ເອກະສານລໍຖ້າກວດກາ', val: `${stats.pending} ລາຍການ` },
-      { label: 'ເອກະສານໃກ້ໝົດອາຍຸ (7 ວັນ)', val: `${stats.expiringSoon} ສະບັບ` },
-      { label: 'ເອກະສານທີ່ໝົດອາຍຸແລ້ວ', val: `${stats.expired} ສະບັບ` },
-      { label: 'ອັດຕາການນຳໃຊ້ພື້ນທີ່ຄັງ', val: '68.50%' },
-      { label: 'ເວລາອະນຸມັດສະເລ່ຍ', val: '1.4 ວັນ' },
-      { label: 'ເອກະສານປອດໄພ / ເຂົ້າລະຫັດ', val: '100.00%' },
+      { label: 'ອັດຕາການອະນຸມັດລວມ', val: `${serverData?.overview.approvalRate ?? stats.approvalRate}.00%` },
+      { label: 'ເອກະສານເຂົ້າເດືອນນີ້', val: `${serverData?.overview.monthlyInflow ?? stats.monthlyInflow} ລາຍການ` },
+      { label: 'ເອກະສານລໍຖ້າກວດກາ', val: `${serverData?.overview.pendingDocuments ?? stats.pending} ລາຍການ` },
+      { label: 'ເອກະສານໃກ້ໝົດອາຍຸ (7 ວັນ)', val: `${serverData?.overview.expiringSoonDocuments ?? stats.expiringSoon} ສະບັບ` },
+      { label: 'ເອກະສານທີ່ໝົດອາຍຸແລ້ວ', val: `${serverData?.overview.expiredDocuments ?? stats.expired} ສະບັບ` },
+      { label: 'ອັດຕາການນຳໃຊ້ພື້ນທີ່ຄັງ', val: serverData?.overview.warehouseUtilizationPct || '68.50%' },
+      { label: 'ເວລາອະນຸມັດສະເລ່ຍ', val: serverData?.overview.averageApprovalDays || '1.4 ວັນ' },
+      { label: 'ເອກະສານປອດໄພ / ເຂົ້າລະຫັດ', val: serverData?.overview.securityEncryptionRate || '100.00%' },
     ],
-    [stats]
+    [serverData, stats]
   );
 
   const formatAllocation = useMemo(() => {
+    if (serverData?.donuts.allocation) {
+      return serverData.donuts.allocation;
+    }
     const counts: Record<string, number> = { PDF: 0, Word: 0, Excel: 0, ຮູບພາບ: 0, ອື່ນໆ: 0 };
     activeDocs.forEach((d) => {
       const ext = d.fileUrl ? d.fileUrl.split('.').pop()?.toUpperCase() : '';
@@ -162,9 +188,12 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     ];
 
     return { items, topVal: `+${items[0].pct}.00%`, topLabel: 'PDF' };
-  }, [activeDocs]);
+  }, [serverData, activeDocs]);
 
   const deptAllocation = useMemo(() => {
+    if (serverData?.donuts.department) {
+      return serverData.donuts.department;
+    }
     const list = divisions.length > 0 ? divisions : ['ຫ້ອງການໄຟຟ້າລາວ', 'ຝ່າຍກວດກາ', 'ຝ່າຍບຸກຄະລາກອນ', 'ຝ່າຍກົດໝາຍ-ສັນຍາ', 'ຝ່າຍບັນຊີ'];
     const palette = ['#a855f7', '#ec4899', '#3b82f6', '#f59e0b', '#10b981'];
 
@@ -177,9 +206,12 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     ];
 
     return { items, topVal: `+${items[0].pct}.00%`, topLabel: items[0].label };
-  }, [divisions]);
+  }, [serverData, divisions]);
 
   const warehouseAllocation = useMemo(() => {
+    if (serverData?.donuts.warehouse) {
+      return serverData.donuts.warehouse;
+    }
     const palette = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#e2e8f0'];
     const whList = warehouses.length > 0 ? warehouses.map((w) => w.name) : ['infinitity', 'Total', 'ຕູ້ເອກະສານດ່ວນ', 'ຕູ້ເອກະສານຊັ້ນ 2', 'ຄັງດິຈິຕອນ'];
 
@@ -192,7 +224,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     ];
 
     return { items, topVal: `+${items[0].pct}.00%`, topLabel: items[0].label };
-  }, [warehouses]);
+  }, [serverData, warehouses]);
 
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 ${className}`}>

@@ -19,3 +19,4 @@ export async function updateSystemSettings(data: Partial<ApiSystemSettings>): Pr
   const res = await apiClient.patch<ApiSystemSettings>('/settings', data)
   return res.data
 }
+
