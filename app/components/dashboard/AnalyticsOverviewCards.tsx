@@ -72,7 +72,7 @@ function ElegantDonut({
   const displayColor = activeItem ? activeItem.color : centerColor;
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
         <circle
           cx={size / 2}
@@ -86,7 +86,7 @@ function ElegantDonut({
           const isHovered = hoveredIdx === i;
           return (
             <circle
-              key={i}
+              key={`${slice.label}-${i}`}
               cx={size / 2}
               cy={size / 2}
               r={radius}
@@ -98,7 +98,7 @@ function ElegantDonut({
               strokeLinecap="round"
               onMouseEnter={() => onHover?.(i)}
               onMouseLeave={() => onHover?.(null)}
-              className={`transition-all duration-300 cursor-pointer ${
+              className={`transition-[opacity,stroke-width] duration-150 cursor-pointer ${
                 hoveredIdx !== null && hoveredIdx !== undefined && !isHovered ? 'opacity-35' : 'opacity-100'
               }`}
             />
@@ -106,10 +106,10 @@ function ElegantDonut({
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-2">
-        <span className="text-sm font-bold leading-tight transition-colors duration-200" style={{ color: displayColor }}>
+        <span className="text-sm font-bold leading-tight transition-colors duration-150" style={{ color: displayColor }}>
           {displayVal}
         </span>
-        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[105px] transition-colors duration-200">
+        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[105px] transition-colors duration-150">
           {displayLabel}
         </span>
       </div>
@@ -120,11 +120,11 @@ function ElegantDonut({
 export function AnalyticsOverviewCards({ className = '' }: { className?: string }) {
   const { documents } = useDocuments();
   const { divisions } = useMasterData();
-  const { warehouses, cabinets } = useArchive();
+  const { warehouses, cabinets, shelves, folders } = useArchive();
 
   // Multi-page navigation states
   const [donutPage1, setDonutPage1] = useState(1); // Page 1: File Types, 2: Flow Direction, 3: Document Status
-  const [donutPage2, setDonutPage2] = useState(1); // Divisions pages (5 per page)
+  const [donutPage2, setDonutPage2] = useState(1); // Page 1: 6 divisions, Page 2: 5 divisions
   const [donutPage3, setDonutPage3] = useState(1); // Page 1: Warehouses, 2: Cabinets, 3: Physical Status
 
   // Hover states for interactive tooltips
@@ -256,7 +256,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
         { label: 'ເອກະສານຂາອອກ', value: outboundCount, color: palette[2], pct: Math.max(2, 100 - Math.round((internalCount / total) * 100) - Math.round((inboundCount / total) * 100)) },
       ];
       return {
-        modeLabel: 'ທິດທາງເອກະສານ',
+        modeLabel: 'ທິດທາງ',
         items,
         topVal: `+${items[0].pct}.00%`,
         topLabel: 'ພາຍໃນ',
@@ -278,7 +278,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
       { label: 'ໝົດອາຍຸແລ້ວ', value: expired, color: palette[3], pct: Math.max(2, 100 - Math.round((approved / total) * 100) - Math.round((pending / total) * 100) - Math.round((draft / total) * 100)) },
     ];
     return {
-      modeLabel: 'ສະຖານະເອກະສານ',
+      modeLabel: 'ສະຖານະ',
       items,
       topVal: `+${items[0].pct}.00%`,
       topLabel: 'ອະນຸມັດ',
@@ -286,7 +286,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
   }, [donutPage1, activeDocs]);
 
   // --------------------------------------------------------------------------
-  // CARD 3: Department Class (Paginate across divisions, 5 per page)
+  // CARD 3: Department Class (Balanced 2 Pages: 6 divisions & 5 divisions)
   // --------------------------------------------------------------------------
   const allDivisions = useMemo(() => {
     return divisions.length > 0
@@ -302,22 +302,22 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           'ຝ່າຍແຜນການ ແລະ ລົງທຶນ',
           'ຝ່າຍເຕັກໂນໂລຊີຂໍ້ມູນຂ່າວສານ',
           'ຝ່າຍຈັດຊື້-ຈັດຈ້າງ',
-          'ຝ່າຍຄຸ້ມຄອງຄວາມປອດໄພ',
+          'ສະຖາບັນພັດທະນາໄຟຟ້າລາວ',
         ];
   }, [divisions]);
 
-  const maxPage2 = Math.max(1, Math.ceil(allDivisions.length / 5));
+  // Split balanced: 6 on page 1, 5 on page 2 (total 2 stable pages)
+  const maxPage2 = 2;
 
   const deptAllocation = useMemo(() => {
-    const pageDivs = allDivisions.slice((donutPage2 - 1) * 5, donutPage2 * 5);
-    const palette = ['#a855f7', '#ec4899', '#3b82f6', '#f59e0b', '#10b981'];
+    const pageDivs = donutPage2 === 1 ? allDivisions.slice(0, 6) : allDivisions.slice(6, 11);
+    const palette = ['#a855f7', '#ec4899', '#3b82f6', '#f59e0b', '#10b981', '#06b6d4'];
 
-    // Real or proportional calculation
     const counts = pageDivs.map((name, i) => {
       const docCount = activeDocs.filter((d) => d.division === name).length;
       return {
         label: name,
-        value: docCount || (38 - (donutPage2 - 1) * 12 - i * 5),
+        value: docCount || (donutPage2 === 1 ? 38 - i * 6 : 24 - i * 4),
       };
     });
 
@@ -331,6 +331,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     }));
 
     return {
+      modeLabel: donutPage2 === 1 ? 'ກຸ່ມ 1' : 'ກຸ່ມ 2',
       items,
       topVal: `+${items[0]?.pct || 0}.00%`,
       topLabel: items[0]?.label || 'ທົ່ວໄປ',
@@ -338,12 +339,12 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
   }, [allDivisions, donutPage2, activeDocs]);
 
   // --------------------------------------------------------------------------
-  // CARD 4: Archive Exposure (3 Pages: Warehouses, Cabinets, Physical Status)
+  // CARD 4: Archive Exposure (3 Pages: Warehouses, Cabinets, Full Breakdown)
   // --------------------------------------------------------------------------
   const maxPage3 = 3;
   const warehouseAllocation = useMemo(() => {
     if (donutPage3 === 1) {
-      // PAGE 1: Warehouses
+      // PAGE 1: Warehouses (Top 5)
       const palette = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#cbd5e1'];
       const whList = warehouses.length > 0 ? warehouses.map((w) => w.name) : ['ຄັງສູນກາງ', 'ຄັງດິຈິຕອນ', 'ສາງຫຼັກ A', 'ສາງສຳຮອງ B', 'ສາງເອກະສານດ່ວນ'];
 
@@ -366,7 +367,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     }
 
     if (donutPage3 === 2) {
-      // PAGE 2: Top Cabinets
+      // PAGE 2: Top Cabinets (5 items)
       const palette = ['#ef4444', '#f97316', '#eab308', '#06b6d4', '#6366f1'];
       const cabList = cabinets.length > 0 ? cabinets.map((c) => c.name) : ['ຕູ້ເອກະສານດ່ວນ', 'ຕູ້ເອກະສານຊັ້ນ 2', 'ຕູ້ບຸກຄະລາກອນ', 'ຕູ້ສັນຍາ-ກົດໝາຍ', 'ຕູ້ບັນຊີ-ການເງິນ'];
 
@@ -388,19 +389,23 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
       };
     }
 
-    // PAGE 3: Physical Storage Status (Assigned to Cabinet vs Unassigned)
-    const assignedCount = activeDocs.filter((d) => Boolean(d.cabinetId)).length || 85;
-    const unassignedCount = activeDocs.filter((d) => !d.cabinetId).length || 32;
-    const total = assignedCount + unassignedCount;
+    // PAGE 3: Physical Storage Complete Breakdown (4 full items)
+    const inCabinet = activeDocs.filter((d) => Boolean(d.cabinetId)).length || 58;
+    const inShelf = activeDocs.filter((d) => Boolean(d.shelfId)).length || 32;
+    const inFolder = activeDocs.filter((d) => Boolean(d.folderId)).length || 24;
+    const unassigned = activeDocs.filter((d) => !d.cabinetId && !d.folderId).length || 18;
+    const total = inCabinet + inShelf + inFolder + unassigned;
 
-    const palette = ['#10b981', '#f43f5e'];
+    const palette = ['#10b981', '#3b82f6', '#f59e0b', '#f43f5e'];
     const items = [
-      { label: 'ຈັດເກັບເຂົ້າຕູ້ແລ້ວ', value: assignedCount, color: palette[0], pct: Math.round((assignedCount / total) * 100) },
-      { label: 'ຍັງບໍ່ທັນຈັດເກັບ', value: unassignedCount, color: palette[1], pct: Math.max(5, 100 - Math.round((assignedCount / total) * 100)) },
+      { label: 'ຈັດເກັບເຂົ້າຕູ້ແລ້ວ', value: inCabinet, color: palette[0], pct: Math.round((inCabinet / total) * 100) },
+      { label: 'ຈັດເກັບໃນຊັ້ນວາງ', value: inShelf, color: palette[1], pct: Math.round((inShelf / total) * 100) },
+      { label: 'ຈັດເກັບໃນແຟ້ມ', value: inFolder, color: palette[2], pct: Math.round((inFolder / total) * 100) },
+      { label: 'ຍັງບໍ່ທັນຈັດເກັບ', value: unassigned, color: palette[3], pct: Math.max(4, 100 - Math.round((inCabinet / total) * 100) - Math.round((inShelf / total) * 100) - Math.round((inFolder / total) * 100)) },
     ];
 
     return {
-      modeLabel: 'ສະຖານະການຈັດເກັບ',
+      modeLabel: 'ສະຖານະຄັງ',
       items,
       topVal: `+${items[0].pct}.00%`,
       topLabel: 'ຈັດເກັບແລ້ວ',
@@ -410,18 +415,18 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 ${className}`}>
       {/* CARD 1: Key Stats */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-1.5">
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between h-full min-h-[355px]">
+        <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 h-10 shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-sm font-bold text-slate-800">Key Stats</span>
             <InfoTooltip text="ສະຫຼຸບຕົວຊີ້ວັດຫຼັກ ແລະ ປະສິດທິພາບຂອງລະບົບ DMS ແບບ Realtime ຈາກຖານຂໍ້ມູນຈິງ" />
           </div>
-          <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 px-2.5 py-0.5 rounded-full">
+          <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 px-2.5 py-0.5 rounded-full shrink-0">
             Realtime
           </span>
         </div>
 
-        <div className="divide-y divide-slate-100 py-1">
+        <div className="divide-y divide-slate-100 py-1 flex-1 flex flex-col justify-center">
           {keyStatsRows.map((row, i) => (
             <div key={i} className="flex items-center justify-between py-1.5">
               <span className="text-slate-500 text-xs truncate max-w-[170px]">{row.label}</span>
@@ -430,54 +435,56 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           ))}
         </div>
 
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+        <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 shrink-0">
           <span>ອັບເດດລ່າສຸດ</span>
           <span className="font-medium text-slate-600">ມື້ນີ້, 10:30</span>
         </div>
       </div>
 
       {/* CARD 2: Allocation Overview */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-slate-800">Allocation Overview</span>
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between h-full min-h-[355px]">
+        <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 h-10 shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-sm font-bold text-slate-800 truncate">Allocation Overview</span>
             <InfoTooltip text="ສັດສ່ວນເອກະສານ: ກົດປຸ່ມ < > ເພື່ອປ່ຽນເບິ່ງຕາມ ປະເພດໄຟລ໌ (1/3), ທິດທາງເອກະສານ (2/3), ຫຼື ສະຖານະ (3/3)" />
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={donutPage1 <= 1}
-              onClick={() => {
-                setDonutPage1((p) => Math.max(1, p - 1));
-                setHover1(null);
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
-              title="ໜ້າກ່ອນໜ້າ"
-            >
-              <ChevronLeft className="w-3 h-3" />
-            </button>
-            <span className="text-xs text-slate-600 font-medium px-1 font-mono">
-              {donutPage1}/{maxPage1}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-medium text-violet-700 bg-violet-50 border border-violet-100 px-2 py-0.5 rounded-full">
+              {currentAllocation.modeLabel}
             </span>
-            <button
-              type="button"
-              disabled={donutPage1 >= maxPage1}
-              onClick={() => {
-                setDonutPage1((p) => Math.min(maxPage1, p + 1));
-                setHover1(null);
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
-              title="ໜ້າຖັດໄປ"
-            >
-              <ChevronRight className="w-3 h-3" />
-            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                disabled={donutPage1 <= 1}
+                onClick={() => {
+                  setDonutPage1((p) => Math.max(1, p - 1));
+                  setHover1(null);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+                title="ໜ້າກ່ອນໜ້າ"
+              >
+                <ChevronLeft className="w-3 h-3" />
+              </button>
+              <span className="text-xs text-slate-600 font-medium w-7 text-center font-mono">
+                {donutPage1}/{maxPage1}
+              </span>
+              <button
+                type="button"
+                disabled={donutPage1 >= maxPage1}
+                onClick={() => {
+                  setDonutPage1((p) => Math.min(maxPage1, p + 1));
+                  setHover1(null);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+                title="ໜ້າຖັດໄປ"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="py-2.5 flex flex-col items-center justify-center">
-          <div className="text-[11px] font-medium text-slate-500 mb-1 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
-            {currentAllocation.modeLabel}
-          </div>
+        <div className="h-[155px] flex items-center justify-center shrink-0">
           <ElegantDonut
             data={currentAllocation.items}
             centerVal={currentAllocation.topVal}
@@ -490,13 +497,13 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           />
         </div>
 
-        <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
+        <div className="h-[148px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0 overflow-hidden">
           {currentAllocation.items.map((item, idx) => (
             <div
               key={idx}
               onMouseEnter={() => setHover1(idx)}
               onMouseLeave={() => setHover1(null)}
-              className={`flex items-center justify-between px-1.5 py-0.5 rounded cursor-pointer transition ${
+              className={`flex items-center justify-between px-1.5 py-1 rounded cursor-pointer transition h-[26px] ${
                 hover1 === idx ? 'bg-violet-50 text-violet-900' : 'hover:bg-slate-50'
               }`}
             >
@@ -511,47 +518,49 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
       </div>
 
       {/* CARD 3: Department Class */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-slate-800">Department Class</span>
-            <InfoTooltip text="ສັດສ່ວນເອກະສານຕາມແຕ່ລະຝ່າຍ/ພະແນກ: ກົດປຸ່ມ < > ເພື່ອເລື່ອນເບິ່ງຝ່າຍອື່ນໆ (ໜ້າລະ 5 ຝ່າຍ)" />
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between h-full min-h-[355px]">
+        <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 h-10 shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-sm font-bold text-slate-800 truncate">Department Class</span>
+            <InfoTooltip text="ສັດສ່ວນເອກະສານຕາມແຕ່ລະຝ່າຍ/ພະແນກ: ກົດປຸ່ມ < > ເພື່ອເລື່ອນເບິ່ງຝ່າຍກຸ່ມຖັດໄປ" />
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={donutPage2 <= 1}
-              onClick={() => {
-                setDonutPage2((p) => Math.max(1, p - 1));
-                setHover2(null);
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
-              title="ໜ້າກ່ອນໜ້າ"
-            >
-              <ChevronLeft className="w-3 h-3" />
-            </button>
-            <span className="text-xs text-slate-600 font-medium px-1 font-mono">
-              {donutPage2}/{maxPage2}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-medium text-purple-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-full">
+              {deptAllocation.modeLabel}
             </span>
-            <button
-              type="button"
-              disabled={donutPage2 >= maxPage2}
-              onClick={() => {
-                setDonutPage2((p) => Math.min(maxPage2, p + 1));
-                setHover2(null);
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
-              title="ໜ້າຖັດໄປ"
-            >
-              <ChevronRight className="w-3 h-3" />
-            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                disabled={donutPage2 <= 1}
+                onClick={() => {
+                  setDonutPage2((p) => Math.max(1, p - 1));
+                  setHover2(null);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+                title="ໜ້າກ່ອນໜ້າ"
+              >
+                <ChevronLeft className="w-3 h-3" />
+              </button>
+              <span className="text-xs text-slate-600 font-medium w-7 text-center font-mono">
+                {donutPage2}/{maxPage2}
+              </span>
+              <button
+                type="button"
+                disabled={donutPage2 >= maxPage2}
+                onClick={() => {
+                  setDonutPage2((p) => Math.min(maxPage2, p + 1));
+                  setHover2(null);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+                title="ໜ້າຖັດໄປ"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="py-2.5 flex flex-col items-center justify-center">
-          <div className="text-[11px] font-medium text-slate-500 mb-1 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
-            ຝ່າຍ ({donutPage2}/{maxPage2})
-          </div>
+        <div className="h-[155px] flex items-center justify-center shrink-0">
           <ElegantDonut
             data={deptAllocation.items}
             centerVal={deptAllocation.topVal}
@@ -564,13 +573,13 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           />
         </div>
 
-        <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
+        <div className="h-[148px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0 overflow-hidden">
           {deptAllocation.items.map((item, idx) => (
             <div
               key={idx}
               onMouseEnter={() => setHover2(idx)}
               onMouseLeave={() => setHover2(null)}
-              className={`flex items-center justify-between px-1.5 py-0.5 rounded cursor-pointer transition ${
+              className={`flex items-center justify-between px-1.5 py-1 rounded cursor-pointer transition h-[26px] ${
                 hover2 === idx ? 'bg-purple-50 text-purple-900' : 'hover:bg-slate-50'
               }`}
             >
@@ -585,47 +594,49 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
       </div>
 
       {/* CARD 4: Archive Exposure */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-slate-800">Archive Exposure</span>
-            <InfoTooltip text="ສັດສ່ວນການຈັດເກັບ: ກົດປຸ່ມ < > ເພື່ອປ່ຽນເບິ່ງຕາມ ຄັງເອກະສານ (1/3), ຕູ້ເອກະສານ (2/3), ຫຼື ສະຖານະການຈັດເກັບ (3/3)" />
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between h-full min-h-[355px]">
+        <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 h-10 shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-sm font-bold text-slate-800 truncate">Archive Exposure</span>
+            <InfoTooltip text="ສັດສ່ວນການຈັດເກັບ: ກົດປຸ່ມ < > ເພື່ອປ່ຽນເບິ່ງຕາມ ຄັງເອກະສານ (1/3), ຕູ້ເອກະສານ (2/3), ຫຼື ສະຖານະຄັງ (3/3)" />
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={donutPage3 <= 1}
-              onClick={() => {
-                setDonutPage3((p) => Math.max(1, p - 1));
-                setHover3(null);
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
-              title="ໜ້າກ່ອນໜ້າ"
-            >
-              <ChevronLeft className="w-3 h-3" />
-            </button>
-            <span className="text-xs text-slate-600 font-medium px-1 font-mono">
-              {donutPage3}/{maxPage3}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-medium text-rose-700 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">
+              {warehouseAllocation.modeLabel}
             </span>
-            <button
-              type="button"
-              disabled={donutPage3 >= maxPage3}
-              onClick={() => {
-                setDonutPage3((p) => Math.min(maxPage3, p + 1));
-                setHover3(null);
-              }}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
-              title="ໜ້າຖັດໄປ"
-            >
-              <ChevronRight className="w-3 h-3" />
-            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                disabled={donutPage3 <= 1}
+                onClick={() => {
+                  setDonutPage3((p) => Math.max(1, p - 1));
+                  setHover3(null);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+                title="ໜ້າກ່ອນໜ້າ"
+              >
+                <ChevronLeft className="w-3 h-3" />
+              </button>
+              <span className="text-xs text-slate-600 font-medium w-7 text-center font-mono">
+                {donutPage3}/{maxPage3}
+              </span>
+              <button
+                type="button"
+                disabled={donutPage3 >= maxPage3}
+                onClick={() => {
+                  setDonutPage3((p) => Math.min(maxPage3, p + 1));
+                  setHover3(null);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+                title="ໜ້າຖັດໄປ"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="py-2.5 flex flex-col items-center justify-center">
-          <div className="text-[11px] font-medium text-slate-500 mb-1 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
-            {warehouseAllocation.modeLabel}
-          </div>
+        <div className="h-[155px] flex items-center justify-center shrink-0">
           <ElegantDonut
             data={warehouseAllocation.items}
             centerVal={warehouseAllocation.topVal}
@@ -638,13 +649,13 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           />
         </div>
 
-        <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
+        <div className="h-[148px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0 overflow-hidden">
           {warehouseAllocation.items.map((item, idx) => (
             <div
               key={idx}
               onMouseEnter={() => setHover3(idx)}
               onMouseLeave={() => setHover3(null)}
-              className={`flex items-center justify-between px-1.5 py-0.5 rounded cursor-pointer transition ${
+              className={`flex items-center justify-between px-1.5 py-1 rounded cursor-pointer transition h-[26px] ${
                 hover3 === idx ? 'bg-rose-50 text-rose-900' : 'hover:bg-slate-50'
               }`}
             >
