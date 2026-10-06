@@ -306,29 +306,51 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
         ];
   }, [divisions]);
 
-  // Split balanced: 6 on page 1, 5 on page 2 (total 2 stable pages)
+  // Split balanced: 5 on page 1, 5 on page 2 (total 2 stable pages, exactly 5 rows each)
   const maxPage2 = 2;
 
   const deptAllocation = useMemo(() => {
-    const pageDivs = donutPage2 === 1 ? allDivisions.slice(0, 6) : allDivisions.slice(6, 11);
-    const palette = ['#a855f7', '#ec4899', '#3b82f6', '#f59e0b', '#10b981', '#06b6d4'];
-
-    const counts = pageDivs.map((name, i) => {
-      const docCount = activeDocs.filter((d) => d.division === name).length;
-      return {
+    let pageDivs: { label: string; value: number }[] = [];
+    if (donutPage2 === 1) {
+      // First 5 divisions (exactly 5 items, no overflow)
+      const first5 = allDivisions.slice(0, 5);
+      pageDivs = first5.map((name, i) => ({
         label: name,
-        value: docCount || (donutPage2 === 1 ? 38 - i * 6 : 24 - i * 4),
-      };
-    });
+        value: activeDocs.filter((d) => d.division === name).length || (38 - i * 6),
+      }));
+    } else {
+      // Next 4 divisions + 1 aggregated "ອື່ນໆ (ອີກ 2 ຝ່າຍ)" (exactly 5 items)
+      const next4 = allDivisions.slice(5, 9);
+      const remainingDivs = allDivisions.slice(9);
+      pageDivs = next4.map((name, i) => ({
+        label: name,
+        value: activeDocs.filter((d) => d.division === name).length || (24 - i * 4),
+      }));
+      const remainingCount = remainingDivs.reduce(
+        (sum, name) => sum + (activeDocs.filter((d) => d.division === name).length || 8),
+        0
+      );
+      pageDivs.push({
+        label: `ອື່ນໆ (ອີກ ${remainingDivs.length} ຝ່າຍ)`,
+        value: remainingCount,
+      });
+    }
 
-    const pageTotal = counts.reduce((acc, c) => acc + c.value, 0) || 1;
+    const palette = ['#a855f7', '#ec4899', '#3b82f6', '#f59e0b', '#10b981'];
+    const pageTotal = pageDivs.reduce((acc, c) => acc + c.value, 0) || 1;
 
-    const items = counts.map((c, i) => ({
+    const items = pageDivs.map((c, i) => ({
       label: c.label,
       value: c.value,
       color: palette[i % palette.length],
       pct: Math.max(5, Math.round((c.value / pageTotal) * 100)),
     }));
+
+    // Balance to exactly 100%
+    if (items.length > 1) {
+      const sumExceptLast = items.slice(0, items.length - 1).reduce((s, it) => s + it.pct, 0);
+      items[items.length - 1].pct = Math.max(2, 100 - sumExceptLast);
+    }
 
     return {
       modeLabel: donutPage2 === 1 ? 'ກຸ່ມ 1' : 'ກຸ່ມ 2',
@@ -579,7 +601,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           />
         </div>
 
-        <div className="h-[148px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0 overflow-hidden">
+        <div className="min-h-[155px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0">
           {currentAllocation.items.map((item, idx) => (
             <div
               key={idx}
@@ -655,7 +677,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           />
         </div>
 
-        <div className="h-[148px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0 overflow-hidden">
+        <div className="min-h-[155px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0">
           {deptAllocation.items.map((item, idx) => (
             <div
               key={idx}
@@ -731,7 +753,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           />
         </div>
 
-        <div className="h-[148px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0 overflow-hidden">
+        <div className="min-h-[155px] flex flex-col justify-start space-y-1 pt-2 border-t border-slate-100 text-xs shrink-0">
           {warehouseAllocation.items.map((item, idx) => (
             <div
               key={idx}
