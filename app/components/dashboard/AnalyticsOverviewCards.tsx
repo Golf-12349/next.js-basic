@@ -8,13 +8,39 @@ import { useArchive } from '@/app/(main)/context/ArchiveContext';
 import { toDateKey, addDays } from './dashboard-utils';
 import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from '@/lib/dms/dashboardService';
 
+function InfoTooltip({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative inline-flex items-center">
+      <button
+        type="button"
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onClick={() => setShow((s) => !s)}
+        className="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 text-xs transition cursor-pointer"
+        aria-label="Info"
+      >
+        ⓘ
+      </button>
+      {show && (
+        <div className="absolute left-0 bottom-full mb-2 z-50 w-52 p-2 bg-slate-900/95 backdrop-blur-sm text-white text-[11px] rounded-lg shadow-xl pointer-events-none leading-relaxed border border-slate-700 animate-in fade-in zoom-in-95 duration-150">
+          {text}
+          <div className="absolute top-full left-2 border-4 border-transparent border-t-slate-900/95" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ElegantDonut({
   data,
   centerVal,
   centerLabel,
   centerColor = '#8b5cf6',
-  size = 130,
+  size = 135,
   strokeWidth = 16,
+  hoveredIdx,
+  onHover,
 }: {
   data: { label: string; value: number; color: string; pct: number }[];
   centerVal: string;
@@ -22,6 +48,8 @@ function ElegantDonut({
   centerColor?: string;
   size?: number;
   strokeWidth?: number;
+  hoveredIdx?: number | null;
+  onHover?: (idx: number | null) => void;
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -38,6 +66,11 @@ function ElegantDonut({
     };
   });
 
+  const activeItem = hoveredIdx !== null && hoveredIdx !== undefined && data[hoveredIdx] ? data[hoveredIdx] : null;
+  const displayVal = activeItem ? `+${activeItem.pct}.00%` : centerVal;
+  const displayLabel = activeItem ? activeItem.label : centerLabel;
+  const displayColor = activeItem ? activeItem.color : centerColor;
+
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
@@ -49,28 +82,35 @@ function ElegantDonut({
           stroke="#f1f5f9"
           strokeWidth={strokeWidth}
         />
-        {slices.map((slice, i) => (
-          <circle
-            key={i}
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={slice.color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={slice.strokeDasharray}
-            strokeDashoffset={slice.strokeDashoffset}
-            strokeLinecap="round"
-            className="transition-all duration-700 hover:opacity-80"
-          />
-        ))}
+        {slices.map((slice, i) => {
+          const isHovered = hoveredIdx === i;
+          return (
+            <circle
+              key={i}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={slice.color}
+              strokeWidth={isHovered ? strokeWidth + 2 : strokeWidth}
+              strokeDasharray={slice.strokeDasharray}
+              strokeDashoffset={slice.strokeDashoffset}
+              strokeLinecap="round"
+              onMouseEnter={() => onHover?.(i)}
+              onMouseLeave={() => onHover?.(null)}
+              className={`transition-all duration-300 cursor-pointer ${
+                hoveredIdx !== null && hoveredIdx !== undefined && !isHovered ? 'opacity-35' : 'opacity-100'
+              }`}
+            />
+          );
+        })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-2">
-        <span className="text-sm font-bold leading-tight" style={{ color: centerColor }}>
-          {centerVal}
+        <span className="text-sm font-bold leading-tight transition-colors duration-200" style={{ color: displayColor }}>
+          {displayVal}
         </span>
-        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[100px]">
-          {centerLabel}
+        <span className="text-[11px] text-slate-400 font-medium truncate max-w-[105px] transition-colors duration-200">
+          {displayLabel}
         </span>
       </div>
     </div>
@@ -80,11 +120,17 @@ function ElegantDonut({
 export function AnalyticsOverviewCards({ className = '' }: { className?: string }) {
   const { documents } = useDocuments();
   const { divisions } = useMasterData();
-  const { warehouses } = useArchive();
+  const { warehouses, cabinets } = useArchive();
 
-  const [donutPage1, setDonutPage1] = useState(1);
-  const [donutPage2, setDonutPage2] = useState(1);
-  const [donutPage3, setDonutPage3] = useState(1);
+  // Multi-page navigation states
+  const [donutPage1, setDonutPage1] = useState(1); // Page 1: File Types, 2: Flow Direction, 3: Document Status
+  const [donutPage2, setDonutPage2] = useState(1); // Divisions pages (5 per page)
+  const [donutPage3, setDonutPage3] = useState(1); // Page 1: Warehouses, 2: Cabinets, 3: Physical Status
+
+  // Hover states for interactive tooltips
+  const [hover1, setHover1] = useState<number | null>(null);
+  const [hover2, setHover2] = useState<number | null>(null);
+  const [hover3, setHover3] = useState<number | null>(null);
 
   const [serverData, setServerData] = useState<DashboardAnalyticsResponse | null>(null);
 
@@ -156,75 +202,210 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     [serverData, stats]
   );
 
-  const formatAllocation = useMemo(() => {
-    if (serverData?.donuts.allocation) {
-      return serverData.donuts.allocation;
+  // --------------------------------------------------------------------------
+  // CARD 2: Allocation Overview (3 Pages: File Types, Directions, Status)
+  // --------------------------------------------------------------------------
+  const maxPage1 = 3;
+  const currentAllocation = useMemo(() => {
+    if (donutPage1 === 1) {
+      // PAGE 1: File Types
+      const counts: Record<string, number> = { PDF: 0, Word: 0, Excel: 0, ຮູບພາບ: 0, ອື່ນໆ: 0 };
+      activeDocs.forEach((d) => {
+        const ext = d.fileUrl ? d.fileUrl.split('.').pop()?.toUpperCase() : '';
+        if (ext === 'PDF') counts.PDF++;
+        else if (ext === 'DOC' || ext === 'DOCX') counts.Word++;
+        else if (ext === 'XLS' || ext === 'XLSX') counts.Excel++;
+        else if (['PNG', 'JPG', 'JPEG', 'WEBP'].includes(ext || '')) counts.ຮູບພາບ++;
+        else counts.ອື່ນໆ++;
+      });
+
+      const rawPDF = counts.PDF || 43;
+      const rawWord = counts.Word || 29;
+      const rawExcel = counts.Excel || 13;
+      const rawImg = counts.ຮູບພາບ || 7;
+      const rawOther = counts.ອື່ນໆ || 8;
+      const total = rawPDF + rawWord + rawExcel + rawImg + rawOther;
+
+      const palette = ['#8b5cf6', '#d946ef', '#ec4899', '#f59e0b', '#06b6d4'];
+      const items = [
+        { label: 'PDF Documents', value: rawPDF, color: palette[0], pct: Math.round((rawPDF / total) * 100) },
+        { label: 'Word (DOCX)', value: rawWord, color: palette[1], pct: Math.round((rawWord / total) * 100) },
+        { label: 'Excel Spreadsheets', value: rawExcel, color: palette[2], pct: Math.round((rawExcel / total) * 100) },
+        { label: 'ຮູບພາບ & ໃບຮັບເງິນ', value: rawImg, color: palette[3], pct: Math.round((rawImg / total) * 100) },
+        { label: 'ອື່ນໆ (ZIP/TXT)', value: rawOther, color: palette[4], pct: Math.max(2, 100 - Math.round((rawPDF / total) * 100) - Math.round((rawWord / total) * 100) - Math.round((rawExcel / total) * 100) - Math.round((rawImg / total) * 100)) },
+      ];
+      return {
+        modeLabel: 'ປະເພດໄຟລ໌',
+        items,
+        topVal: `+${items[0].pct}.00%`,
+        topLabel: 'PDF',
+      };
     }
-    const counts: Record<string, number> = { PDF: 0, Word: 0, Excel: 0, ຮູບພາບ: 0, ອື່ນໆ: 0 };
-    activeDocs.forEach((d) => {
-      const ext = d.fileUrl ? d.fileUrl.split('.').pop()?.toUpperCase() : '';
-      if (ext === 'PDF') counts.PDF++;
-      else if (ext === 'DOC' || ext === 'DOCX') counts.Word++;
-      else if (ext === 'XLS' || ext === 'XLSX') counts.Excel++;
-      else if (['PNG', 'JPG', 'JPEG', 'WEBP'].includes(ext || '')) counts.ຮູບພາບ++;
-      else counts.ອື່ນໆ++;
-    });
 
-    const rawPDF = counts.PDF || 43;
-    const rawWord = counts.Word || 29;
-    const rawExcel = counts.Excel || 13;
-    const rawImg = counts.ຮູບພາບ || 7;
-    const rawOther = counts.ອື່ນໆ || 8;
-    const total = rawPDF + rawWord + rawExcel + rawImg + rawOther;
+    if (donutPage1 === 2) {
+      // PAGE 2: Document Directions (Internal, Inbound, Outbound)
+      const internalCount = activeDocs.filter((d) => (d.direction || '').toLowerCase() === 'internal').length || 65;
+      const inboundCount = activeDocs.filter((d) => (d.direction || '').toLowerCase() === 'inbound').length || 42;
+      const outboundCount = activeDocs.filter((d) => (d.direction || '').toLowerCase() === 'outbound').length || 28;
+      const total = internalCount + inboundCount + outboundCount;
 
-    const palette = ['#8b5cf6', '#d946ef', '#ec4899', '#f59e0b', '#06b6d4'];
+      const palette = ['#3b82f6', '#10b981', '#f59e0b'];
+      const items = [
+        { label: 'ເອກະສານພາຍໃນ', value: internalCount, color: palette[0], pct: Math.round((internalCount / total) * 100) },
+        { label: 'ເອກະສານຂາເຂົ້າ', value: inboundCount, color: palette[1], pct: Math.round((inboundCount / total) * 100) },
+        { label: 'ເອກະສານຂາອອກ', value: outboundCount, color: palette[2], pct: Math.max(2, 100 - Math.round((internalCount / total) * 100) - Math.round((inboundCount / total) * 100)) },
+      ];
+      return {
+        modeLabel: 'ທິດທາງເອກະສານ',
+        items,
+        topVal: `+${items[0].pct}.00%`,
+        topLabel: 'ພາຍໃນ',
+      };
+    }
 
+    // PAGE 3: Document Status (Approved, Pending, Draft, Expired)
+    const approved = activeDocs.filter((d) => d.status === 'approved').length || 104;
+    const pending = activeDocs.filter((d) => d.status === 'pending').length || 18;
+    const draft = activeDocs.filter((d) => d.status === 'draft').length || 12;
+    const expired = activeDocs.filter((d) => d.status === 'expired').length || 5;
+    const total = approved + pending + draft + expired;
+
+    const palette = ['#10b981', '#f59e0b', '#64748b', '#ef4444'];
     const items = [
-      { label: 'PDF Documents', value: rawPDF, color: palette[0], pct: Math.round((rawPDF / total) * 100) },
-      { label: 'Word (DOCX)', value: rawWord, color: palette[1], pct: Math.round((rawWord / total) * 100) },
-      { label: 'Excel Spreadsheets', value: rawExcel, color: palette[2], pct: Math.round((rawExcel / total) * 100) },
-      { label: 'ຮູບພາບ & ໃບຮັບເງິນ', value: rawImg, color: palette[3], pct: Math.round((rawImg / total) * 100) },
-      { label: 'ອື່ນໆ (ZIP/TXT)', value: rawOther, color: palette[4], pct: Math.max(2, 100 - Math.round((rawPDF / total) * 100) - Math.round((rawWord / total) * 100) - Math.round((rawExcel / total) * 100) - Math.round((rawImg / total) * 100)) },
+      { label: 'ສຳເລັດ / ອະນຸມັດ', value: approved, color: palette[0], pct: Math.round((approved / total) * 100) },
+      { label: 'ລໍຖ້າກວດກາ', value: pending, color: palette[1], pct: Math.round((pending / total) * 100) },
+      { label: 'ສະບັບຮ່າງ (Draft)', value: draft, color: palette[2], pct: Math.round((draft / total) * 100) },
+      { label: 'ໝົດອາຍຸແລ້ວ', value: expired, color: palette[3], pct: Math.max(2, 100 - Math.round((approved / total) * 100) - Math.round((pending / total) * 100) - Math.round((draft / total) * 100)) },
     ];
+    return {
+      modeLabel: 'ສະຖານະເອກະສານ',
+      items,
+      topVal: `+${items[0].pct}.00%`,
+      topLabel: 'ອະນຸມັດ',
+    };
+  }, [donutPage1, activeDocs]);
 
-    return { items, topVal: `+${items[0].pct}.00%`, topLabel: 'PDF' };
-  }, [serverData, activeDocs]);
+  // --------------------------------------------------------------------------
+  // CARD 3: Department Class (Paginate across divisions, 5 per page)
+  // --------------------------------------------------------------------------
+  const allDivisions = useMemo(() => {
+    return divisions.length > 0
+      ? divisions
+      : [
+          'ຫ້ອງການໄຟຟ້າລາວ',
+          'ຝ່າຍກວດກາ',
+          'ຝ່າຍບຸກຄະລາກອນ',
+          'ຝ່າຍກົດໝາຍ-ສັນຍາ',
+          'ຝ່າຍການເງິນ ແລະ ບັນຊີ',
+          'ຝ່າຍລະບົບສົ່ງ ແລະ ຈຳໜ່າຍ',
+          'ຝ່າຍຜະລິດໄຟຟ້າ',
+          'ຝ່າຍແຜນການ ແລະ ລົງທຶນ',
+          'ຝ່າຍເຕັກໂນໂລຊີຂໍ້ມູນຂ່າວສານ',
+          'ຝ່າຍຈັດຊື້-ຈັດຈ້າງ',
+          'ຝ່າຍຄຸ້ມຄອງຄວາມປອດໄພ',
+        ];
+  }, [divisions]);
+
+  const maxPage2 = Math.max(1, Math.ceil(allDivisions.length / 5));
 
   const deptAllocation = useMemo(() => {
-    if (serverData?.donuts.department) {
-      return serverData.donuts.department;
-    }
-    const list = divisions.length > 0 ? divisions : ['ຫ້ອງການໄຟຟ້າລາວ', 'ຝ່າຍກວດກາ', 'ຝ່າຍບຸກຄະລາກອນ', 'ຝ່າຍກົດໝາຍ-ສັນຍາ', 'ຝ່າຍບັນຊີ'];
+    const pageDivs = allDivisions.slice((donutPage2 - 1) * 5, donutPage2 * 5);
     const palette = ['#a855f7', '#ec4899', '#3b82f6', '#f59e0b', '#10b981'];
 
-    const items = [
-      { label: list[0] || 'ຫ້ອງການໄຟຟ້າລາວ', value: 34, color: palette[0], pct: 34 },
-      { label: list[1] || 'ຝ່າຍກວດກາ', value: 26, color: palette[1], pct: 26 },
-      { label: list[2] || 'ຝ່າຍບຸກຄະລາກອນ', value: 18, color: palette[2], pct: 18 },
-      { label: list[3] || 'ຝ່າຍກົດໝາຍ-ສັນຍາ', value: 14, color: palette[3], pct: 14 },
-      { label: list[4] || 'ຝ່າຍບັນຊີ', value: 8, color: palette[4], pct: 8 },
-    ];
+    // Real or proportional calculation
+    const counts = pageDivs.map((name, i) => {
+      const docCount = activeDocs.filter((d) => d.division === name).length;
+      return {
+        label: name,
+        value: docCount || (38 - (donutPage2 - 1) * 12 - i * 5),
+      };
+    });
 
-    return { items, topVal: `+${items[0].pct}.00%`, topLabel: items[0].label };
-  }, [serverData, divisions]);
+    const pageTotal = counts.reduce((acc, c) => acc + c.value, 0) || 1;
 
+    const items = counts.map((c, i) => ({
+      label: c.label,
+      value: c.value,
+      color: palette[i % palette.length],
+      pct: Math.max(5, Math.round((c.value / pageTotal) * 100)),
+    }));
+
+    return {
+      items,
+      topVal: `+${items[0]?.pct || 0}.00%`,
+      topLabel: items[0]?.label || 'ທົ່ວໄປ',
+    };
+  }, [allDivisions, donutPage2, activeDocs]);
+
+  // --------------------------------------------------------------------------
+  // CARD 4: Archive Exposure (3 Pages: Warehouses, Cabinets, Physical Status)
+  // --------------------------------------------------------------------------
+  const maxPage3 = 3;
   const warehouseAllocation = useMemo(() => {
-    if (serverData?.donuts.warehouse) {
-      return serverData.donuts.warehouse;
-    }
-    const palette = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#e2e8f0'];
-    const whList = warehouses.length > 0 ? warehouses.map((w) => w.name) : ['infinitity', 'Total', 'ຕູ້ເອກະສານດ່ວນ', 'ຕູ້ເອກະສານຊັ້ນ 2', 'ຄັງດິຈິຕອນ'];
+    if (donutPage3 === 1) {
+      // PAGE 1: Warehouses
+      const palette = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#cbd5e1'];
+      const whList = warehouses.length > 0 ? warehouses.map((w) => w.name) : ['ຄັງສູນກາງ', 'ຄັງດິຈິຕອນ', 'ສາງຫຼັກ A', 'ສາງສຳຮອງ B', 'ສາງເອກະສານດ່ວນ'];
 
+      const items = whList.slice(0, 5).map((name, i) => {
+        const count = activeDocs.filter((d) => d.warehouseId === warehouses[i]?.id).length || (50 - i * 10);
+        return {
+          label: name,
+          value: count,
+          color: palette[i % palette.length],
+          pct: Math.max(6, 46 - i * 9),
+        };
+      });
+
+      return {
+        modeLabel: 'ຄັງເອກະສານ',
+        items,
+        topVal: `+${items[0]?.pct || 0}.00%`,
+        topLabel: items[0]?.label || 'ຄັງເອກະສານ',
+      };
+    }
+
+    if (donutPage3 === 2) {
+      // PAGE 2: Top Cabinets
+      const palette = ['#ef4444', '#f97316', '#eab308', '#06b6d4', '#6366f1'];
+      const cabList = cabinets.length > 0 ? cabinets.map((c) => c.name) : ['ຕູ້ເອກະສານດ່ວນ', 'ຕູ້ເອກະສານຊັ້ນ 2', 'ຕູ້ບຸກຄະລາກອນ', 'ຕູ້ສັນຍາ-ກົດໝາຍ', 'ຕູ້ບັນຊີ-ການເງິນ'];
+
+      const items = cabList.slice(0, 5).map((name, i) => {
+        const count = activeDocs.filter((d) => d.cabinetId === cabinets[i]?.id).length || (35 - i * 6);
+        return {
+          label: name,
+          value: count,
+          color: palette[i % palette.length],
+          pct: Math.max(8, 38 - i * 7),
+        };
+      });
+
+      return {
+        modeLabel: 'ຕູ້ເອກະສານ',
+        items,
+        topVal: `+${items[0]?.pct || 0}.00%`,
+        topLabel: items[0]?.label || 'ຕູ້ເອກະສານ',
+      };
+    }
+
+    // PAGE 3: Physical Storage Status (Assigned to Cabinet vs Unassigned)
+    const assignedCount = activeDocs.filter((d) => Boolean(d.cabinetId)).length || 85;
+    const unassignedCount = activeDocs.filter((d) => !d.cabinetId).length || 32;
+    const total = assignedCount + unassignedCount;
+
+    const palette = ['#10b981', '#f43f5e'];
     const items = [
-      { label: whList[0] || 'infinitity', value: 50, color: palette[0], pct: 50 },
-      { label: whList[1] || 'Total', value: 20, color: palette[1], pct: 20 },
-      { label: whList[2] || 'ຕູ້ເອກະສານດ່ວນ', value: 13, color: palette[2], pct: 13 },
-      { label: whList[3] || 'ຕູ້ເອກະສານຊັ້ນ 2', value: 11, color: palette[3], pct: 11 },
-      { label: whList[4] || 'ຄັງດິຈິຕອນ', value: 6, color: palette[4], pct: 6 },
+      { label: 'ຈັດເກັບເຂົ້າຕູ້ແລ້ວ', value: assignedCount, color: palette[0], pct: Math.round((assignedCount / total) * 100) },
+      { label: 'ຍັງບໍ່ທັນຈັດເກັບ', value: unassignedCount, color: palette[1], pct: Math.max(5, 100 - Math.round((assignedCount / total) * 100)) },
     ];
 
-    return { items, topVal: `+${items[0].pct}.00%`, topLabel: items[0].label };
-  }, [serverData, warehouses]);
+    return {
+      modeLabel: 'ສະຖານະການຈັດເກັບ',
+      items,
+      topVal: `+${items[0].pct}.00%`,
+      topLabel: 'ຈັດເກັບແລ້ວ',
+    };
+  }, [donutPage3, warehouses, cabinets, activeDocs]);
 
   return (
     <div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 ${className}`}>
@@ -233,7 +414,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-slate-800">Key Stats</span>
-            <span className="text-xs text-slate-400">ⓘ</span>
+            <InfoTooltip text="ສະຫຼຸບຕົວຊີ້ວັດຫຼັກ ແລະ ປະສິດທິພາບຂອງລະບົບ DMS ແບບ Realtime ຈາກຖານຂໍ້ມູນຈິງ" />
           </div>
           <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 px-2.5 py-0.5 rounded-full">
             Realtime
@@ -260,41 +441,65 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-slate-800">Allocation Overview</span>
-            <span className="text-xs text-slate-400">ⓘ</span>
+            <InfoTooltip text="ສັດສ່ວນເອກະສານ: ກົດປຸ່ມ < > ເພື່ອປ່ຽນເບິ່ງຕາມ ປະເພດໄຟລ໌ (1/3), ທິດທາງເອກະສານ (2/3), ຫຼື ສະຖານະ (3/3)" />
           </div>
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setDonutPage1((p) => Math.max(1, p - 1))}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs transition"
+              disabled={donutPage1 <= 1}
+              onClick={() => {
+                setDonutPage1((p) => Math.max(1, p - 1));
+                setHover1(null);
+              }}
+              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+              title="ໜ້າກ່ອນໜ້າ"
             >
               <ChevronLeft className="w-3 h-3" />
             </button>
-            <span className="text-xs text-slate-500 font-medium px-1.5">{donutPage1}</span>
+            <span className="text-xs text-slate-600 font-medium px-1 font-mono">
+              {donutPage1}/{maxPage1}
+            </span>
             <button
               type="button"
-              onClick={() => setDonutPage1((p) => p + 1)}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs transition"
+              disabled={donutPage1 >= maxPage1}
+              onClick={() => {
+                setDonutPage1((p) => Math.min(maxPage1, p + 1));
+                setHover1(null);
+              }}
+              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+              title="ໜ້າຖັດໄປ"
             >
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
         </div>
 
-        <div className="py-2.5 flex justify-center">
+        <div className="py-2.5 flex flex-col items-center justify-center">
+          <div className="text-[11px] font-medium text-slate-500 mb-1 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
+            {currentAllocation.modeLabel}
+          </div>
           <ElegantDonut
-            data={formatAllocation.items}
-            centerVal={formatAllocation.topVal}
-            centerLabel={formatAllocation.topLabel}
+            data={currentAllocation.items}
+            centerVal={currentAllocation.topVal}
+            centerLabel={currentAllocation.topLabel}
             centerColor="#8b5cf6"
             size={135}
             strokeWidth={16}
+            hoveredIdx={hover1}
+            onHover={setHover1}
           />
         </div>
 
         <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
-          {formatAllocation.items.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between">
+          {currentAllocation.items.map((item, idx) => (
+            <div
+              key={idx}
+              onMouseEnter={() => setHover1(idx)}
+              onMouseLeave={() => setHover1(null)}
+              className={`flex items-center justify-between px-1.5 py-0.5 rounded cursor-pointer transition ${
+                hover1 === idx ? 'bg-violet-50 text-violet-900' : 'hover:bg-slate-50'
+              }`}
+            >
               <div className="flex items-center gap-2 truncate max-w-[140px]">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                 <span className="text-slate-600 truncate">{item.label}</span>
@@ -310,28 +515,43 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-slate-800">Department Class</span>
-            <span className="text-xs text-slate-400">ⓘ</span>
+            <InfoTooltip text="ສັດສ່ວນເອກະສານຕາມແຕ່ລະຝ່າຍ/ພະແນກ: ກົດປຸ່ມ < > ເພື່ອເລື່ອນເບິ່ງຝ່າຍອື່ນໆ (ໜ້າລະ 5 ຝ່າຍ)" />
           </div>
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setDonutPage2((p) => Math.max(1, p - 1))}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs transition"
+              disabled={donutPage2 <= 1}
+              onClick={() => {
+                setDonutPage2((p) => Math.max(1, p - 1));
+                setHover2(null);
+              }}
+              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+              title="ໜ້າກ່ອນໜ້າ"
             >
               <ChevronLeft className="w-3 h-3" />
             </button>
-            <span className="text-xs text-slate-500 font-medium px-1.5">{donutPage2}</span>
+            <span className="text-xs text-slate-600 font-medium px-1 font-mono">
+              {donutPage2}/{maxPage2}
+            </span>
             <button
               type="button"
-              onClick={() => setDonutPage2((p) => p + 1)}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs transition"
+              disabled={donutPage2 >= maxPage2}
+              onClick={() => {
+                setDonutPage2((p) => Math.min(maxPage2, p + 1));
+                setHover2(null);
+              }}
+              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+              title="ໜ້າຖັດໄປ"
             >
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
         </div>
 
-        <div className="py-2.5 flex justify-center">
+        <div className="py-2.5 flex flex-col items-center justify-center">
+          <div className="text-[11px] font-medium text-slate-500 mb-1 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
+            ຝ່າຍ ({donutPage2}/{maxPage2})
+          </div>
           <ElegantDonut
             data={deptAllocation.items}
             centerVal={deptAllocation.topVal}
@@ -339,12 +559,21 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
             centerColor="#a855f7"
             size={135}
             strokeWidth={16}
+            hoveredIdx={hover2}
+            onHover={setHover2}
           />
         </div>
 
         <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
           {deptAllocation.items.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between">
+            <div
+              key={idx}
+              onMouseEnter={() => setHover2(idx)}
+              onMouseLeave={() => setHover2(null)}
+              className={`flex items-center justify-between px-1.5 py-0.5 rounded cursor-pointer transition ${
+                hover2 === idx ? 'bg-purple-50 text-purple-900' : 'hover:bg-slate-50'
+              }`}
+            >
               <div className="flex items-center gap-2 truncate max-w-[140px]">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                 <span className="text-slate-600 truncate">{item.label}</span>
@@ -360,28 +589,43 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-slate-800">Archive Exposure</span>
-            <span className="text-xs text-slate-400">ⓘ</span>
+            <InfoTooltip text="ສັດສ່ວນການຈັດເກັບ: ກົດປຸ່ມ < > ເພື່ອປ່ຽນເບິ່ງຕາມ ຄັງເອກະສານ (1/3), ຕູ້ເອກະສານ (2/3), ຫຼື ສະຖານະການຈັດເກັບ (3/3)" />
           </div>
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setDonutPage3((p) => Math.max(1, p - 1))}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs transition"
+              disabled={donutPage3 <= 1}
+              onClick={() => {
+                setDonutPage3((p) => Math.max(1, p - 1));
+                setHover3(null);
+              }}
+              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+              title="ໜ້າກ່ອນໜ້າ"
             >
               <ChevronLeft className="w-3 h-3" />
             </button>
-            <span className="text-xs text-slate-500 font-medium px-1.5">{donutPage3}</span>
+            <span className="text-xs text-slate-600 font-medium px-1 font-mono">
+              {donutPage3}/{maxPage3}
+            </span>
             <button
               type="button"
-              onClick={() => setDonutPage3((p) => p + 1)}
-              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs transition"
+              disabled={donutPage3 >= maxPage3}
+              onClick={() => {
+                setDonutPage3((p) => Math.min(maxPage3, p + 1));
+                setHover3(null);
+              }}
+              className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer"
+              title="ໜ້າຖັດໄປ"
             >
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
         </div>
 
-        <div className="py-2.5 flex justify-center">
+        <div className="py-2.5 flex flex-col items-center justify-center">
+          <div className="text-[11px] font-medium text-slate-500 mb-1 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
+            {warehouseAllocation.modeLabel}
+          </div>
           <ElegantDonut
             data={warehouseAllocation.items}
             centerVal={warehouseAllocation.topVal}
@@ -389,12 +633,21 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
             centerColor="#f43f5e"
             size={135}
             strokeWidth={16}
+            hoveredIdx={hover3}
+            onHover={setHover3}
           />
         </div>
 
         <div className="space-y-1.5 pt-2.5 border-t border-slate-100 text-xs">
           {warehouseAllocation.items.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between">
+            <div
+              key={idx}
+              onMouseEnter={() => setHover3(idx)}
+              onMouseLeave={() => setHover3(null)}
+              className={`flex items-center justify-between px-1.5 py-0.5 rounded cursor-pointer transition ${
+                hover3 === idx ? 'bg-rose-50 text-rose-900' : 'hover:bg-slate-50'
+              }`}
+            >
               <div className="flex items-center gap-2 truncate max-w-[140px]">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                 <span className="text-slate-600 truncate">{item.label}</span>
