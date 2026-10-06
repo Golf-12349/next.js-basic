@@ -7,6 +7,7 @@ import {
   AlertCircle,
   Archive,
   ArrowRightLeft,
+  BarChart3,
   Bell,
   BellOff,
   Building2,
@@ -95,6 +96,7 @@ const menuSections: MenuSection[] = [
     title: 'MAIN',
     items: [
       { name: 'ໜ້າຫຼັກ', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'ລາຍງານ & ສະຖິຕິ', href: '/reports', icon: BarChart3 },
     ],
   },
   {

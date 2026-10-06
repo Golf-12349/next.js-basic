@@ -4,7 +4,6 @@ import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { GreetingHeader } from '@/app/components/dashboard/GreetingHeader';
 import { MetricCards } from '@/app/components/dashboard/MetricCards';
 import { AnalyticsOverviewCards } from '@/app/components/dashboard/AnalyticsOverviewCards';
-import { ReportsSection } from '@/app/components/dashboard/ReportsSection';
 
 export default function DashboardPage() {
   return (
@@ -13,7 +12,6 @@ export default function DashboardPage() {
         <GreetingHeader />
         <MetricCards />
         <AnalyticsOverviewCards />
-        <ReportsSection />
       </main>
     </DashboardLayout>
   );

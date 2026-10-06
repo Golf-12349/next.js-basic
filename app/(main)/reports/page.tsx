@@ -1,9 +1,14 @@
-import { redirect } from 'next/navigation'
+'use client';
 
-/**
- * ໜ້າ "ລາຍງານ & ສະຖິຕິ" ຖືກລວມເຂົ້າກັບໜ້າຫຼັກແລ້ວ
- * ດັ່ງນັ້ນ URL ເກົ່າ /reports ຈະຖືກສົ່ງຕໍ່ໄປ /dashboard ອັດຕະໂນມັດ
- */
-export default function ReportsRedirectPage() {
-  redirect('/dashboard')
+import { DashboardLayout } from '@/app/components/dashboard-layout';
+import { ReportsSection } from '@/app/components/dashboard/ReportsSection';
+
+export default function ReportsPage() {
+  return (
+    <DashboardLayout title="ລາຍງານ & ສະຖິຕິ">
+      <main className="w-full space-y-4 p-3 sm:p-4 lg:p-5">
+        <ReportsSection />
+      </main>
+    </DashboardLayout>
+  );
 }
