@@ -132,9 +132,6 @@ const menuSections: MenuSection[] = [
           },
         ],
       },
-      { name: 'ຍ້າຍຕູ້ເອກະສານ', href: '/documents/relocate/cabinet', icon: Layers },
-      { name: 'ຍ້າຍຊັ້ນວາງ', href: '/documents/relocate/shelf', icon: Library },
-      { name: 'ຍ້າຍແຟ້ມເອກະສານ', href: '/documents/relocate/folder', icon: FolderArchive },
     ],
   },
   {

@@ -38,6 +38,9 @@ export default function ArchivePage() {
     deleteShelf,
     deleteFolder,
     assignDocument,
+    moveCabinet,
+    moveShelf,
+    moveFolder,
   } = useDMSArchive();
 
   // Role permissions:
@@ -160,11 +163,12 @@ export default function ArchivePage() {
             onCreate={() => archive.setCabinetModalOpen(true)}
             onOpen={(cabinetId) =>
               archive.setView({
-                level: 'shelves',
-                warehouseId: archive.activeWarehouse?.id,
-                cabinetId,
-              })
-            }
+                 level: 'shelves',
+                 warehouseId: archive.activeWarehouse?.id,
+                 cabinetId,
+               })
+             }
+            onMoveCabinet={moveCabinet}
             onDelete={(cabinet) => archive.handleDelete('cabinet', cabinet.id, cabinet.name)}
           />
         )}
@@ -190,6 +194,7 @@ export default function ArchivePage() {
                 shelfId,
               });
             }}
+            onMoveShelf={moveShelf}
             onDelete={(shelf) => archive.handleDelete('shelf', shelf.id, shelf.name)}
           />
         )}
@@ -217,6 +222,7 @@ export default function ArchivePage() {
                 folderId,
               });
             }}
+            onMoveFolder={moveFolder}
             onDelete={(folder) => archive.handleDelete('folder', folder.id, folder.name)}
           />
         )}

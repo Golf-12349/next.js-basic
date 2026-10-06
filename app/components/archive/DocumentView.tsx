@@ -304,9 +304,9 @@ function DocumentRow({
           <button
             onClick={() => onMoveShelf(doc)}
             className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-100"
-            title="ຍ້າຍບ່ອນເກັບ"
+            title="ຍ້າຍເອກະສານ"
           >
-            <FolderInput size={14} /> ຍ້າຍແຟ້ມ
+            <FolderInput size={14} /> ຍ້າຍເອກະສານ
           </button>
         )}
         <button
@@ -485,7 +485,7 @@ function MoveToFolderModal({
       pushToast({ title: `ຍ້າຍເອກະສານເຂົ້າແຟ້ມສຳເລັດ` });
       onClose();
     } catch {
-      pushToast({ title: 'ເກີດຂໍ້ຜິດພາດໃນການຍ້າຍແຟ້ມ' });
+      pushToast({ title: 'ເກີດຂໍ້ຜິດພາດໃນການຍ້າຍເອກະສານ' });
     } finally {
       setLoading(false);
     }

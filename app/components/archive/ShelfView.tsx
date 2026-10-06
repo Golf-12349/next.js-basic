@@ -1,10 +1,11 @@
-﻿"use client"
+"use client"
 import { useState, useMemo } from 'react'
-import { FileText, FolderArchive, Plus, Trash2, Search, RotateCcw } from 'lucide-react'
+import { FileText, FolderArchive, Plus, Trash2, Search, RotateCcw, FolderInput } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
 import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
 import { ArchiveDetailModal, toShelfDetail } from './ArchiveDetailModal'
+import { MoveShelfModal } from './MoveShelfModal'
 import type { ArchiveDetailTarget } from './ArchiveDetailModal'
 import type { ArchiveColumn } from './ArchiveListView'
 import type { ViewMode } from './useArchive'
@@ -18,6 +19,7 @@ interface ShelfCardProps {
   docCount: number;
   canManage?: boolean;
   onOpen: () => void;
+  onMove?: () => void;
   onDelete: () => void;
 }
 
@@ -40,6 +42,7 @@ function ShelfCard({
   docCount,
   canManage = true,
   onOpen,
+  onMove,
   onDelete,
 }: ShelfCardProps) {
   return (
@@ -52,18 +55,32 @@ function ShelfCard({
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-xl transition group-hover:scale-105">
             🪜
           </div>
-          {canManage && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
-              title="ລຶບຊັ້ນວາງ"
-            >
-              <Trash2 size={16} />
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            {canManage && onMove && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMove();
+                }}
+                className="rounded-lg p-1.5 text-gray-400 transition hover:bg-indigo-50 hover:text-indigo-600"
+                title="ຍ້າຍຊັ້ນວາງ"
+              >
+                <FolderInput size={16} />
+              </button>
+            )}
+            {canManage && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
+                title="ລຶບຊັ້ນວາງ"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         <h3 className="mt-3 text-base font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
@@ -149,6 +166,7 @@ interface ShelfViewProps {
   onViewModeChange?: (mode: ViewMode) => void;
   onCreate: () => void;
   onOpen: (shelfId: string) => void;
+  onMoveShelf?: (shelfId: string, targetCabinetId: string) => Promise<void>;
   onDelete: (shelf: Shelf) => void;
 }
 
@@ -164,6 +182,7 @@ export default function ShelfView({
   onViewModeChange,
   onCreate,
   onOpen,
+  onMoveShelf,
   onDelete,
 }: ShelfViewProps) {
   const [filterWarehouseId, setFilterWarehouseId] = useState<string>('all');
@@ -171,6 +190,7 @@ export default function ShelfView({
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [detail, setDetail] = useState<ArchiveDetailTarget | null>(null);
+  const [moveShelfTarget, setMoveShelfTarget] = useState<Shelf | null>(null);
   const PAGE_SIZE = 30;
 
   // Available cabinets for dropdown (cascading from warehouse)
@@ -462,6 +482,8 @@ export default function ShelfView({
               rowKey={(s) => s.id}
               onOpen={(s) => onOpen(s.id)}
               onView={(sh) => setDetail(toShelfDetail(sh, shelfStats.get(sh.id) ?? EMPTY_SHELF_STATS, buildShelfPath(sh)))}
+              onMove={canManage && onMoveShelf ? (sh) => setMoveShelfTarget(sh) : undefined}
+              moveTitle="ຍ້າຍຊັ້ນວາງ"
               canManage={canManage}
               onDelete={(s) => onDelete(s)}
               deleteTitle="ລຶບຊັ້ນວາງ"
@@ -487,6 +509,7 @@ export default function ShelfView({
                   folderCount={stat.folders}
                   docCount={stat.docs}
                   onOpen={() => onOpen(shelf.id)}
+                  onMove={canManage && onMoveShelf ? () => setMoveShelfTarget(shelf) : undefined}
                   onDelete={() => onDelete(shelf)}
                 />
               );
@@ -500,6 +523,18 @@ export default function ShelfView({
               const found = detail ? shelves.find((x) => x.name === detail.name) : undefined;
               setDetail(null);
               if (found) onOpen(found.id);
+            }}
+          />
+          <MoveShelfModal
+            open={!!moveShelfTarget}
+            shelf={moveShelfTarget}
+            cabinets={cabinets}
+            onClose={() => setMoveShelfTarget(null)}
+            onConfirm={async (shId, cabId) => {
+              if (onMoveShelf) {
+                await onMoveShelf(shId, cabId);
+              }
+              setMoveShelfTarget(null);
             }}
           />
           <Pagination

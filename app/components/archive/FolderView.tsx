@@ -1,10 +1,11 @@
-﻿"use client"
+"use client"
 import { useState, useMemo } from 'react'
-import { FileText, Plus, Trash2, Search, RotateCcw } from 'lucide-react'
+import { FileText, Plus, Trash2, Search, RotateCcw, FolderInput } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
 import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
 import { ArchiveDetailModal, toFolderDetail } from './ArchiveDetailModal'
+import { MoveFolderModal } from './MoveFolderModal'
 import type { ArchiveDetailTarget } from './ArchiveDetailModal'
 import type { ArchiveColumn } from './ArchiveListView'
 import type { ViewMode } from './useArchive'
@@ -18,6 +19,7 @@ interface FolderCardProps {
   docCount: number;
   canManage?: boolean;
   onOpen: () => void;
+  onMove?: () => void;
   onDelete: () => void;
 }
 
@@ -40,6 +42,7 @@ function FolderCard({
   docCount,
   canManage = true,
   onOpen,
+  onMove,
   onDelete,
 }: FolderCardProps) {
   return (
@@ -52,18 +55,32 @@ function FolderCard({
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-xl transition group-hover:scale-105">
             📁
           </div>
-          {canManage && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
-              title="ລຶບແຟ້ມ"
-            >
-              <Trash2 size={16} />
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            {canManage && onMove && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMove();
+                }}
+                className="rounded-lg p-1.5 text-gray-400 transition hover:bg-amber-50 hover:text-amber-700"
+                title="ຍ້າຍແຟ້ມເອກະສານ"
+              >
+                <FolderInput size={16} />
+              </button>
+            )}
+            {canManage && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="rounded-lg p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-rose-600"
+                title="ລຶບແຟ້ມ"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         <h3 className="mt-3 text-base font-bold text-gray-900 group-hover:text-amber-700 transition-colors">
@@ -150,6 +167,7 @@ interface FolderViewProps {
   onViewModeChange?: (mode: ViewMode) => void;
   onCreate: () => void;
   onOpen: (folderId: string) => void;
+  onMoveFolder?: (folderId: string, targetCabinetId: string, targetShelfId?: string | null) => Promise<void>;
   onDelete: (folder: Folder) => void;
 }
 
@@ -166,6 +184,7 @@ export default function FolderView({
   onViewModeChange,
   onCreate,
   onOpen,
+  onMoveFolder,
   onDelete,
 }: FolderViewProps) {
   const [filterWarehouseId, setFilterWarehouseId] = useState<string>('all');
@@ -174,6 +193,7 @@ export default function FolderView({
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [detail, setDetail] = useState<ArchiveDetailTarget | null>(null);
+  const [moveFolderTarget, setMoveFolderTarget] = useState<Folder | null>(null);
   const PAGE_SIZE = 30;
 
   // Available cabinets for dropdown (cascading from warehouse)
@@ -523,6 +543,8 @@ export default function FolderView({
               rowKey={(f) => f.id}
               onOpen={(f) => onOpen(f.id)}
               onView={(fol) => setDetail(toFolderDetail(fol, folderStats.get(fol.id) ?? EMPTY_FOLDER_STATS, buildFolderPath(fol)))}
+              onMove={canManage && onMoveFolder ? (fol) => setMoveFolderTarget(fol) : undefined}
+              moveTitle="ຍ້າຍແຟ້ມເອກະສານ"
               canManage={canManage}
               onDelete={(f) => onDelete(f)}
               deleteTitle="ລຶບແຟ້ມ"
@@ -549,6 +571,7 @@ export default function FolderView({
                   canManage={canManage}
                   docCount={stat.docs}
                   onOpen={() => onOpen(folder.id)}
+                  onMove={canManage && onMoveFolder ? () => setMoveFolderTarget(folder) : undefined}
                   onDelete={() => onDelete(folder)}
                 />
               );
@@ -562,6 +585,19 @@ export default function FolderView({
               const found = detail ? folders.find((x) => x.name === detail.name) : undefined;
               setDetail(null);
               if (found) onOpen(found.id);
+            }}
+          />
+          <MoveFolderModal
+            open={!!moveFolderTarget}
+            folder={moveFolderTarget}
+            cabinets={cabinets}
+            shelves={shelves}
+            onClose={() => setMoveFolderTarget(null)}
+            onConfirm={async (folId, cabId, shId) => {
+              if (onMoveFolder) {
+                await onMoveFolder(folId, cabId, shId);
+              }
+              setMoveFolderTarget(null);
             }}
           />
           <Pagination

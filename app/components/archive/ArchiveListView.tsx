@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowUpDown, ChevronRight, Eye, LayoutGrid, List, Trash2 } from 'lucide-react'
+import { ArrowUpDown, Eye, FolderInput, LayoutGrid, List, Trash2 } from 'lucide-react'
 import type { ViewMode } from './useArchive'
 
 // ── Column definition ────────────────────────────────────────
@@ -99,6 +99,8 @@ interface ArchiveListViewProps<T> {
   rowKey: (item: T) => string
   onOpen: (item: T) => void
   onView?: (item: T) => void
+  onMove?: (item: T) => void
+  moveTitle?: string
   canManage?: boolean
   onDelete?: (item: T) => void
   deleteTitle?: string
@@ -115,6 +117,8 @@ export default function ArchiveListView<T>({
   rowKey,
   onOpen,
   onView,
+  onMove,
+  moveTitle,
   canManage = false,
   onDelete,
   deleteTitle = 'ລຶບ',
@@ -196,17 +200,20 @@ export default function ArchiveListView<T>({
                         <Eye size={16} />
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpen(row);
-                      }}
-                      title="ເປີດ"
-                      className="rounded-lg p-1.5 text-gray-400 transition hover:bg-indigo-50 hover:text-indigo-600"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
+                    {canManage && onMove && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMove(row);
+                        }}
+                        title={moveTitle || 'ຍ້າຍ'}
+                        className="rounded-lg p-1.5 text-indigo-600 transition hover:bg-indigo-50"
+                      >
+                        <FolderInput size={16} />
+                      </button>
+                    )}
+
                     {canManage && onDelete && (
                       <button
                         type="button"

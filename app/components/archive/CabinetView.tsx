@@ -1,11 +1,12 @@
-﻿"use client"
+"use client"
 import { useState, useMemo } from 'react'
-import { Plus, Trash2, Search, RotateCcw } from 'lucide-react'
+import { Plus, Trash2, Search, RotateCcw, FolderInput } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
 import { ArchiveDetailModal, toCabinetDetail } from './ArchiveDetailModal'
+import { MoveCabinetModal } from './MoveCabinetModal'
 import type { ArchiveDetailTarget } from './ArchiveDetailModal'
 import type { ArchiveColumn } from './ArchiveListView'
 import type { ViewMode } from './useArchive'
@@ -19,6 +20,7 @@ interface CabinetCardProps {
   docCount: number;
   canManage?: boolean;
   onOpen: () => void;
+  onMove?: () => void;
   onDelete: () => void;
 }
 
@@ -37,6 +39,7 @@ function CabinetCard({
   docCount,
   canManage = true,
   onOpen,
+  onMove,
   onDelete,
 }: CabinetCardProps) {
   const gradient = cabinet.color && cabinet.color.startsWith('from-')
@@ -58,6 +61,18 @@ function CabinetCard({
               <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
                 {shelfCount} ຊັ້ນວາງ
               </span>
+              {canManage && onMove && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMove();
+                  }}
+                  className="rounded-lg bg-white/10 p-1.5 text-white/80 transition hover:bg-white/25 hover:text-white"
+                  title="ຍ້າຍຕູ້ເອກະສານ"
+                >
+                  <FolderInput size={16} />
+                </button>
+              )}
               {canManage && (
                 <button
                   onClick={(e) => {
@@ -165,6 +180,7 @@ interface CabinetViewProps {
   onViewModeChange?: (mode: ViewMode) => void;
   onCreate: () => void;
   onOpen: (cabinetId: string) => void;
+  onMoveCabinet?: (cabinetId: string, targetWarehouseId: string, division?: string, department?: string) => Promise<void>;
   onDelete: (cabinet: Cabinet) => void;
 }
 
@@ -184,6 +200,7 @@ export default function CabinetView({
   onViewModeChange,
   onCreate,
   onOpen,
+  onMoveCabinet,
   onDelete,
 }: CabinetViewProps) {
   const [filterWarehouseId, setFilterWarehouseId] = useState<string>('all');
@@ -192,6 +209,7 @@ export default function CabinetView({
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [detail, setDetail] = useState<ArchiveDetailTarget | null>(null);
+  const [moveCabinetTarget, setMoveCabinetTarget] = useState<Cabinet | null>(null);
   const PAGE_SIZE = 30;
 
   // Unique divisions from edlStructure + cabinets
@@ -516,6 +534,8 @@ export default function CabinetView({
               rowKey={(c) => c.id}
               onOpen={(c) => onOpen(c.id)}
               onView={(cab) => setDetail(toCabinetDetail(cab, cabinetStats.get(cab.id) ?? EMPTY_CABINET_STATS, cab.warehouseId ? warehouseById.get(cab.warehouseId)?.name : undefined))}
+              onMove={canManage && onMoveCabinet ? (cab) => setMoveCabinetTarget(cab) : undefined}
+              moveTitle="ຍ້າຍຕູ້ເອກະສານ"
               canManage={canManage}
               onDelete={(c) => onDelete(c)}
               deleteTitle="ລຶບຕູ້"
@@ -540,6 +560,7 @@ export default function CabinetView({
                     docCount={stat.docs}
                     canManage={canManage}
                     onOpen={() => onOpen(cabinet.id)}
+                    onMove={canManage && onMoveCabinet ? () => setMoveCabinetTarget(cabinet) : undefined}
                     onDelete={() => onDelete(cabinet)}
                   />
                 );
@@ -553,6 +574,18 @@ export default function CabinetView({
               const found = detail ? cabinets.find((x) => x.name === detail.name) : undefined;
               setDetail(null);
               if (found) onOpen(found.id);
+            }}
+          />
+          <MoveCabinetModal
+            open={!!moveCabinetTarget}
+            cabinet={moveCabinetTarget}
+            warehouses={warehouses}
+            onClose={() => setMoveCabinetTarget(null)}
+            onConfirm={async (cabId, whId, div, dept) => {
+              if (onMoveCabinet) {
+                await onMoveCabinet(cabId, whId, div, dept);
+              }
+              setMoveCabinetTarget(null);
             }}
           />
           <Pagination
