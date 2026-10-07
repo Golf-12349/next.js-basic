@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useRef } from 'react'
-import { BarChart3, FileSpreadsheet, Printer } from 'lucide-react'
+import { BarChart3, Printer } from 'lucide-react'
 import { useDocuments } from '@/app/(main)/context/DocumentsContext'
 import { pushToast } from '@/app/components/ui/Toast'
 
@@ -58,38 +58,6 @@ export function ReportsSection() {
       .sort((a, b) => (a.uploadDate < b.uploadDate ? 1 : -1))
       .slice(0, 4)
   }, [active])
-
-  // ---------- Export Excel ----------
-  // ສ້າງໄຟລ໌ .xlsx ຈິງ ຈາກ documents[] ໃນ Context ແລ້ວດາວໂຫຼດອັດຕະໂນມັດ
-  async function handleExportExcel() {
-    const XLSX = await import('xlsx')
-    if (active.length === 0) {
-      pushToast({ title: 'ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ' })
-      return
-    }
-
-    const rows = active.map((d) => ({
-      'ຊື່ເອກກະສານ': d.title,
-      'ເລກທີ': d.docNumber,
-      'ໝວດໝູ່': d.category,
-      'ສະຖານະ': statusLabelMap[d.status],
-      'ວັນທີອັບໂຫຼດ': d.uploadDate,
-      'ຜູ້ອັບໂຫຼດ': d.uploadedBy,
-    }))
-
-    const worksheet = XLSX.utils.json_to_sheet(rows)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'ລາຍງານ')
-
-    // ຕັ້ງຄວາມກ້ວາງຄໍລຳໃຫ້ອ່ານງ່າຍ
-    worksheet['!cols'] = [
-      { wch: 35 }, { wch: 15 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 18 },
-    ]
-
-    const fileName = `dms-report-${new Date().toISOString().slice(0, 10)}.xlsx`
-    XLSX.writeFile(workbook, fileName)
-    pushToast({ title: 'ສົ່ງອອກ Excel ສຳເລັດ' })
-  }
 
   // ---------- Print ----------
   // ໃຊ້ window.print() ຂອງ Browser + CSS ໃນ globals.css ໃຫ້ພິມສະເພາະ #print-area
@@ -179,14 +147,6 @@ export function ReportsSection() {
             <p className="mt-1 text-sm text-gray-500">ສົ່ງອອກ ຫຼື ພິມລາຍງານ</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void handleExportExcel()}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Export Excel
-            </button>
             <button
               type="button"
               onClick={handlePrint}

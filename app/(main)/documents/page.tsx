@@ -22,7 +22,6 @@ import {
   ArrowRightLeft,
   Trash2,
   ChevronDown,
-  FileText,
 } from 'lucide-react'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
@@ -30,7 +29,6 @@ import TransferDocumentModal from '@/app/components/documents/TransferDocumentMo
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
-import ExportPdfModal from '@/app/components/documents/ExportPdfModal'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 
@@ -75,7 +73,6 @@ export default function DocumentsPage() {
   const [storageDoc, setStorageDoc] = useState<Document | null>(null)
   const [renewDoc, setRenewDoc] = useState<Document | null>(null)
   const [editDoc, setEditDoc] = useState<Document | null>(null)
-  const [exportPdfOpen, setExportPdfOpen] = useState(false)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const visibleCabinets = useMemo(() => {
@@ -257,25 +254,13 @@ export default function DocumentsPage() {
             <p className="text-sm text-gray-500 mt-1">ການຕິດຕາມແລະຈັດການເອກະສານໃນລະບົບ DMS</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setExportPdfOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100 transition"
-              title="ສົ່ງອອກບົດລາຍງານ PDF ພ້ອມຕົວກັ່ນຕອງ"
-            >
-              <FileText className="w-4 h-4 text-indigo-600" />
-              <span>📄 ສົ່ງອອກ PDF</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={openUpload}
-              className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
-            >
-              + ອັບໂຫຼດເອກກະສານ
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={openUpload}
+            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+          >
+            + ອັບໂຫຼດເອກກະສານ
+          </button>
         </div>
 
 
@@ -848,12 +833,6 @@ export default function DocumentsPage() {
           onSuccess={() => void reload()}
         />
 
-        <ExportPdfModal
-          open={exportPdfOpen}
-          onClose={() => setExportPdfOpen(false)}
-          initialDocuments={visible}
-          defaultTitle="ບົດລາຍງານສະຫຼຸບເອກະສານ DMS"
-        />
       </div>
     </DashboardLayout>
   )

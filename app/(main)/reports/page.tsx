@@ -12,7 +12,6 @@ import {
   Clock,
   Download,
   Eye,
-  FileSpreadsheet,
   FileText,
   Filter,
   FolderArchive,
@@ -276,33 +275,6 @@ export default function ReportsPage() {
     };
   }, [filteredDocs, warehouses, cabinets]);
 
-  // ---------- Export to Excel ----------
-  async function handleExportExcel() {
-    if (filteredDocs.length === 0) {
-      pushToast({ title: 'ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', description: 'ກະລຸນາເລືອກຕົວກັ່ນຕອງໃໝ່' });
-      return;
-    }
-
-    try {
-      const { exportDocumentsToExcel } = await import('@/lib/dms/excelExport');
-      exportDocumentsToExcel(filteredDocs, {
-        title: 'ບົດລາຍງານ ແລະ ສະຖິຕິເອກະສານປະຈຳງວດ EDL-DMS',
-        subTitle: 'ລັດວິສາຫະກິດໄຟຟ້າລາວ • ELECTRICITE DU LAOS',
-        filterScope: `ຂອບເຂດປີ ${selectedYear === 'all' ? 'ທຸກປີ' : `ປີ ${selectedYear}`} | ${
-          selectedMonth === 'all' ? 'ທຸກເດືອນ' : `ເດືອນ ${selectedMonth}`
-        } | ${selectedDivision === 'all' ? 'ທຸກຝ່າຍ' : selectedDivision}`,
-        cabinets,
-      });
-      pushToast({
-        title: 'ສົ່ງອອກ Excel ມືອາຊີບສຳເລັດແລ້ວ 🎉',
-        description: 'ລວມ 2 ແຜ່ນງານ (ລາຍການເອກະສານລະອຽດ + ສະຫຼຸບສະຖິຕິ KPI)',
-      });
-    } catch (err) {
-      console.error('Excel export error:', err);
-      pushToast({ title: 'ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ Excel' });
-    }
-  }
-
   // ---------- Print / PDF ----------
   function handlePrint() {
     window.print();
@@ -374,15 +346,6 @@ export default function ReportsPage() {
               >
                 <FileText className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Export PDF (Custom Format)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleExportExcel()}
-                className="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition shadow-sm flex items-center gap-1.5"
-                title="ສົ່ງອອກໄຟລ໌ Excel"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-slate-200" />
-                <span>Export Excel (.xlsx)</span>
               </button>
             </div>
           </div>
@@ -1186,14 +1149,6 @@ export default function ReportsPage() {
                     ສະແດງທັງໝົດ {filteredDocs.length} ລາຍການຕາມເງື່ອນໄຂຕົວກອງ
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void handleExportExcel()}
-                  className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-500" />
-                  <span>ດາວໂຫຼດ Excel</span>
-                </button>
               </div>
 
               <div className="overflow-x-auto mt-3">

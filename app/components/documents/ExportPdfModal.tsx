@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Download,
   Eye,
-  FileSpreadsheet,
   FileText,
   Filter,
   Layers,
@@ -23,7 +22,6 @@ import type { Document } from '@/types/document';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
 import { useMasterData } from '@/app/(main)/context/MasterDataContext';
 import { useArchive } from '@/app/(main)/context/ArchiveContext';
-import { exportDocumentsToExcel } from '@/lib/dms/excelExport';
 
 interface ExportPdfModalProps {
   open: boolean;
@@ -250,38 +248,6 @@ export default function ExportPdfModal({
       });
     } finally {
       setExporting(false);
-    }
-  }
-
-  function handleExportExcel() {
-    if (filteredDocs.length === 0) {
-      pushToast({ title: 'ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', description: 'ກະລຸນາເລືອກຕົວກັ່ນຕອງໃໝ່' });
-      return;
-    }
-
-    try {
-      exportDocumentsToExcel(filteredDocs, {
-        title: reportTitle,
-        subTitle: organizationName,
-        preparedBy,
-        filterScope:
-          presetRange === 'all'
-            ? 'ທຸກຊ່ວງເວລາ (All Time)'
-            : presetRange === 'this_year'
-            ? 'ປີ 2026'
-            : presetRange === 'this_month'
-            ? 'ເດືອນຕຸລາ 2026'
-            : `${startDate || 'ເລີ່ມຕົ້ນ'} ຫາ ${endDate || 'ປັດຈຸບັນ'}`,
-        cabinets,
-      });
-
-      pushToast({
-        title: 'ສົ່ງອອກ Excel ມືອາຊີບສຳເລັດແລ້ວ 🎉',
-        description: 'ລວມ 2 ແຜ່ນງານ (ລາຍການເອກະສານລະອຽດ + ສະຫຼຸບສະຖິຕິ KPI)',
-      });
-    } catch (err) {
-      console.error('Excel export error:', err);
-      pushToast({ title: 'ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ Excel' });
     }
   }
 
@@ -808,17 +774,6 @@ export default function ExportPdfModal({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={handleExportExcel}
-                      disabled={filteredDocs.length === 0}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 shadow-sm transition disabled:opacity-50"
-                      title="ດາວໂຫຼດ Excel ມືອາຊີບ (2 ແຜ່ນງານພ້ອມສະຫຼຸບ KPI)"
-                    >
-                      <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                      <span>📊 ດາວໂຫຼດ Excel (Pro Multi-Sheet)</span>
-                    </button>
-
-                    <button
-                      type="button"
                       disabled={exporting || filteredDocs.length === 0}
                       onClick={() => void handleExportDirectPdf()}
                       className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-md hover:bg-indigo-700 disabled:opacity-50 transition"
@@ -1035,17 +990,6 @@ export default function ExportPdfModal({
             </button>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={filteredDocs.length === 0}
-                onClick={handleExportExcel}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50 transition shadow-xs"
-                title="ດາວໂຫຼດ Excel ມືອາຊີບ (2 ແຜ່ນງານ)"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                <span>ດາວໂຫຼດ Excel</span>
-              </button>
-
               {activeTab !== 'preview' ? (
                 <button
                   type="button"
