@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import type { Document, DocumentStatus } from '@/types/document'
@@ -274,13 +275,12 @@ export default function DocumentsPage() {
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setFilterWarehouse('unassigned')}
+            <Link
+              href="/documents/unassigned"
               className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 transition shrink-0"
             >
-              🔍 ກວດສອບເອກະສານທີ່ຍັງບໍ່ມີບ່ອນເກັບ
-            </button>
+              🔍 ໄປທີ່ໜ້າຈັດການເອກະສານຍັງບໍ່ມີບ່ອນເກັບ →
+            </Link>
           </div>
         )}
 

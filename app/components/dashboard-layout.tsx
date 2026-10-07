@@ -24,6 +24,7 @@ import {
   Library,
   LogOut,
   Menu,
+  PackageOpen,
   Search,
   Settings,
   ShieldCheck,
@@ -103,6 +104,7 @@ const menuSections: MenuSection[] = [
     title: 'DOCUMENTS',
     items: [
       { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
+      { name: 'ຍັງບໍ່ມີບ່ອນເກັບ', href: '/documents/unassigned', icon: PackageOpen },
       { name: 'ປະຫວັດການອັບໂຫຼດ', href: '/documents/upload-history', icon: History },
       { name: 'ເອກະສານສົ່ງຂ້າມ', href: '/documents/pending', icon: ArrowRightLeft },
       { name: 'ປະຫວັດການສົ່ງຂ້າມ', href: '/documents/transfers', icon: ArrowRightLeft },
@@ -200,8 +202,12 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
     ).length;
   }, [documents, todayStr, in7DaysStr]);
 
-  // Routes where the global header search is visible (only /documents)
-  const searchAllowedRoutes = ['/documents'];
+  const unassignedCount = useMemo(() => {
+    return documents.filter((d) => !d.deleted && !d.cabinetId && !d.folderId).length;
+  }, [documents]);
+
+  // Routes where the global header search is visible (only /documents and /documents/unassigned)
+  const searchAllowedRoutes = ['/documents', '/documents/unassigned'];
   const shouldShowSearch = showSearch !== undefined ? showSearch : searchAllowedRoutes.includes(pathname);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -497,6 +503,9 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                       if (item.href === '/documents/pending' && incomingTransferCount > 0) {
                         itemBadge = String(incomingTransferCount);
                         badgeClass = 'bg-indigo-600 text-white font-bold shadow-sm';
+                      } else if (item.href === '/documents/unassigned' && unassignedCount > 0) {
+                        itemBadge = String(unassignedCount);
+                        badgeClass = 'bg-amber-500 text-slate-950 font-bold shadow-sm';
                       } else if (item.href === '/documents/expired') {
                         if (expiredCount > 0) {
                           itemBadge = String(expiredCount);
