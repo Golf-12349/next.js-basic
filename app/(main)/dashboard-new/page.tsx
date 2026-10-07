@@ -1,792 +1,649 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  ArrowDownRight,
+  ArrowDownLeft,
   ArrowUpRight,
   BarChart3,
-  Calendar,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   ExternalLink,
   FileSpreadsheet,
   FileText,
-  Filter,
   FolderArchive,
+  Image as ImageIcon,
   Layers,
-  Search,
-  Sparkles,
+  Repeat,
+  ShieldCheck,
   TrendingUp,
+  AlertCircle,
+  Building2,
+  Database,
+  ArrowRight,
+  Eye,
 } from 'lucide-react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
 import { useMasterData } from '@/app/(main)/context/MasterDataContext';
 import { useArchive } from '@/app/(main)/context/ArchiveContext';
-import { toDateKey, addDays, percentage } from '@/app/components/dashboard/dashboard-utils';
-
-type Ticker = {
-  label: string;
-  sub: string;
-  val: string;
-  change: string;
-  isUp: boolean;
-};
-
-function ElegantDonut({
-  data,
-  centerVal,
-  centerLabel,
-  centerColor = '#8b5cf6',
-  size = 140,
-  strokeWidth = 18,
-}: {
-  data: { label: string; value: number; color: string; pct: number }[];
-  centerVal: string;
-  centerLabel: string;
-  centerColor?: string;
-  size?: number;
-  strokeWidth?: number;
-}) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  let accumulated = 0;
-  const slices = data.map((d) => {
-    const strokeDasharray = `${(d.pct / 100) * circumference} ${circumference}`;
-    const strokeDashoffset = -accumulated;
-    accumulated += (d.pct / 100) * circumference;
-    return {
-      ...d,
-      strokeDasharray,
-      strokeDashoffset,
-    };
-  });
-
-  return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#f1f5f9"
-          strokeWidth={strokeWidth}
-        />
-        {slices.map((slice, i) => (
-          <circle
-            key={i}
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={slice.color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={slice.strokeDasharray}
-            strokeDashoffset={slice.strokeDashoffset}
-            strokeLinecap="round"
-            className="transition-all duration-700 hover:opacity-80"
-          />
-        ))}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-2">
-        <span className="text-xs font-bold leading-tight" style={{ color: centerColor }}>
-          {centerVal}
-        </span>
-        <span className="text-[10px] text-slate-400 font-medium truncate max-w-[80px]">
-          {centerLabel}
-        </span>
-      </div>
-    </div>
-  );
-}
+import { toDateKey, addDays } from '@/app/components/dashboard/dashboard-utils';
+import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from '@/lib/dms/dashboardService';
 
 export default function DashboardNewPage() {
   const { documents } = useDocuments();
   const { divisions } = useMasterData();
-  const { warehouses } = useArchive();
+  const { warehouses, cabinets } = useArchive();
 
-  const [activeTabHist, setActiveTabHist] = useState<'all' | 'dept'>('all');
-  const [activeMatrixTab, setActiveMatrixTab] = useState<'importance' | 'risk'>('importance');
-  const [donutPage1, setDonutPage1] = useState(1);
-  const [donutPage2, setDonutPage2] = useState(1);
-  const [donutPage3, setDonutPage3] = useState(1);
+  const [serverData, setServerData] = useState<DashboardAnalyticsResponse | null>(null);
+
+  useEffect(() => {
+    fetchDashboardAnalytics()
+      .then((data) => {
+        if (data && data.overview) setServerData(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const activeDocs = useMemo(() => documents.filter((d) => !d.deleted), [documents]);
 
   const stats = useMemo(() => {
-    const total = activeDocs.length;
-    const pending = activeDocs.filter((d) => d.status === 'pending').length;
-    const approved = activeDocs.filter((d) => d.status === 'approved').length;
-    const archived = activeDocs.filter((d) => d.status === 'archived').length;
+    const total = activeDocs.length || 142;
+    const pending = activeDocs.filter((d) => d.status === 'pending').length || 18;
+    const approved = activeDocs.filter((d) => d.status === 'approved').length || 104;
+    const draft = activeDocs.filter((d) => d.status === 'draft').length || 15;
 
     const now = new Date();
     const today = toDateKey(now);
     const in7Days = toDateKey(addDays(now, 7));
     const expired = activeDocs.filter(
       (d) => d.status === 'expired' || (Boolean(d.expiresAt) && d.expiresAt! <= today)
-    ).length;
+    ).length || 5;
     const expiringSoon = activeDocs.filter(
       (d) => d.status !== 'expired' && Boolean(d.expiresAt) && d.expiresAt! > today && d.expiresAt! <= in7Days
-    ).length;
+    ).length || 2;
 
     const currentMonthKey = today.slice(0, 7);
-    const monthlyInflow = activeDocs.filter((d) => d.uploadDate?.slice(0, 7) === currentMonthKey).length;
+    const monthlyInflow = activeDocs.filter((d) => d.uploadDate?.slice(0, 7) === currentMonthKey).length || 28;
 
     const reviewed = approved + pending;
     const approvalRate = reviewed > 0 ? Math.round((approved / reviewed) * 100) : 85;
 
     return {
-      total: total || 142,
-      pending: pending || 18,
-      approved: approved || 104,
-      archived: archived || 15,
-      expired: expired || 5,
-      expiringSoon: expiringSoon || 4,
-      monthlyInflow: monthlyInflow || 36,
+      total,
+      pending,
+      approved,
+      draft,
+      expired,
+      expiringSoon,
+      monthlyInflow,
       approvalRate,
     };
   }, [activeDocs]);
 
-  const tickers: Ticker[] = useMemo(
-    () => [
-      {
-        label: 'ເອກະສານທັງໝົດ',
-        sub: 'TOTAL DOCS',
-        val: `${stats.total}`,
-        change: '+14.2%',
-        isUp: true,
-      },
-      {
-        label: 'ລໍຖ້າອະນຸມັດ',
-        sub: 'PENDING',
-        val: `${stats.pending}`,
-        change: '-2.4%',
-        isUp: false,
-      },
-      {
-        label: 'ອັດຕາອະນຸມັດ',
-        sub: 'APPROVAL RATE',
-        val: `${stats.approvalRate}%`,
-        change: '+5.0%',
-        isUp: true,
-      },
-      {
-        label: 'ຄັງເອກະສານ',
-        sub: 'ARCHIVED',
-        val: `${stats.archived}`,
-        change: '+1.1%',
-        isUp: true,
-      },
-    ],
-    [stats]
-  );
-
-  const keyStatsRows = useMemo(
-    () => [
-      { label: 'ອັດຕາການອະນຸມັດລວມ', val: `${stats.approvalRate}.00%` },
-      { label: 'ເອກະສານເຂົ້າເດືອນນີ້', val: `${stats.monthlyInflow} ລາຍການ` },
-      { label: 'ເອກະສານລໍຖ້າກວດກາ', val: `${stats.pending} ລາຍການ` },
-      { label: 'ເອກະສານໃກ້ໝົດອາຍຸ (7 ວັນ)', val: `${stats.expiringSoon} ສະບັບ` },
-      { label: 'ເອກະສານທີ່ໝົດອາຍຸແລ້ວ', val: `${stats.expired} ສະບັບ` },
-      { label: 'ອັດຕາການນຳໃຊ້ພື້ນທີ່ຄັງ', val: '68.50%' },
-      { label: 'ເວລາອະນຸມັດສະເລ່ຍ', val: '1.4 ວັນ' },
-      { label: 'ເອກະສານປອດໄພ / ເຂົ້າລະຫັດ', val: '100.00%' },
-    ],
-    [stats]
-  );
-
-  const formatAllocation = useMemo(() => {
-    const counts: Record<string, number> = { PDF: 0, Word: 0, Excel: 0, ຮູບພາບ: 0, ອື່ນໆ: 0 };
+  // --------------------------------------------------------------------------
+  // File Format Distribution (GitHub-style Segmented Bar)
+  // --------------------------------------------------------------------------
+  const formatBreakdown = useMemo(() => {
+    const counts: Record<string, number> = { PDF: 0, Word: 0, Excel: 0, Images: 0, Others: 0 };
     activeDocs.forEach((d) => {
       const ext = d.fileUrl ? d.fileUrl.split('.').pop()?.toUpperCase() : '';
       if (ext === 'PDF') counts.PDF++;
       else if (ext === 'DOC' || ext === 'DOCX') counts.Word++;
       else if (ext === 'XLS' || ext === 'XLSX') counts.Excel++;
-      else if (['PNG', 'JPG', 'JPEG', 'WEBP'].includes(ext || '')) counts.ຮູບພາບ++;
-      else counts.ອື່ນໆ++;
+      else if (['PNG', 'JPG', 'JPEG', 'WEBP'].includes(ext || '')) counts.Images++;
+      else counts.Others++;
     });
 
-    const rawPDF = counts.PDF || 48;
-    const rawWord = counts.Word || 32;
-    const rawExcel = counts.Excel || 14;
-    const rawImg = counts.ຮູບພາບ || 8;
-    const rawOther = counts.ອື່ນໆ || 4;
+    const rawPDF = counts.PDF || 58;
+    const rawWord = counts.Word || 36;
+    const rawExcel = counts.Excel || 22;
+    const rawImg = counts.Images || 14;
+    const rawOther = counts.Others || 12;
     const total = rawPDF + rawWord + rawExcel + rawImg + rawOther;
 
-    const palette = ['#8b5cf6', '#d946ef', '#ec4899', '#f59e0b', '#06b6d4'];
-
     const items = [
-      { label: 'PDF Documents', value: rawPDF, color: palette[0], pct: Math.round((rawPDF / total) * 100) },
-      { label: 'Word (DOCX)', value: rawWord, color: palette[1], pct: Math.round((rawWord / total) * 100) },
-      { label: 'Excel Spreadsheets', value: rawExcel, color: palette[2], pct: Math.round((rawExcel / total) * 100) },
-      { label: 'ຮູບພາບ & ໃບຮັບເງິນ', value: rawImg, color: palette[3], pct: Math.round((rawImg / total) * 100) },
-      { label: 'ອື່ນໆ (ZIP/TXT)', value: rawOther, color: palette[4], pct: Math.max(2, 100 - Math.round((rawPDF / total) * 100) - Math.round((rawWord / total) * 100) - Math.round((rawExcel / total) * 100) - Math.round((rawImg / total) * 100)) },
+      { label: 'PDF Documents', ext: 'PDF', count: rawPDF, color: '#3b82f6', bg: 'bg-blue-500', pct: Math.round((rawPDF / total) * 100), icon: FileText },
+      { label: 'Word (DOCX)', ext: 'DOCX', count: rawWord, color: '#06b6d4', bg: 'bg-cyan-500', pct: Math.round((rawWord / total) * 100), icon: FileText },
+      { label: 'Excel (XLSX)', ext: 'XLSX', count: rawExcel, color: '#10b981', bg: 'bg-emerald-500', pct: Math.round((rawExcel / total) * 100), icon: FileSpreadsheet },
+      { label: 'ຮູບພາບ & ໃບຮັບ', ext: 'IMG', count: rawImg, color: '#f59e0b', bg: 'bg-amber-500', pct: Math.round((rawImg / total) * 100), icon: ImageIcon },
+      { label: 'ໄຟລ໌ອື່ນໆ (ZIP/TXT)', ext: 'OTHER', count: rawOther, color: '#8b5cf6', bg: 'bg-purple-500', pct: Math.max(3, 100 - Math.round((rawPDF / total) * 100) - Math.round((rawWord / total) * 100) - Math.round((rawExcel / total) * 100) - Math.round((rawImg / total) * 100)), icon: Layers },
     ];
 
-    return { items, topVal: `+${items[0].pct}.00%`, topLabel: 'PDF' };
+    return { total, items };
   }, [activeDocs]);
 
-  const deptAllocation = useMemo(() => {
-    const list = divisions.length > 0 ? divisions : ['ຝ່າຍເຕັກໂນໂລຊີ', 'ຝ່າຍການເງິນ', 'ຝ່າຍບໍລິຫານ', 'ຝ່າຍຈັດຊື້', 'ຝ່າຍກວດສອບ'];
-    const palette = ['#a855f7', '#ec4899', '#3b82f6', '#f59e0b', '#10b981'];
+  // --------------------------------------------------------------------------
+  // Document Flow / Direction
+  // --------------------------------------------------------------------------
+  const flowBreakdown = useMemo(() => {
+    const internalCount = activeDocs.filter((d) => (d.direction || '').toLowerCase() === 'internal').length || 72;
+    const inboundCount = activeDocs.filter((d) => (d.direction || '').toLowerCase() === 'inbound').length || 45;
+    const outboundCount = activeDocs.filter((d) => (d.direction || '').toLowerCase() === 'outbound').length || 25;
+    const total = internalCount + inboundCount + outboundCount;
 
-    const items = [
-      { label: list[0] || 'ຝ່າຍເຕັກໂນໂລຊີ', value: 34, color: palette[0], pct: 34 },
-      { label: list[1] || 'ຝ່າຍການເງິນ', value: 26, color: palette[1], pct: 26 },
-      { label: list[2] || 'ຝ່າຍບໍລິຫານ', value: 18, color: palette[2], pct: 18 },
-      { label: list[3] || 'ຝ່າຍຈັດຊື້-ສັນຍາ', value: 14, color: palette[3], pct: 14 },
-      { label: list[4] || 'ຝ່າຍກວດສອບ', value: 8, color: palette[4], pct: 8 },
+    return [
+      { label: 'ເອກະສານພາຍໃນ (Internal)', count: internalCount, pct: Math.round((internalCount / total) * 100), icon: Repeat, color: 'text-blue-600', barBg: 'bg-blue-600', desc: 'ໄຫຼວຽນລະຫວ່າງຝ່າຍ/ພະແນກ' },
+      { label: 'ເອກະສານຂາເຂົ້າ (Inbound)', count: inboundCount, pct: Math.round((inboundCount / total) * 100), icon: ArrowDownLeft, color: 'text-emerald-600', barBg: 'bg-emerald-600', desc: 'ຮັບຈາກພາຍນອກ & ຄູ່ຮ່ວມງານ' },
+      { label: 'ເອກະສານຂາອອກ (Outbound)', count: outboundCount, pct: Math.max(3, 100 - Math.round((internalCount / total) * 100) - Math.round((inboundCount / total) * 100)), icon: ArrowUpRight, color: 'text-amber-600', barBg: 'bg-amber-600', desc: 'ສົ່ງອອກໜ່ວຍງານພາຍນອກ' },
+    ];
+  }, [activeDocs]);
+
+  // --------------------------------------------------------------------------
+  // Top Departments Leaderboard
+  // --------------------------------------------------------------------------
+  const topDivisions = useMemo(() => {
+    const list = divisions.length > 0 ? divisions : [
+      'ຫ້ອງການໄຟຟ້າລາວ',
+      'ຝ່າຍກວດກາ',
+      'ຝ່າຍບຸກຄະລາກອນ',
+      'ຝ່າຍກົດໝາຍ-ສັນຍາ',
+      'ຝ່າຍການເງິນ ແລະ ບັນຊີ',
+      'ຝ່າຍລະບົບສົ່ງ ແລະ ຈຳໜ່າຍ',
+      'ຝ່າຍຜະລິດໄຟຟ້າ',
+      'ຝ່າຍເຕັກໂນໂລຊີຂໍ້ມູນຂ່າວສານ',
     ];
 
-    return { items, topVal: `+${items[0].pct}.00%`, topLabel: items[0].label };
-  }, [divisions]);
+    const mapped = list.map((name, i) => {
+      const count = activeDocs.filter((d) => d.division === name).length || (45 - i * 5);
+      return { name, count };
+    });
+    mapped.sort((a, b) => b.count - a.count);
 
-  const warehouseAllocation = useMemo(() => {
-    const palette = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#e2e8f0'];
-    const whList = warehouses.length > 0 ? warehouses.map((w) => w.name) : ['ຄັງສູນກາງ A', 'ຄັງສຳຮອງ B', 'ຄັງເອກະສານດ່ວນ', 'ຕູ້ເອກະສານຊັ້ນ 2', 'ຄັງດິຈິຕອນ'];
+    const maxCount = mapped[0]?.count || 1;
+    return mapped.slice(0, 6).map((item, idx) => ({
+      ...item,
+      rank: idx + 1,
+      ratio: Math.round((item.count / maxCount) * 100),
+    }));
+  }, [divisions, activeDocs]);
 
-    const items = [
-      { label: whList[0] || 'ຄັງສູນກາງ A', value: 50, color: palette[0], pct: 50 },
-      { label: whList[1] || 'ຄັງສຳຮອງ B', value: 20, color: palette[1], pct: 20 },
-      { label: whList[2] || 'ຄັງເອກະສານດ່ວນ', value: 13, color: palette[2], pct: 13 },
-      { label: whList[3] || 'ຕູ້ເອກະສານຊັ້ນ 2', value: 11, color: palette[3], pct: 11 },
-      { label: whList[4] || 'ຄັງດິຈິຕອນ', value: 6, color: palette[4], pct: 6 },
-    ];
+  // --------------------------------------------------------------------------
+  // Storage Archive Meter
+  // --------------------------------------------------------------------------
+  const storageData = useMemo(() => {
+    const inCabinet = activeDocs.filter((d) => Boolean(d.cabinetId)).length || 85;
+    const inShelf = activeDocs.filter((d) => Boolean(d.shelfId)).length || 42;
+    const inFolder = activeDocs.filter((d) => Boolean(d.folderId)).length || 38;
+    const unassigned = activeDocs.filter((d) => !d.cabinetId).length || 19;
+    const total = inCabinet + unassigned;
 
-    return { items, topVal: `+${items[0].pct}.00%`, topLabel: items[0].label };
-  }, [warehouses]);
+    const topWhs = warehouses.slice(0, 4).map((w, i) => {
+      const count = activeDocs.filter((d) => d.warehouseId === w.id).length || (48 - i * 12);
+      const cap = 100;
+      return {
+        name: w.name,
+        count,
+        cap,
+        pct: Math.min(100, Math.round((count / cap) * 100)),
+      };
+    });
 
-  const historicalBars = useMemo(() => {
-    const bars = [];
-    for (let i = 1; i <= 26; i++) {
-      const basePurple = 52 - (i * 0.5) + (Math.sin(i) * 3);
-      const basePink = 26 + (Math.cos(i) * 2);
-      const baseAmber = 100 - basePurple - basePink;
-
-      bars.push({
-        day: `Jan ${i}`,
-        purple: Math.max(20, Math.min(60, basePurple)),
-        pink: Math.max(15, Math.min(35, basePink)),
-        amber: Math.max(15, Math.min(40, baseAmber)),
-      });
-    }
-    return bars;
-  }, []);
+    return {
+      inCabinet,
+      inShelf,
+      inFolder,
+      unassigned,
+      utilizationPct: serverData?.overview.warehouseUtilizationPct || '68.50%',
+      topWhs: topWhs.length > 0 ? topWhs : [
+        { name: 'ຄັງສູນກາງ A', count: 78, cap: 100, pct: 78 },
+        { name: 'ຄັງດິຈິຕອນ B', count: 54, cap: 100, pct: 54 },
+        { name: 'ສາງເອກະສານດ່ວນ', count: 35, cap: 80, pct: 44 },
+        { name: 'ຫ້ອງເກັບມ້ຽນຊັ້ນ 2', count: 22, cap: 60, pct: 37 },
+      ],
+    };
+  }, [activeDocs, warehouses, serverData]);
 
   return (
-    <DashboardLayout title="Dashboard ໃໝ່ (Preview)">
-      <div className="w-full min-h-screen bg-[#f8fafc] text-slate-800 p-3 sm:p-5 lg:p-6 space-y-6">
-        
-        {/* HEADER BAR & TICKERS */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <DashboardLayout title="ໜ້າຫຼັກ (ດີໄຊໃໝ່)">
+      <div className="w-full space-y-5 p-3 sm:p-4 lg:p-6 max-w-[1600px] mx-auto">
+        {/* =========================================================================
+            HEADER BANNER & VIEW SWITCHER
+           ========================================================================= */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 border border-violet-200">
-                <Sparkles className="w-3 h-3" />
-                V2 Design
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                Realtime Synchronized
               </span>
+              <span className="text-xs font-medium text-slate-400">•</span>
+              <span className="text-xs text-slate-500 font-mono">EDL-DMS Enterprise v2.4</span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              ພາບລວມສະຖິຕິເອກະສານ, ການຈັດສັນຄັງເກັບ ແລະ ຄວາມຄືບໜ້າວຽກງານ
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              ສູນຄວບຄຸມ & ວິເຄາະເອກະສານ (Executive Overview)
+            </h1>
+            <p className="text-slate-500 text-xs sm:text-sm mt-1">
+              ສະແດງພາບລວມການດຳເນີນງານທັງໝົດດ້ວຍຕົວຊີ້ວັດ Linear Meter & Leaderboard (ບໍ່ມີ Pie Chart)
             </p>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
-            {tickers.map((t, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-3 bg-white border border-slate-200/80 rounded-xl px-3 py-1.5 shadow-sm min-w-max hover:border-violet-300 transition-colors"
-              >
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition"
+              title="ກັບໄປໜ້າຫຼັກເດີມ"
+            >
+              ← ກັບໄປໜ້າຫຼັກເດີມ (Pie Chart)
+            </Link>
+            <Link
+              href="/reports"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              ສູນລາຍງານເຕັມ
+            </Link>
+          </div>
+        </div>
+
+        {/* =========================================================================
+            TOP 4 PRIMARY METRICS (EXECUTIVE KPIS)
+           ========================================================================= */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* Tile 1: Total Docs */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">ເອກະສານທັງໝົດ</span>
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <FileText className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
+                {stats.total.toLocaleString()}
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-xs">
+                <span className="inline-flex items-center text-emerald-600 font-semibold font-mono">
+                  <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
+                  +{stats.monthlyInflow}
+                </span>
+                <span className="text-slate-400">ເຂົ້າໃໝ່ເດືອນນີ້</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tile 2: Approval Rate */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">ອັດຕາການອະນຸມັດ</span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
+                {stats.approvalRate}.00%
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-xs">
+                <span className="text-slate-600 font-medium">ເວລາອະນຸມັດສະເລ່ຍ:</span>
+                <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-mono">
+                  {serverData?.overview.averageApprovalDays || '1.4'} ວັນ
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tile 3: Pending Review */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">ລໍຖ້າການກວດກາ</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
+                {stats.pending}
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-xs">
+                <span className="text-rose-600 font-medium flex items-center">
+                  <AlertCircle className="w-3.5 h-3.5 mr-0.5" />
+                  {stats.expiringSoon} ສະບັບ
+                </span>
+                <span className="text-slate-400">ໃກ້ໝົດອາຍຸ (7 ວັນ)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tile 4: Warehouse Capacity */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">ການນຳໃຊ້ພື້ນທີ່ຄັງ</span>
+              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <FolderArchive className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
+                {storageData.utilizationPct}
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full mt-2.5 overflow-hidden">
+                <div
+                  className="bg-purple-600 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${parseFloat(storageData.utilizationPct)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* =========================================================================
+            DOCUMENT LIFECYCLE PIPELINE (HORIZONTAL WORKFLOW FUNNEL)
+           ========================================================================= */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">ຂະບວນການໄຫຼວຽນເອກະສານ (Document Lifecycle Pipeline)</h2>
+              <p className="text-xs text-slate-400 mt-0.5">ສະແດງການເຄື່ອນໄຫວແຕ່ລະຂັ້ນຕອນຕັ້ງແຕ່ສ້າງຮ່າງຈົນຮອດການຈັດເກັບເຂົ້າຄັງ</p>
+            </div>
+            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg font-mono">
+              ທັງໝົດ {stats.total} ສະບັບ
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Step 1: Draft */}
+            <div className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/50 hover:bg-slate-50 transition">
+              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                <span>1. ສະບັບຮ່າງ (Draft)</span>
+                <span className="font-mono font-semibold">{Math.round((stats.draft / stats.total) * 100)}%</span>
+              </div>
+              <div className="text-xl font-bold text-slate-800 font-mono">{stats.draft}</div>
+              <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div className="bg-slate-500 h-full rounded-full" style={{ width: `${(stats.draft / stats.total) * 100}%` }} />
+              </div>
+            </div>
+
+            {/* Step 2: Pending */}
+            <div className="p-3.5 rounded-xl border border-amber-200/80 bg-amber-50/40 hover:bg-amber-50/70 transition">
+              <div className="flex items-center justify-between text-xs text-amber-800 mb-1">
+                <span>2. ລໍຖ້າກວດກາ (Review)</span>
+                <span className="font-mono font-semibold">{Math.round((stats.pending / stats.total) * 100)}%</span>
+              </div>
+              <div className="text-xl font-bold text-amber-900 font-mono">{stats.pending}</div>
+              <div className="w-full bg-amber-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div className="bg-amber-500 h-full rounded-full" style={{ width: `${(stats.pending / stats.total) * 100}%` }} />
+              </div>
+            </div>
+
+            {/* Step 3: Approved */}
+            <div className="p-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/40 hover:bg-emerald-50/70 transition">
+              <div className="flex items-center justify-between text-xs text-emerald-800 mb-1">
+                <span>3. ອະນຸມັດແລ້ວ (Approved)</span>
+                <span className="font-mono font-semibold">{Math.round((stats.approved / stats.total) * 100)}%</span>
+              </div>
+              <div className="text-xl font-bold text-emerald-900 font-mono">{stats.approved}</div>
+              <div className="w-full bg-emerald-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${(stats.approved / stats.total) * 100}%` }} />
+              </div>
+            </div>
+
+            {/* Step 4: Archived */}
+            <div className="p-3.5 rounded-xl border border-purple-200/80 bg-purple-50/40 hover:bg-purple-50/70 transition">
+              <div className="flex items-center justify-between text-xs text-purple-800 mb-1">
+                <span>4. ຈັດເກັບໃນຄັງ (Archived)</span>
+                <span className="font-mono font-semibold">{Math.round((storageData.inCabinet / stats.total) * 100)}%</span>
+              </div>
+              <div className="text-xl font-bold text-purple-900 font-mono">{storageData.inCabinet}</div>
+              <div className="w-full bg-purple-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div className="bg-purple-600 h-full rounded-full" style={{ width: `${(storageData.inCabinet / stats.total) * 100}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* =========================================================================
+            MIDDLE SECTION: 2 COLUMNS (FORMAT BREAKDOWN + DEPARTMENT LEADERBOARD)
+           ========================================================================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* COLUMN 1: File Formats (GitHub-Style Segmented Bar) & Document Direction */}
+          <div className="space-y-5">
+            {/* Box 1: File Format Breakdown */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                 <div>
-                  <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-                    {t.sub}
-                  </div>
-                  <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <span>{t.val}</span>
-                    <span
-                      className={`text-[10px] font-medium flex items-center ${
-                        t.isUp ? 'text-emerald-600' : 'text-rose-500'
-                      }`}
+                  <h3 className="text-sm font-bold text-slate-900">ສັດສ່ວນປະເພດໄຟລ໌ (File Format Breakdown)</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">ຈຳແນກຕາມນາມສະກຸນໄຟລ໌ເອກະສານທີ່ອັບໂຫຼດເຂົ້າລະບົບ</p>
+                </div>
+                <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200 font-mono">
+                  {formatBreakdown.total} ໄຟລ໌
+                </span>
+              </div>
+
+              {/* Multi-segment horizontal bar (GitHub Style) */}
+              <div className="w-full h-3 rounded-full bg-slate-100 flex overflow-hidden shadow-inner mb-4">
+                {formatBreakdown.items.map((it, idx) => (
+                  <div
+                    key={idx}
+                    className={`${it.bg} h-full transition-all hover:opacity-85 cursor-pointer`}
+                    style={{ width: `${it.pct}%` }}
+                    title={`${it.label}: ${it.count} (${it.pct}%)`}
+                  />
+                ))}
+              </div>
+
+              {/* Items List */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {formatBreakdown.items.map((it, idx) => {
+                  const Icon = it.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition"
                     >
-                      {t.isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                      {t.change}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-              <button
-                type="button"
-                className="p-2 rounded-xl bg-white border border-slate-200/80 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors shadow-sm"
-                title="ຄົ້ນຫາ"
-              >
-                <Search className="w-4 h-4" />
-              </button>
-              <Link
-                href="/dashboard"
-                className="px-3 py-2 rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700 transition-colors shadow-sm flex items-center gap-1.5"
-                title="ກັບຄືນໜ້າຫຼັກເດີມ"
-              >
-                <span>ກັບຄືນ V1</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* TOP ROW: 4 CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-          
-          {/* CARD 1: Key Stats */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-800">Key Stats</span>
-                <span className="text-[10px] text-slate-400">ⓘ</span>
-              </div>
-              <span className="text-[10px] font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
-                Realtime
-              </span>
-            </div>
-
-            <div className="divide-y divide-slate-100 py-1 text-xs">
-              {keyStatsRows.map((row, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5">
-                  <span className="text-slate-500 text-[11px] truncate max-w-[150px]">{row.label}</span>
-                  <span className="font-semibold text-slate-700 text-[11px]">{row.val}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-              <span>ອັບເດດລ່າສຸດ</span>
-              <span className="font-medium text-slate-600">ມື້ນີ້, 10:30</span>
-            </div>
-          </div>
-
-          {/* CARD 2: Allocation Overview */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-800">Allocation Overview</span>
-                <span className="text-[10px] text-slate-400">ⓘ</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setDonutPage1((p) => Math.max(1, p - 1))}
-                  className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs"
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                </button>
-                <span className="text-[10px] text-slate-500 font-medium px-1">{donutPage1}</span>
-                <button
-                  type="button"
-                  onClick={() => setDonutPage1((p) => p + 1)}
-                  className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs"
-                >
-                  <ChevronRight className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-
-            <div className="py-2 flex justify-center">
-              <ElegantDonut
-                data={formatAllocation.items}
-                centerVal={formatAllocation.topVal}
-                centerLabel={formatAllocation.topLabel}
-                centerColor="#8b5cf6"
-                size={130}
-                strokeWidth={16}
-              />
-            </div>
-
-            <div className="space-y-1.5 pt-2 border-t border-slate-100 text-[11px]">
-              {formatAllocation.items.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 truncate max-w-[130px]">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                    <span className="text-slate-600 truncate">{item.label}</span>
-                  </div>
-                  <span className="font-semibold text-slate-700">+{item.pct}.00%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* CARD 3: Department Class */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-800">Department Class</span>
-                <span className="text-[10px] text-slate-400">ⓘ</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setDonutPage2((p) => Math.max(1, p - 1))}
-                  className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs"
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                </button>
-                <span className="text-[10px] text-slate-500 font-medium px-1">{donutPage2}</span>
-                <button
-                  type="button"
-                  onClick={() => setDonutPage2((p) => p + 1)}
-                  className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs"
-                >
-                  <ChevronRight className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-
-            <div className="py-2 flex justify-center">
-              <ElegantDonut
-                data={deptAllocation.items}
-                centerVal={deptAllocation.topVal}
-                centerLabel={deptAllocation.topLabel}
-                centerColor="#a855f7"
-                size={130}
-                strokeWidth={16}
-              />
-            </div>
-
-            <div className="space-y-1.5 pt-2 border-t border-slate-100 text-[11px]">
-              {deptAllocation.items.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 truncate max-w-[130px]">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                    <span className="text-slate-600 truncate">{item.label}</span>
-                  </div>
-                  <span className="font-semibold text-slate-700">+{item.pct}.00%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* CARD 4: Archive Exposure */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-800">Archive Exposure</span>
-                <span className="text-[10px] text-slate-400">ⓘ</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setDonutPage3((p) => Math.max(1, p - 1))}
-                  className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs"
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                </button>
-                <span className="text-[10px] text-slate-500 font-medium px-1">{donutPage3}</span>
-                <button
-                  type="button"
-                  onClick={() => setDonutPage3((p) => p + 1)}
-                  className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 text-xs"
-                >
-                  <ChevronRight className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-
-            <div className="py-2 flex justify-center">
-              <ElegantDonut
-                data={warehouseAllocation.items}
-                centerVal={warehouseAllocation.topVal}
-                centerLabel={warehouseAllocation.topLabel}
-                centerColor="#f43f5e"
-                size={130}
-                strokeWidth={16}
-              />
-            </div>
-
-            <div className="space-y-1.5 pt-2 border-t border-slate-100 text-[11px]">
-              {warehouseAllocation.items.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 truncate max-w-[130px]">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                    <span className="text-slate-600 truncate">{item.label}</span>
-                  </div>
-                  <span className="font-semibold text-slate-700">+{item.pct}.00%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-        {/* MIDDLE ROW: HISTORICAL OVERVIEW & MATRIX */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-          
-          {/* LEFT WIDE CARD: Historical Overview */}
-          <div className="xl:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-4 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setActiveTabHist('all')}
-                  className={`pb-1 border-b-2 transition-colors ${
-                    activeTabHist === 'all'
-                      ? 'border-violet-600 text-violet-700'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  Historical Overview ⓘ
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTabHist('dept')}
-                  className={`pb-1 border-b-2 transition-colors ${
-                    activeTabHist === 'dept'
-                      ? 'border-violet-600 text-violet-700'
-                      : 'border-transparent text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  Historical by Department
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 w-fit">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span className="font-medium text-[11px]">1 ມັງກອນ 2026 – 28 ມັງກອນ 2026</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-end gap-1.5 h-56 w-full pt-4 pb-2 border-b border-slate-100">
-                <div className="flex flex-col justify-between h-full text-[10px] text-slate-400 pr-2 shrink-0 select-none">
-                  <span>100</span>
-                  <span>80</span>
-                  <span>60</span>
-                  <span>40</span>
-                  <span>20</span>
-                  <span>0</span>
-                </div>
-
-                <div className="flex-1 flex items-end justify-between gap-1 sm:gap-1.5 h-full">
-                  {historicalBars.map((bar, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col justify-end h-full group relative cursor-pointer">
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center bg-slate-900 text-white text-[9px] py-1 px-2 rounded shadow-lg pointer-events-none z-20 whitespace-nowrap">
-                        <span className="font-bold">{bar.day}</span>
-                        <span>
-                          {Math.round(bar.purple)}% / {Math.round(bar.pink)}% / {Math.round(bar.amber)}%
-                        </span>
+                      <div className="flex items-center gap-2.5 truncate">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: it.color }} />
+                        <Icon className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="text-xs font-medium text-slate-700 truncate">{it.label}</span>
                       </div>
+                      <div className="text-right shrink-0 font-mono">
+                        <span className="text-xs font-bold text-slate-800">+{it.pct}.00%</span>
+                        <span className="text-[11px] text-slate-400 block">{it.count} ໄຟລ໌</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-                      <div className="w-full flex flex-col h-full justify-end rounded-t overflow-hidden transition-transform duration-200 group-hover:scale-y-105 origin-bottom">
+            {/* Box 2: Document Flow (Internal, Inbound, Outbound) */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">ທິດທາງການໄຫຼວຽນ (Document Direction & Flow)</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">ປຽບທຽບສັດສ່ວນເອກະສານພາຍໃນ, ຂາເຂົ້າ, ແລະ ຂາອອກ</p>
+                </div>
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  3 ທິດທາງ
+                </span>
+              </div>
+
+              <div className="space-y-3.5">
+                {flowBreakdown.map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={idx} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Icon className={`w-4 h-4 ${item.color}`} />
+                          <span className="font-semibold text-slate-800">{item.label}</span>
+                        </div>
+                        <div className="font-mono text-slate-700">
+                          <span className="font-bold">+{item.pct}.00%</span>
+                          <span className="text-slate-400 ml-1.5">({item.count} ສະບັບ)</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div
-                          className="w-full bg-[#fcd34d] hover:bg-[#fbbf24] transition-colors"
-                          style={{ height: `${bar.amber}%` }}
-                        />
-                        <div
-                          className="w-full bg-[#f472b6] hover:bg-[#ec4899] transition-colors"
-                          style={{ height: `${bar.pink}%` }}
-                        />
-                        <div
-                          className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] transition-colors"
-                          style={{ height: `${bar.purple}%` }}
+                          className={`${item.barBg} h-full rounded-full transition-all duration-500`}
+                          style={{ width: `${item.pct}%` }}
                         />
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-between pl-8 pr-1 pt-2 text-[9px] text-slate-400 overflow-hidden select-none">
-                <span>Jan 1</span>
-                <span>Jan 5</span>
-                <span>Jan 10</span>
-                <span>Jan 15</span>
-                <span>Jan 20</span>
-                <span>Jan 25</span>
-                <span>Jan 28</span>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-6 text-[11px]">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]" />
-                <span className="text-slate-600">ເອກະສານບໍລິຫານ & ການເງິນ (Core Docs)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#f472b6]" />
-                <span className="text-slate-600">ສັນຍາ & ຈັດຊື້-ຈັດຈ້າງ (Contracts)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#fcd34d]" />
-                <span className="text-slate-600">ເອກະສານເຕັກນິກ & ບົດລາຍງານ (Technical)</span>
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* RIGHT NARROW CARD: Matrix */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 text-xs font-semibold">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setActiveMatrixTab('importance')}
-                    className={`pb-1 border-b-2 transition-colors ${
-                      activeMatrixTab === 'importance'
-                        ? 'border-violet-600 text-violet-700'
-                        : 'border-transparent text-slate-400 hover:text-slate-600'
-                    }`}
-                  >
-                    ລະດັບຄວາມສຳຄັນ
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveMatrixTab('risk')}
-                    className={`pb-1 border-b-2 transition-colors ${
-                      activeMatrixTab === 'risk'
-                        ? 'border-violet-600 text-violet-700'
-                        : 'border-transparent text-slate-400 hover:text-slate-600'
-                    }`}
-                  >
-                    ລະດັບຄວາມລັບ
-                  </button>
+          {/* COLUMN 2: Department Distribution Leaderboard & Physical Storage */}
+          <div className="space-y-5">
+            {/* Box 3: Department Leaderboard */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">ຈັດອັນດັບຝ່າຍທີ່ມີປະລິມານເອກະສານສູງສຸດໃນລະບົບ</p>
                 </div>
-                <span className="text-[10px] text-slate-400">Valuation ⓘ</span>
+                <Link
+                  href="/master-data/divisions"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center"
+                >
+                  ເບິ່ງທຸກຝ່າຍ <ArrowRight className="w-3 h-3 ml-1" />
+                </Link>
               </div>
 
-              <div className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider my-2">
-                Document Matrix Classification
-              </div>
+              <div className="space-y-3">
+                {topDivisions.map((dept) => (
+                  <div
+                    key={dept.rank}
+                    className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 transition"
+                  >
+                    <div
+                      className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 font-mono ${
+                        dept.rank === 1
+                          ? 'bg-amber-100 text-amber-800'
+                          : dept.rank === 2
+                          ? 'bg-slate-200 text-slate-700'
+                          : dept.rank === 3
+                          ? 'bg-amber-50 text-amber-700'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {dept.rank}
+                    </div>
 
-              <div className="relative border border-slate-200 rounded-xl bg-slate-50/50 p-3 mt-1">
-                <div className="absolute -left-6 top-1/2 -translate-y-1/2 -rotate-90 text-[9px] font-bold text-slate-400 tracking-wider">
-                  VOLUME / SIZE
-                </div>
-
-                <div className="grid grid-cols-3 gap-1.5 text-center">
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs relative">
-                    <span className="text-[10px] font-semibold text-slate-700">29.00%</span>
-                    <span className="text-[8px] block text-slate-400">ສຳຄັນສູງ</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-semibold text-slate-800 truncate">{dept.name}</span>
+                        <span className="font-bold text-slate-900 font-mono">{dept.count} ສະບັບ</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-blue-600 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${dept.ratio}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs relative">
-                    <div className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-indigo-900 ring-2 ring-indigo-200" />
-                    <span className="text-[10px] font-semibold text-slate-700">30.00%</span>
-                    <span className="text-[8px] block text-slate-400">ທົ່ວໄປ</span>
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs relative">
-                    <div className="absolute bottom-2 left-2 w-2.5 h-2.5 rounded-full bg-amber-600 ring-2 ring-amber-200" />
-                    <span className="text-[10px] font-semibold text-slate-700">27.00%</span>
-                    <span className="text-[8px] block text-slate-400">ພາຍໃນ</span>
-                  </div>
-
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs">
-                    <span className="text-[10px] font-semibold text-slate-700">5.00%</span>
-                    <span className="text-[8px] block text-slate-400">ຮ່າງ</span>
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs">
-                    <span className="text-[10px] font-semibold text-slate-700">4.00%</span>
-                    <span className="text-[8px] block text-slate-400">ລໍຖ້າ</span>
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs">
-                    <span className="text-[10px] font-semibold text-slate-700">3.00%</span>
-                    <span className="text-[8px] block text-slate-400">ກວດສອບ</span>
-                  </div>
-
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs">
-                    <span className="text-[10px] font-semibold text-slate-700">1.00%</span>
-                    <span className="text-[8px] block text-slate-400">ແຈ້ງການ</span>
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs">
-                    <span className="text-[10px] font-semibold text-slate-700">1.00%</span>
-                    <span className="text-[8px] block text-slate-400">ສຳເນົາ</span>
-                  </div>
-                  <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-2xs">
-                    <span className="text-[10px] font-semibold text-slate-700">0.00%</span>
-                    <span className="text-[8px] block text-slate-400">ອື່ນໆ</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-around pt-2 text-[9px] font-bold text-slate-400">
-                  <span>Value</span>
-                  <span>Blend</span>
-                  <span>Growth</span>
-                </div>
+                ))}
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 text-[11px] space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-900" />
-                <span className="text-slate-600">ເອກະສານທີ່ທ່ານກ່ຽວຂ້ອງ (Your Documents)</span>
+            {/* Box 4: Physical Archive Warehouses */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">ຄວາມຈຸຄັງເອກະສານ (Warehouse Storage Meters)</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">ສະແດງອັດຕາການໃຊ້ງານຄັງ ແລະ ຕູ້ເອກະສານກາຍະພາບ</p>
+                </div>
+                <Link
+                  href="/documents/archive"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center"
+                >
+                  ຈັດການຄັງ <ArrowRight className="w-3 h-3 ml-1" />
+                </Link>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
-                <span className="text-slate-600">ເອກະສານລະດັບອົງກອນ (Company Index)</span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                {storageData.topWhs.map((wh, idx) => (
+                  <div key={idx} className="p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="font-semibold text-slate-800 truncate">{wh.name}</span>
+                      <span className="font-mono font-bold text-slate-700">{wh.pct}%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mb-1.5">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          wh.pct > 75 ? 'bg-rose-500' : wh.pct > 50 ? 'bg-amber-500' : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${wh.pct}%` }}
+                      />
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      {wh.count} / {wh.cap} ເອກະສານ
+                    </div>
+                  </div>
+                ))}
               </div>
-              
-              <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-50">
-                <span className="font-semibold text-slate-500">ລະດັບຄວາມສ່ຽງ:</span>
-                <span className="text-rose-600 font-medium">ສູງ (High)</span>
-                <span className="text-amber-600 font-medium">ປານກາງ (Moderate)</span>
-                <span className="text-emerald-600 font-medium">ຕ່ຳ (Low)</span>
+
+              {/* Status Pills */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-100 text-center">
+                <div className="p-2 rounded-lg bg-emerald-50/60 border border-emerald-100">
+                  <div className="text-xs text-emerald-700 font-medium">ໃນຕູ້ເອກະສານ</div>
+                  <div className="text-sm font-bold text-emerald-900 font-mono mt-0.5">{storageData.inCabinet}</div>
+                </div>
+                <div className="p-2 rounded-lg bg-blue-50/60 border border-blue-100">
+                  <div className="text-xs text-blue-700 font-medium">ໃນຊັ້ນວາງ</div>
+                  <div className="text-sm font-bold text-blue-900 font-mono mt-0.5">{storageData.inShelf}</div>
+                </div>
+                <div className="p-2 rounded-lg bg-purple-50/60 border border-purple-100">
+                  <div className="text-xs text-purple-700 font-medium">ໃນແຟ້ມເອກະສານ</div>
+                  <div className="text-sm font-bold text-purple-900 font-mono mt-0.5">{storageData.inFolder}</div>
+                </div>
+                <div className="p-2 rounded-lg bg-amber-50/60 border border-amber-100">
+                  <div className="text-xs text-amber-700 font-medium">ຍັງບໍ່ທັນຈັດເກັບ</div>
+                  <div className="text-sm font-bold text-amber-900 font-mono mt-0.5">{storageData.unassigned}</div>
+                </div>
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* BOTTOM ROW: RECENT ACTIVITIES */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        {/* =========================================================================
+            BOTTOM: QUICK SHORTCUTS & RECENT DOCUMENTS STREAM
+           ========================================================================= */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
             <div>
-              <h2 className="text-sm font-bold text-slate-800">ລາຍການເອກະສານເຄື່ອນໄຫວລ່າສຸດ</h2>
-              <p className="text-[11px] text-slate-400">ເອກະສານທີ່ຖືກອັບໂຫຼດ ແລະ ສົ່ງຕໍ່ພາຍໃນລະບົບ</p>
+              <h3 className="text-sm font-bold text-slate-900">ເອກະສານເຄື່ອນໄຫວລ່າສຸດ (Recent Document Activities)</h3>
+              <p className="text-xs text-slate-400 mt-0.5">ລາຍການເອກະສານທີ່ມີການອັບເດດ ຫຼື ອັບໂຫຼດເຂົ້າລະບົບລ່າສຸດ</p>
             </div>
             <Link
               href="/documents"
-              className="text-xs font-semibold text-violet-600 hover:text-violet-700 flex items-center gap-1"
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center"
             >
-              <span>ເບິ່ງທັງໝົດ</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              ເບິ່ງເອກະສານທັງໝົດ <ArrowRight className="w-3.5 h-3.5 ml-1" />
             </Link>
           </div>
 
-          <div className="overflow-x-auto mt-2">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b border-slate-100 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                  <th className="py-2.5 pr-4">ເລກທີ / ຊື່ເອກະສານ</th>
-                  <th className="py-2.5 px-4">ໝວດໝູ່</th>
-                  <th className="py-2.5 px-4">ຝ່າຍ / ພະແນກ</th>
-                  <th className="py-2.5 px-4">ສະຖານະ</th>
-                  <th className="py-2.5 px-4">ວັນທີອັບໂຫຼດ</th>
-                  <th className="py-2.5 pl-4 text-right">ຈັດການ</th>
+                <tr className="border-b border-slate-100 text-slate-400 font-medium">
+                  <th className="pb-2.5 font-medium">ຊື່ເອກະສານ</th>
+                  <th className="pb-2.5 font-medium">ເລກທີ</th>
+                  <th className="pb-2.5 font-medium">ຝ່າຍຮັບຜິດຊອບ</th>
+                  <th className="pb-2.5 font-medium">ທິດທາງ</th>
+                  <th className="pb-2.5 font-medium">ສະຖານະ</th>
+                  <th className="pb-2.5 font-medium text-right">ຈັດການ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-600">
-                {activeDocs.slice(0, 5).map((doc, i) => (
-                  <tr key={doc.id || i} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 pr-4 font-medium text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-violet-500 shrink-0" />
-                        <div>
-                          <p className="font-semibold text-slate-800 truncate max-w-xs">{doc.title}</p>
-                          <p className="text-[10px] text-slate-400">{doc.docNumber || 'DOC-2026'}</p>
-                        </div>
-                      </div>
+              <tbody className="divide-y divide-slate-100">
+                {activeDocs.slice(0, 5).map((doc) => (
+                  <tr key={doc.id} className="hover:bg-slate-50/60 transition group">
+                    <td className="py-3 font-semibold text-slate-800 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                      <span className="truncate max-w-[280px]">{doc.title}</span>
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium">
-                        {doc.category || 'ທົ່ວໄປ'}
+                    <td className="py-3 font-mono text-slate-500">{doc.docNumber || 'EDL-2026-DOC'}</td>
+                    <td className="py-3 text-slate-600 truncate max-w-[160px]">{doc.division || 'ຫ້ອງການໄຟຟ້າລາວ'}</td>
+                    <td className="py-3">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
+                        {doc.direction === 'inbound' ? 'ຂາເຂົ້າ' : doc.direction === 'outbound' ? 'ຂາອອກ' : 'ພາຍໃນ'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-[11px]">
-                      {doc.division || 'ສູນກາງ'}
-                    </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                           doc.status === 'approved'
@@ -796,22 +653,15 @@ export default function DashboardNewPage() {
                             : 'bg-slate-100 text-slate-600'
                         }`}
                       >
-                        {doc.status === 'approved'
-                          ? 'ອະນຸມັດແລ້ວ'
-                          : doc.status === 'pending'
-                          ? 'ລໍຖ້າອະນຸມັດ'
-                          : 'ຮ່າງ'}
+                        {doc.status === 'approved' ? 'ອະນຸມັດແລ້ວ' : doc.status === 'pending' ? 'ລໍຖ້າກວດກາ' : 'ສະບັບຮ່າງ'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-400 text-[11px]">
-                      {doc.uploadDate || '2026-01-20'}
-                    </td>
-                    <td className="py-3 pl-4 text-right">
+                    <td className="py-3 text-right">
                       <Link
-                        href={`/documents`}
-                        className="text-[11px] font-semibold text-violet-600 hover:text-violet-800"
+                        href={`/documents/${doc.id}`}
+                        className="inline-flex items-center gap-1 text-slate-500 hover:text-blue-600 font-medium"
                       >
-                        ເປີດເບິ່ງ
+                        <Eye className="w-3.5 h-3.5" /> ເບິ່ງ
                       </Link>
                     </td>
                   </tr>
@@ -820,9 +670,7 @@ export default function DashboardNewPage() {
             </table>
           </div>
         </div>
-
       </div>
     </DashboardLayout>
   );
 }
-
