@@ -8,6 +8,7 @@ import {
   Building2,
   Calendar,
   CheckCircle2,
+  CheckSquare,
   ChevronRight,
   Eye,
   FileCheck2,
@@ -97,7 +98,8 @@ export default function UnassignedDocumentsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [statusTab, setStatusTab] = useState<'all' | 'approved' | 'pending' | 'draft'>('all');
 
-  // Selected for batch operations
+  // Selection mode & selected IDs for batch operations
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Modals
@@ -192,6 +194,11 @@ export default function UnassignedDocumentsPage() {
     setSelectedIds(next);
   }
 
+  function handleCancelSelection() {
+    setSelectedIds(new Set());
+    setIsSelectionMode(false);
+  }
+
   // Batch assign submit
   async function handleConfirmBatchAssign() {
     if (selectedIds.size === 0) return;
@@ -220,6 +227,7 @@ export default function UnassignedDocumentsPage() {
         description: `ໄດ້ກຳນົດບ່ອນເກັບໃຫ້ ${ids.length} ເອກະສານຮຽບຮ້ອຍແລ້ວ`,
       });
       setSelectedIds(new Set());
+      setIsSelectionMode(false);
       setBatchModalOpen(false);
       setBatchWarehouseId('');
       setBatchCabinetId('');
@@ -508,7 +516,7 @@ export default function UnassignedDocumentsPage() {
         {/* =========================================================================
             BATCH ACTION BAR (When items are selected)
            ========================================================================= */}
-        {selectedIds.size > 0 && (
+        {isSelectionMode && selectedIds.size > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/90 p-3.5 shadow-sm">
             <div className="flex items-center gap-3">
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white text-xs font-bold tabular-nums">
@@ -522,7 +530,7 @@ export default function UnassignedDocumentsPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setSelectedIds(new Set())}
+                onClick={handleCancelSelection}
                 className="rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 transition"
               >
                 ຍົກເລີກການເລືອກ
@@ -594,19 +602,72 @@ export default function UnassignedDocumentsPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            {/* Table Header Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-800 text-xs sm:text-sm">ລາຍການເອກະສານຄ້າງຈັດເກັບ</span>
+                <span className="rounded-full bg-slate-200/80 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                  {filteredDocs.length}
+                </span>
+                {isSelectionMode && (
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    selectedIds.size > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {selectedIds.size > 0 ? `ເລືອກແລ້ວ ${selectedIds.size}` : 'ໂໝດເລືອກຫຼາຍລາຍການ'}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!isSelectionMode ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsSelectionMode(true)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>ເລືອກຫຼາຍລາຍການ</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    {selectedIds.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setBatchModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>ກຳນົດບ່ອນເກັບ ({selectedIds.size})</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleCancelSelection}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
+                    >
+                      <X className="w-3.5 h-3.5 text-slate-500" />
+                      <span>ຍົກເລີກ</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/80 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="py-3.5 px-3 w-10 text-center">
-                      <input
-                        type="checkbox"
-                        checked={allFilteredSelected}
-                        onChange={handleToggleSelectAll}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                        title="ເລືອກທັງໝົດ"
-                      />
-                    </th>
+                    {isSelectionMode && (
+                      <th className="py-3.5 px-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={allFilteredSelected}
+                          onChange={handleToggleSelectAll}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          title="ເລືອກທັງໝົດ"
+                        />
+                      </th>
+                    )}
                     <th className="py-3.5 px-3 w-12 text-center text-slate-500 whitespace-nowrap">ລ/ດ</th>
                     <th className="py-3.5 px-3.5 min-w-[260px]">ຊື່ເອກະສານ / ເລກທີ</th>
                     <th className="py-3.5 px-3 min-w-[160px]">ຝ່າຍ & ພະແນກ</th>
@@ -628,14 +689,16 @@ export default function UnassignedDocumentsPage() {
                         }`}
                       >
                         {/* Checkbox */}
-                        <td className="py-3.5 px-3 text-center">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelectOne(doc.id)}
-                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          />
-                        </td>
+                        {isSelectionMode && (
+                          <td className="py-3.5 px-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectOne(doc.id)}
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                          </td>
+                        )}
 
                         {/* Sequence Number */}
                         <td className="py-3.5 px-3 text-center font-medium text-slate-400 tabular-nums whitespace-nowrap">
