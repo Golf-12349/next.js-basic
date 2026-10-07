@@ -514,41 +514,6 @@ export default function UnassignedDocumentsPage() {
         </div>
 
         {/* =========================================================================
-            BATCH ACTION BAR (When items are selected)
-           ========================================================================= */}
-        {isSelectionMode && selectedIds.size > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/90 p-3.5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white text-xs font-bold tabular-nums">
-                {selectedIds.size}
-              </span>
-              <div className="text-xs text-indigo-900 font-medium">
-                ໄດ້ເລືອກ <span className="font-bold">{selectedIds.size}</span> ເອກະສານສຳລັບດຳເນີນການ
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleCancelSelection}
-                className="rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 transition"
-              >
-                ຍົກເລີກການເລືອກ
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setBatchModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>ກຳນົດບ່ອນເກັບເປັນກຸ່ມ ({selectedIds.size})</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* =========================================================================
             DOCUMENTS TABLE & LIST VIEW
            ========================================================================= */}
         {unassignedDocs.length === 0 ? (
