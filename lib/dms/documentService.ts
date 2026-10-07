@@ -133,13 +133,19 @@ export async function patchDocument(id: string, patch: Record<string, unknown>):
     if (['categoryId', 'cabinetId', 'shelfId', 'folderId'].includes(key)) {
       if (typeof value === 'string' && UUID_REGEX.test(value)) {
         cleaned[key] = value
-      } else if (value === null) {
+      } else if (value === null || value === '' || value === 'unassigned') {
         cleaned[key] = null
       }
     } else if (key === 'warehouseId') {
-      if (typeof value === 'string' && UUID_REGEX.test(value)) {
+      if (typeof value === 'string' && (UUID_REGEX.test(value) || value.startsWith('wh-'))) {
         cleaned[key] = value
-      } else if (value === null) {
+      } else if (value === null || value === '' || value === 'unassigned') {
+        cleaned[key] = null
+      }
+    } else if (key === 'expiresAt') {
+      if (typeof value === 'string' && value.trim()) {
+        cleaned[key] = new Date(value).toISOString()
+      } else if (value === null || value === '') {
         cleaned[key] = null
       }
     } else if (value !== undefined) {

@@ -12,6 +12,7 @@ import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
+import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
 import Pagination from '@/app/components/ui/Pagination'
 import { pushToast } from '@/app/components/ui/Toast'
 import {
@@ -21,6 +22,7 @@ import {
   Clock,
   Search,
   Eye,
+  Pencil,
   Download,
   Archive,
   Trash2,
@@ -57,6 +59,7 @@ export default function ExpiredDocumentsPage() {
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
   const [storageDoc, setStorageDoc] = useState<Document | null>(null)
+  const [editDoc, setEditDoc] = useState<Document | null>(null)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const [currentPage, setCurrentPage] = useState(1)
@@ -627,6 +630,18 @@ export default function ExpiredDocumentsPage() {
                                     type="button"
                                     onClick={() => {
                                       setActiveDropdownId(null)
+                                      setEditDoc(doc)
+                                    }}
+                                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50 transition"
+                                  >
+                                    <Pencil className="h-4 w-4 text-indigo-500" />
+                                    <span>ແກ້ໄຂເອກະສານ</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveDropdownId(null)
                                       handleDownload(doc)
                                     }}
                                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
@@ -795,6 +810,13 @@ export default function ExpiredDocumentsPage() {
             </div>
           </div>
         )}
+        {/* Edit Document Modal */}
+        <EditDocumentModal
+          open={Boolean(editDoc)}
+          doc={editDoc}
+          onClose={() => setEditDoc(null)}
+          onSuccess={() => void reload()}
+        />
       </div>
     </DashboardLayout>
   )

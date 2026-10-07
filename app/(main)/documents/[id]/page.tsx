@@ -12,7 +12,9 @@ import { pushToast } from '@/app/components/ui/Toast'
 import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
+import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
 import { fetchDocumentById } from '@/lib/dms/documentService'
+import { Pencil } from 'lucide-react'
 
 function getSessionRole(): UserRole | null {
   if (typeof window === 'undefined') return null
@@ -69,10 +71,11 @@ export default function DocumentDetailPage() {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(getSessionRole)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(getStoredUser)
 
-  // Modals for transfer, storage, and renewal
+  // Modals for transfer, storage, renewal, and edit
   const [transferOpen, setTransferOpen] = useState<boolean>(false)
   const [storageOpen, setStorageOpen] = useState<boolean>(false)
   const [renewOpen, setRenewOpen] = useState<boolean>(false)
+  const [editOpen, setEditOpen] = useState<boolean>(false)
 
   useEffect(() => {
     function syncRole() {
@@ -139,9 +142,19 @@ export default function DocumentDetailPage() {
             <p className="mt-1 text-sm text-gray-500">ຂໍ້ມູນເອກະສານທີ່ລະບົບໄດ້ບັນທຶກໄວ້</p>
           </div>
 
-          <Link href="/documents" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-            ← ກັບໄປລາຍການ
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100 transition"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              <span>ແກ້ໄຂເອກະສານ</span>
+            </button>
+            <Link href="/documents" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+              ← ກັບໄປລາຍການ
+            </Link>
+          </div>
         </div>
 
         {/* Expiration Alert Banners */}
@@ -331,6 +344,16 @@ export default function DocumentDetailPage() {
                   </button>
                 )}
 
+                {/* Edit document button */}
+                <button
+                  onClick={() => setEditOpen(true)}
+                  type="button"
+                  className="w-full rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span>ແກ້ໄຂເອກະສານ</span>
+                </button>
+
                 {/* Renew document button */}
                 <button
                   onClick={() => setRenewOpen(true)}
@@ -477,6 +500,17 @@ export default function DocumentDetailPage() {
           document={doc}
           onClose={() => setRenewOpen(false)}
           onSuccess={() => void reload()}
+        />
+
+        {/* Edit Document Modal */}
+        <EditDocumentModal
+          open={editOpen}
+          doc={doc}
+          onClose={() => setEditOpen(false)}
+          onSuccess={(updated) => {
+            setFetchedDoc(updated)
+            void reload()
+          }}
         />
 
       </div>

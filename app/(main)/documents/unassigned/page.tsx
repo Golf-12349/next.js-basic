@@ -20,6 +20,7 @@ import {
   Layers,
   Library,
   PackageOpen,
+  Pencil,
   RefreshCw,
   Search,
   SlidersHorizontal,
@@ -36,6 +37,7 @@ import { pushToast } from '@/app/components/ui/Toast';
 import Modal from '@/app/components/ui/Modal';
 import DocumentPreview from '@/app/components/ui/DocumentPreview';
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal';
+import EditDocumentModal from '@/app/components/documents/EditDocumentModal';
 import type { Document } from '@/types/document';
 
 function getFileIcon(type?: string) {
@@ -101,6 +103,7 @@ export default function UnassignedDocumentsPage() {
   // Modals
   const [storageDoc, setStorageDoc] = useState<Document | null>(null);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
+  const [editDoc, setEditDoc] = useState<Document | null>(null);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
 
   // Batch assignment state
@@ -721,6 +724,15 @@ export default function UnassignedDocumentsPage() {
 
                             <button
                               type="button"
+                              onClick={() => setEditDoc(doc)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition shrink-0"
+                              title="ແກ້ໄຂເອກະສານ"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={() => setPreviewDoc(doc)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition shrink-0"
                               title="ເບິ່ງຕົວຢ່າງ"
@@ -923,6 +935,16 @@ export default function UnassignedDocumentsPage() {
             </div>
           )}
         </Modal>
+
+        {/* =========================================================================
+            EDIT DOCUMENT MODAL
+           ========================================================================= */}
+        <EditDocumentModal
+          open={Boolean(editDoc)}
+          doc={editDoc}
+          onClose={() => setEditDoc(null)}
+          onSuccess={() => void reload()}
+        />
       </div>
     </DashboardLayout>
   );

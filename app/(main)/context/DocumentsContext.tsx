@@ -270,16 +270,32 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       void _cabName
       void _shelfName
       void _folderName
-      const categoryId = category ? categoryList.find((c) => c.name === category)?.id : undefined
-      if (Object.keys(rest).length > 0 || categoryId) {
-        await documentService.patchDocument(id, { ...rest, categoryId })
+      let categoryId: string | null | undefined = undefined
+      if (category !== undefined) {
+        if (!category) {
+          categoryId = null
+        } else {
+          let found = categoryList.find((c) => c.name === category)?.id
+          if (!found && category.trim()) {
+            const ensured = await ensureCategory(category)
+            found = ensured?.id
+          }
+          categoryId = found || null
+        }
+      }
+      if (Object.keys(rest).length > 0 || categoryId !== undefined) {
+        await documentService.patchDocument(id, { ...rest, ...(categoryId !== undefined ? { categoryId } : {}) })
       }
     } catch (err) {
       console.error('Backend updateDocument error:', err)
       throw err
     }
     setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)))
-  }, [categoryList])
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('dms:documents-changed', { detail: { action: 'update', id } }))
+    }
+    void reload()
+  }, [categoryList, ensureCategory, reload])
 
   const deleteDocument = useCallback(async (id: string): Promise<void> => {
     try {

@@ -15,6 +15,7 @@ import { pushToast } from '@/app/components/ui/Toast'
 import {
   Settings,
   Eye,
+  Pencil,
   Download,
   RefreshCw,
   Archive,
@@ -27,6 +28,7 @@ import CategoryBadge from '@/app/components/documents/CategoryBadge'
 import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
+import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 
@@ -70,6 +72,7 @@ export default function DocumentsPage() {
   const [transferDoc, setTransferDoc] = useState<Document | null>(null)
   const [storageDoc, setStorageDoc] = useState<Document | null>(null)
   const [renewDoc, setRenewDoc] = useState<Document | null>(null)
+  const [editDoc, setEditDoc] = useState<Document | null>(null)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const visibleCabinets = useMemo(() => {
@@ -514,6 +517,18 @@ export default function DocumentsPage() {
                                 type="button"
                                 onClick={() => {
                                   setActiveDropdownId(null)
+                                  setEditDoc(doc)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-50 transition"
+                              >
+                                <Pencil className="h-4 w-4 text-indigo-500" />
+                                <span>ແກ້ໄຂເອກະສານ</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null)
                                   handleDownload(doc)
                                 }}
                                 className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition"
@@ -636,18 +651,32 @@ export default function DocumentsPage() {
           footer={
             detailDoc && (
               <div className="flex w-full items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const target = detailDoc
-                    setDetailDoc(null)
-                    setPreviewDoc(target)
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-indigo-200 bg-indigo-50 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition"
-                >
-                  <Eye className="h-4 w-4" />
-                  <span>ເປີດເບິ່ງໄຟລ໌</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = detailDoc
+                      setDetailDoc(null)
+                      setPreviewDoc(target)
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-indigo-200 bg-indigo-50 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span>ເປີດເບິ່ງໄຟລ໌</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = detailDoc
+                      setDetailDoc(null)
+                      setEditDoc(target)
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-indigo-200 bg-white text-sm font-medium text-indigo-700 hover:bg-indigo-50 transition"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span>ແກ້ໄຂ</span>
+                  </button>
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -817,6 +846,13 @@ export default function DocumentsPage() {
           open={Boolean(renewDoc)}
           document={renewDoc}
           onClose={() => setRenewDoc(null)}
+          onSuccess={() => void reload()}
+        />
+
+        <EditDocumentModal
+          open={Boolean(editDoc)}
+          doc={editDoc}
+          onClose={() => setEditDoc(null)}
           onSuccess={() => void reload()}
         />
       </div>

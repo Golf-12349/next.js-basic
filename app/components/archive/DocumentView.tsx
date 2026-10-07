@@ -8,6 +8,7 @@ import {
   FileText,
   FolderInput,
   Home,
+  Pencil,
   Plus,
   Trash2,
   Filter,
@@ -20,6 +21,7 @@ import { pushToast } from '@/app/components/ui/Toast'
 import Pagination from '@/app/components/ui/Pagination'
 import { useUploadModal } from '@/app/(main)/context/UploadModalContext'
 import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
+import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
 import { useDocuments } from '@/app/(main)/context/DocumentsContext'
 
@@ -182,6 +184,7 @@ interface DocumentRowProps {
   onDelete: (doc: Document) => void;
   onMoveShelf?: (doc: Document) => void;
   onTransfer?: (doc: Document) => void;
+  onEdit?: (doc: Document) => void;
 }
 
 function formatDate(dateStr?: string): string {
@@ -202,6 +205,7 @@ function DocumentRow({
   onDelete,
   onMoveShelf,
   onTransfer,
+  onEdit,
 }: DocumentRowProps) {
   const currentFolder = folders.find((f) => f.id === doc.folderId);
   const currentShelf = shelves.find((s) => s.id === doc.shelfId || (currentFolder && s.id === currentFolder.shelfId));
@@ -300,6 +304,16 @@ function DocumentRow({
             <ArrowRightLeft size={14} /> ສົ່ງຂ້າມ
           </button>
         )}
+        {onEdit && (
+          <button
+            type="button"
+            onClick={() => onEdit(doc)}
+            className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-100"
+            title="ແກ້ໄຂເອກະສານ"
+          >
+            <Pencil size={14} /> ແກ້ໄຂ
+          </button>
+        )}
         {onMoveShelf && (
           <button
             onClick={() => onMoveShelf(doc)}
@@ -333,6 +347,7 @@ interface DocumentListProps {
   onDelete: (doc: Document) => void;
   onMoveShelf?: (doc: Document) => void;
   onTransfer?: (doc: Document) => void;
+  onEdit?: (doc: Document) => void;
   emptyMessage?: string;
   emptySubMessage?: string;
   showPagination?: boolean;
@@ -351,6 +366,7 @@ function DocumentList({
   onDelete,
   onMoveShelf,
   onTransfer,
+  onEdit,
   emptyMessage = 'ຍັງບໍ່ມີເອກະສານ',
   emptySubMessage = 'ອັບໂຫຼດເອກະສານໃໝ່ເພື່ອເລີ່ມຕົ້ນຈັດເກັບ',
   showPagination = true,
@@ -404,6 +420,7 @@ function DocumentList({
             onDelete={onDelete}
             onMoveShelf={onMoveShelf}
             onTransfer={onTransfer}
+            onEdit={onEdit}
           />
         ))}
       </div>
@@ -623,6 +640,7 @@ export default function DocumentView({
   const { reload } = useDocuments();
   const [moveDoc, setMoveDoc] = useState<Document | null>(null);
   const [transferDoc, setTransferDoc] = useState<Document | null>(null);
+  const [editDoc, setEditDoc] = useState<Document | null>(null);
   const [filterCabinetId, setFilterCabinetId] = useState<string>('all');
   const [filterShelfId, setFilterShelfId] = useState<string>('all');
   const [filterFolderId, setFilterFolderId] = useState<string>('all');
@@ -691,10 +709,21 @@ export default function DocumentView({
           onDelete={onDelete}
           onMoveShelf={(doc) => setMoveDoc(doc)}
           onTransfer={(doc) => setTransferDoc(doc)}
+          onEdit={(doc) => setEditDoc(doc)}
           emptyMessage={`ຍັງບໍ່ມີເອກະສານໃນແຟ້ມ "${folder.name}"`}
           emptySubMessage="ເອກະສານຂອງແຟ້ມນີ້ຈະສະແດງສະເພາະຢູ່ທີ່ນີ້ເທົ່ານັ້ນ"
           actionLabel="ອັບໂຫຼດເອກະສານເຂົ້າແຟ້ມນີ້"
           onAction={handleUploadToFolder}
+        />
+
+        <EditDocumentModal
+          open={Boolean(editDoc)}
+          doc={editDoc}
+          onClose={() => setEditDoc(null)}
+          onSuccess={() => {
+            setEditDoc(null);
+            void reload();
+          }}
         />
 
         <MoveToFolderModal
@@ -850,8 +879,19 @@ export default function DocumentView({
         onDelete={onDelete}
         onMoveShelf={(doc) => setMoveDoc(doc)}
         onTransfer={(doc) => setTransferDoc(doc)}
+        onEdit={(doc) => setEditDoc(doc)}
         emptyMessage="ບໍ່ພົບເອກະສານໃນບ່ອນເກັບນີ້"
         emptySubMessage="ເລືອກຕູ້, ຊັ້ນວາງ ຫຼື ແຟ້ມອື່ນ ເພື່ອເບິ່ງເອກະສານ"
+      />
+
+      <EditDocumentModal
+        open={Boolean(editDoc)}
+        doc={editDoc}
+        onClose={() => setEditDoc(null)}
+        onSuccess={() => {
+          setEditDoc(null);
+          void reload();
+        }}
       />
 
       <MoveToFolderModal
