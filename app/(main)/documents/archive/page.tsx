@@ -1,6 +1,4 @@
 "use client"
-import Link from 'next/link';
-import { useMemo } from 'react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '../../context/DocumentsContext';
 import { useArchive as useDMSArchive } from '../../context/ArchiveContext';
@@ -71,24 +69,6 @@ export default function ArchivePage() {
     user,
   );
 
-  const unassignedDocsCount = useMemo(() => {
-    return documents.filter(
-      (d) =>
-        !d.deleted &&
-        d.status !== 'pending' &&
-        !(
-          d.warehouseId ||
-          d.cabinetId ||
-          d.shelfId ||
-          d.folderId ||
-          d.warehouseName ||
-          d.cabinetName ||
-          d.shelfName ||
-          d.folderName
-        ),
-    ).length;
-  }, [documents]);
-
   return (
     <DashboardLayout title="ຄັງເກັບເອກກະສານ">
       <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
@@ -96,30 +76,6 @@ export default function ArchivePage() {
           showCreateButton={false}
           onSearchChange={undefined}
         />
-
-        {unassignedDocsCount > 0 && (
-          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-amber-900 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xl">
-                📦
-              </span>
-              <div>
-                <div className="text-sm font-semibold text-amber-900">
-                  ມີ {unassignedDocsCount} ເອກະສານທີ່ຍັງບໍ່ທັນຖືກຈັດເກັບເຂົ້າຄັງ / ຕູ້ / ຊັ້ນ / ແຟ້ມ
-                </div>
-                <div className="text-xs text-amber-700">
-                  ທ່ານສາມາດກວດສອບ ແລະ ເລືອກບ່ອນຈັດເກັບໃຫ້ເອກະສານໄດ້ໂດຍກົງ
-                </div>
-              </div>
-            </div>
-            <Link
-              href="/documents?warehouse=unassigned"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 transition shrink-0"
-            >
-              🔍 ກວດສອບ ແລະ ລະບຸບ່ອນເກັບ →
-            </Link>
-          </div>
-        )}
 
         <div className="mb-4">
           <div className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm">
