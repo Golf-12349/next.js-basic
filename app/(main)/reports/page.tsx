@@ -279,48 +279,26 @@ export default function ReportsPage() {
   // ---------- Export to Excel ----------
   async function handleExportExcel() {
     if (filteredDocs.length === 0) {
-      pushToast({ title: 'ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ' });
+      pushToast({ title: 'ບໍ່ມີຂໍ້ມູນໃຫ້ສົ່ງອອກ', description: 'ກະລຸນາເລືອກຕົວກັ່ນຕອງໃໝ່' });
       return;
     }
 
     try {
-      const XLSX = await import('xlsx');
-      const rows = filteredDocs.map((d, index) => ({
-        'ລຳດັບ': index + 1,
-        'ເລກທີເອກະສານ': d.docNumber || '-',
-        'ຊື່ເອກະສານ': d.title,
-        'ໝວດໝູ່': d.category || '-',
-        'ທິດທາງ': directionLabels[getDocDirection(d.direction)] || 'ພາຍໃນ',
-        'ຝ່າຍ': d.division || 'ສູນກາງ',
-        'ພະແນກ': d.department || '-',
-        'ສະຖານະ': statusLabels[d.status] || d.status,
-        'ວັນທີອັບໂຫຼດ': d.uploadDate || '-',
-        'ວັນທີໝົດອາຍຸ': d.expiresAt || 'ບໍ່ກຳນົດ',
-        'ຜູ້ອັບໂຫຼດ': d.uploadedBy || '-',
-      }));
-
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'ລາຍງານເອກະສານ');
-
-      worksheet['!cols'] = [
-        { wch: 8 },
-        { wch: 18 },
-        { wch: 36 },
-        { wch: 16 },
-        { wch: 14 },
-        { wch: 22 },
-        { wch: 20 },
-        { wch: 14 },
-        { wch: 14 },
-        { wch: 14 },
-        { wch: 18 },
-      ];
-
-      const fileName = `EDL-DMS-Report-${selectedYear}-${new Date().toISOString().slice(0, 10)}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
-      pushToast({ title: 'ສົ່ງອອກໄຟລ໌ Excel ສຳເລັດແລ້ວ' });
+      const { exportDocumentsToExcel } = await import('@/lib/dms/excelExport');
+      exportDocumentsToExcel(filteredDocs, {
+        title: 'ບົດລາຍງານ ແລະ ສະຖິຕິເອກະສານປະຈຳງວດ EDL-DMS',
+        subTitle: 'ລັດວິສາຫະກິດໄຟຟ້າລາວ • ELECTRICITE DU LAOS',
+        filterScope: `ຂອບເຂດປີ ${selectedYear === 'all' ? 'ທຸກປີ' : `ປີ ${selectedYear}`} | ${
+          selectedMonth === 'all' ? 'ທຸກເດືອນ' : `ເດືອນ ${selectedMonth}`
+        } | ${selectedDivision === 'all' ? 'ທຸກຝ່າຍ' : selectedDivision}`,
+        cabinets,
+      });
+      pushToast({
+        title: 'ສົ່ງອອກ Excel ມືອາຊີບສຳເລັດແລ້ວ 🎉',
+        description: 'ລວມ 2 ແຜ່ນງານ (ລາຍການເອກະສານລະອຽດ + ສະຫຼຸບສະຖິຕິ KPI)',
+      });
     } catch (err) {
+      console.error('Excel export error:', err);
       pushToast({ title: 'ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກ Excel' });
     }
   }
