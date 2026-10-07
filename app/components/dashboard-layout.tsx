@@ -103,13 +103,9 @@ const menuSections: MenuSection[] = [
   {
     title: 'DOCUMENTS',
     items: [
-      { name: 'ເອກກະສານທັງໝົດ', href: '/documents', icon: FileText },
-      { name: 'ຍັງບໍ່ມີບ່ອນເກັບ', href: '/documents/unassigned', icon: PackageOpen },
-      { name: 'ປະຫວັດການອັບໂຫຼດ', href: '/documents/upload-history', icon: History },
-      { name: 'ເອກະສານສົ່ງຂ້າມ', href: '/documents/pending', icon: ArrowRightLeft },
-      { name: 'ປະຫວັດການສົ່ງຂ້າມ', href: '/documents/transfers', icon: ArrowRightLeft },
+      { name: 'ເອກະສານທັງໝົດ', href: '/documents', icon: FileText },
       {
-        name: 'ຄັງເກັບເອກກະສານ',
+        name: 'ຄັງເກັບເອກະສານ',
         href: '/documents/archive',
         icon: Archive,
         children: [
@@ -136,6 +132,10 @@ const menuSections: MenuSection[] = [
           },
         ],
       },
+      { name: 'ຍັງບໍ່ມີບ່ອນເກັບ', href: '/documents/unassigned', icon: PackageOpen },
+      { name: 'ປະຫວັດການອັບໂຫຼດ', href: '/documents/upload-history', icon: History },
+      { name: 'ເອກະສານສົ່ງຂ້າມ', href: '/documents/pending', icon: ArrowRightLeft },
+      { name: 'ປະຫວັດການສົ່ງຂ້າມ', href: '/documents/transfers', icon: ArrowRightLeft },
     ],
   },
   {
