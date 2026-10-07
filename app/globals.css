@@ -50,16 +50,40 @@
   --foreground: #0f172a;
 }
 
+@font-face {
+  font-family: 'Phetsarath';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/phetsarath/Phetsarath-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Phetsarath';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/phetsarath/Phetsarath-Bold.ttf') format('truetype');
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), sans-serif;
-  --font-mono: var(--font-noto-sans), sans-serif;
+  --font-mono: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), monospace;
 }
 
+html,
+body,
+input,
+button,
+select,
+textarea,
+optgroup {
+  font-family: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), sans-serif;
+}
 
 html {
-  font-family: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), sans-serif;
   /* Compact density — smaller, cleaner scale across all pages */
   font-size: 15px;
 }
@@ -67,10 +91,18 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Monospace contexts fallback to Phetsarath for Lao glyphs */
+.font-mono,
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), monospace;
 }
 
 /* ---------- Dashboard: hide scrollbar on horizontal strips ---------- */

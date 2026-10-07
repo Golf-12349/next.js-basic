@@ -411,21 +411,21 @@ export default function ReportsPage() {
           <div className="pt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-slate-600">
             <div>
               <span className="text-[10px] text-slate-400 uppercase font-semibold block">ວັນທີອອກບົດລາຍງານ</span>
-              <span className="font-mono font-medium text-slate-700">{currentDateText}</span>
+              <span className="font-medium text-slate-700 tabular-nums">{currentDateText}</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 uppercase font-semibold block">ຂອບເຂດປີທີ່ວິເຄາະ</span>
-              <span className="font-mono font-medium text-slate-700">
+              <span className="font-medium text-slate-700">
                 {selectedYear === 'all' ? 'ທຸກປີ (All Years)' : `ປີ ${selectedYear}`}
               </span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 uppercase font-semibold block">ຈຳນວນເອກະສານທີ່ພົບ</span>
-              <span className="font-mono font-bold text-slate-900">{filteredDocs.length} ສະບັບ</span>
+              <span className="font-bold text-slate-900 tabular-nums">{filteredDocs.length} ສະບັບ</span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 uppercase font-semibold block">ສະຖານະລະບົບ</span>
-              <span className="font-mono font-medium text-slate-700">
+              <span className="font-medium text-slate-700">
                 ອັບເດດສົດຕາມຖານຂໍ້ມູນ
               </span>
             </div>
@@ -441,8 +441,8 @@ export default function ReportsPage() {
               <Filter className="w-4 h-4 text-slate-500" />
               <span>ເງື່ອນໄຂການກັ່ນຕອງຂໍ້ມູນ (Report Filters)</span>
             </div>
-            <div className="text-[11px] font-mono text-slate-400">
-              ກັ່ນຕອງໄດ້ {filteredDocs.length} / {activeDocs.length} ລາຍການ
+            <div className="text-[11px] text-slate-400">
+              ກັ່ນຕອງໄດ້ <span className="font-semibold text-slate-600 tabular-nums">{filteredDocs.length}</span> / <span className="tabular-nums">{activeDocs.length}</span> ລາຍການ
             </div>
           </div>
 
@@ -788,7 +788,7 @@ export default function ReportsPage() {
                               />
                             </div>
 
-                            <span className="text-[11px] font-mono font-medium text-slate-500 mt-2 truncate">
+                            <span className="text-[11px] font-medium text-slate-500 mt-2 truncate">
                               {m.monthName.slice(0, 3)}
                             </span>
                           </div>
@@ -1095,8 +1095,8 @@ export default function ReportsPage() {
                     <div className="mt-1 text-2xl font-bold font-mono tabular-nums text-slate-900">
                       {archiveBreakdown.assignedRate}%
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 font-mono">
-                      {archiveBreakdown.assignedCount} ສະບັບ ໄດ້ລະບຸຕູ້/ຊັ້ນ/ແຟ້ມແລ້ວ
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      <span className="font-semibold text-slate-700 tabular-nums">{archiveBreakdown.assignedCount}</span> ສະບັບ ໄດ້ລະບຸຕູ້/ຊັ້ນ/ແຟ້ມແລ້ວ
                     </p>
                   </div>
                   <div className="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">

@@ -408,7 +408,7 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
           {keyStatsRows.map((row, i) => (
             <div key={i} className="flex items-center justify-between py-1.5">
               <span className="text-slate-500 text-xs truncate max-w-[200px]">{row.label}</span>
-              <span className="font-semibold text-slate-700 text-xs font-mono">{row.val}</span>
+              <span className="font-semibold text-slate-700 text-xs tabular-nums">{row.val}</span>
             </div>
           ))}
         </div>

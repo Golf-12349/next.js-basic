@@ -526,7 +526,7 @@ export default function DashboardNewPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between text-xs mb-1">
                         <span className="font-semibold text-slate-800 truncate">{dept.name}</span>
-                        <span className="font-bold text-slate-900 font-mono">{dept.count} ສະບັບ</span>
+                        <span className="font-bold text-slate-900 tabular-nums">{dept.count} ສະບັບ</span>
                       </div>
                       <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                         <div
