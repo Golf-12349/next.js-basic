@@ -61,6 +61,7 @@ export function Dashboard() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="py-3 px-4 w-12 text-center whitespace-nowrap">ລ/ດ</th>
                 <th className="py-3 px-4">ຜູ້ໃຊ້ງານ</th>
                 <th className="py-3 px-4">ລາຍການ</th>
                 <th className="py-3 px-4">ເວລາ</th>
@@ -69,6 +70,7 @@ export function Dashboard() {
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
               <tr>
+                <td className="py-3 px-4 text-center text-xs text-gray-400 whitespace-nowrap">1</td>
                 <td className="py-3 px-4 font-medium text-gray-900">Somchai Jaidee</td>
                 <td className="py-3 px-4">ສະໝັກແພັກເກັດ Pro (1 ປີ)</td>
                 <td className="py-3 px-4 text-gray-500">2 ນາທີກ່ອນ</td>
@@ -77,6 +79,7 @@ export function Dashboard() {
                 </td>
               </tr>
               <tr>
+                <td className="py-3 px-4 text-center text-xs text-gray-400 whitespace-nowrap">2</td>
                 <td className="py-3 px-4 font-medium text-gray-900">Somsri Raka</td>
                 <td className="py-3 px-4">ອັບເດດຂໍ້ມູນໂປຣໄຟລ໌</td>
                 <td className="py-3 px-4 text-gray-500">1 ຊົ່ວໂມງກ່ອນ</td>
@@ -85,6 +88,7 @@ export function Dashboard() {
                 </td>
               </tr>
               <tr>
+                <td className="py-3 px-4 text-center text-xs text-gray-400 whitespace-nowrap">3</td>
                 <td className="py-3 px-4 font-medium text-gray-900">Anan Sukjai</td>
                 <td className="py-3 px-4">ຊຳລະເງິນບໍ່ສຳເລັດ</td>
                 <td className="py-3 px-4 text-gray-500">3 ຊົ່ວໂມງກ່ອນ</td>

@@ -803,6 +803,7 @@ export default function ReportsPage() {
                   <table className="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider">
+                        <th className="py-2.5 px-3 w-12 text-center whitespace-nowrap">ລ/ດ</th>
                         <th className="py-2.5 px-3">ງວດເດືອນ</th>
                         <th className="py-2.5 px-3 text-right">ເອກະສານທັງໝົດ</th>
                         <th className="py-2.5 px-3 text-right">ຂາເຂົ້າ (IN)</th>
@@ -813,8 +814,11 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {monthlyBreakdown.months.map((m) => (
+                      {monthlyBreakdown.months.map((m, idx) => (
                         <tr key={m.monthNum} className="even:bg-slate-50/40 hover:bg-slate-50 transition-colors">
+                          <td className="py-2.5 px-3 text-center font-mono text-slate-400 text-xs">
+                            {idx + 1}
+                          </td>
                           <td className="py-2.5 px-3 font-medium text-slate-800">
                             {m.monthName} ({m.monthNum})
                           </td>
@@ -843,7 +847,7 @@ export default function ReportsPage() {
                     {/* Classic Financial Total Row */}
                     <tfoot>
                       <tr className="bg-slate-50 border-t-2 border-slate-300 font-bold text-slate-800 text-xs">
-                        <td className="py-2.5 px-3">ລວມທັງໝົດ (TOTAL)</td>
+                        <td colSpan={2} className="py-2.5 px-3">ລວມທັງໝົດ (TOTAL)</td>
                         <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-900">
                           {monthlyBreakdown.totals.total}
                         </td>
@@ -891,6 +895,7 @@ export default function ReportsPage() {
                   <table className="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider">
+                        <th className="py-2.5 px-3 w-12 text-center whitespace-nowrap">ລ/ດ</th>
                         <th className="py-2.5 px-3">ຊື່ຝ່າຍ (Division)</th>
                         <th className="py-2.5 px-3 text-center">ຈຳນວນພະແນກ</th>
                         <th className="py-2.5 px-3 text-right">ເອກະສານທັງໝົດ</th>
@@ -908,6 +913,9 @@ export default function ReportsPage() {
 
                         return (
                           <tr key={i} className="even:bg-slate-50/40 hover:bg-slate-50 transition-colors">
+                            <td className="py-2.5 px-3 text-center font-mono text-slate-400 text-xs whitespace-nowrap">
+                              {i + 1}
+                            </td>
                             <td className="py-2.5 px-3 font-semibold text-slate-800">
                               {div.name}
                             </td>
@@ -1030,6 +1038,7 @@ export default function ReportsPage() {
                   <table className="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider">
+                        <th className="py-2.5 px-3 w-12 text-center whitespace-nowrap">ລ/ດ</th>
                         <th className="py-2.5 px-3">ເລກທີ / ຊື່ເອກະສານ</th>
                         <th className="py-2.5 px-3">ຝ່າຍ / ພະແນກ</th>
                         <th className="py-2.5 px-3">ວັນທີໝົດອາຍຸ</th>
@@ -1040,6 +1049,9 @@ export default function ReportsPage() {
                     <tbody className="divide-y divide-slate-100 text-slate-700">
                       {[...expiryRiskData.expiredList, ...expiryRiskData.soon7DaysList].map((doc, idx) => (
                         <tr key={doc.id || idx} className="even:bg-slate-50/40 hover:bg-slate-50 transition-colors">
+                          <td className="py-2.5 px-3 text-center font-mono text-slate-400 text-xs whitespace-nowrap">
+                            {idx + 1}
+                          </td>
                           <td className="py-2.5 px-3">
                             <p className="font-semibold text-slate-800">{doc.title}</p>
                             <p className="text-[10px] text-slate-400 font-mono">{doc.docNumber || '-'}</p>
@@ -1138,6 +1150,7 @@ export default function ReportsPage() {
                   <table className="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider">
+                        <th className="py-2.5 px-3 w-12 text-center whitespace-nowrap">ລ/ດ</th>
                         <th className="py-2.5 px-3">ຊື່ຄັງເອກະສານ</th>
                         <th className="py-2.5 px-3 text-center">ຈຳນວນຕູ້ເອກະສານ</th>
                         <th className="py-2.5 px-3 text-right">ເອກະສານພາຍໃນຄັງ</th>
@@ -1145,8 +1158,11 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {archiveBreakdown.whStats.map((wh) => (
+                      {archiveBreakdown.whStats.map((wh, idx) => (
                         <tr key={wh.id} className="even:bg-slate-50/40 hover:bg-slate-50 transition-colors">
+                          <td className="py-2.5 px-3 text-center font-mono text-slate-400 text-xs whitespace-nowrap">
+                            {idx + 1}
+                          </td>
                           <td className="py-2.5 px-3 font-semibold text-slate-800 flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-sm bg-slate-600" />
                             <span>{wh.name}</span>
@@ -1204,7 +1220,7 @@ export default function ReportsPage() {
                 <table className="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
                   <thead>
                     <tr className="bg-slate-50 text-slate-600 border-b border-slate-200 text-[11px] font-semibold uppercase tracking-wider">
-                      <th className="py-2.5 px-3 text-slate-400">#</th>
+                      <th className="py-2.5 px-3 text-slate-400 w-12 text-center whitespace-nowrap">ລ/ດ</th>
                       <th className="py-2.5 px-3">ເລກທີ / ຊື່ເອກະສານ</th>
                       <th className="py-2.5 px-3">ໝວດໝູ່</th>
                       <th className="py-2.5 px-3">ທິດທາງ</th>
@@ -1217,7 +1233,7 @@ export default function ReportsPage() {
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {filteredDocs.map((doc, i) => (
                       <tr key={doc.id || i} className="even:bg-slate-50/40 hover:bg-slate-50 transition-colors">
-                        <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{i + 1}</td>
+                        <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px] text-center whitespace-nowrap">{i + 1}</td>
                         <td className="py-2.5 px-3 font-medium text-slate-800">
                           <p className="font-semibold text-slate-800 truncate max-w-xs">{doc.title}</p>
                           <p className="text-[10px] text-slate-400 font-mono">{doc.docNumber || '-'}</p>

@@ -119,6 +119,7 @@ export default function MasterDataDivisionsPage() {
         <MasterTable
           head={
             <>
+              <Th align="center" className="w-12 whitespace-nowrap">ລ/ດ</Th>
               <Th>ຊື່ຝ່າຍ</Th>
               <Th>ຈຳນວນພະແນກ</Th>
               <Th>ຕູ້ເອກະສານ</Th>
@@ -129,15 +130,18 @@ export default function MasterDataDivisionsPage() {
         >
           {divisions.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-5 py-12 text-center text-sm text-slate-400">
+              <td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-400">
                 ຍັງບໍ່ມີຝ່າຍໃນລະບົບ
               </td>
             </tr>
           ) : (
-            divisions.map((division) => {
+            divisions.map((division, idx) => {
               const stat = divisionStats.get(division)
               return (
                 <tr key={division} className="transition hover:bg-slate-50/60">
+                  <td className="px-5 py-3.5 text-center font-medium text-slate-400 tabular-nums whitespace-nowrap">
+                    {idx + 1}
+                  </td>
                   <td className="px-5 py-3.5">
                     <span className="font-semibold text-slate-800">🏢 {division}</span>
                   </td>

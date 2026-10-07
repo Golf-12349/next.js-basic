@@ -621,6 +621,7 @@ export default function DashboardNewPage() {
             <table className="w-full text-xs text-left">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-medium">
+                  <th className="pb-2.5 font-medium w-10 text-center whitespace-nowrap">ລ/ດ</th>
                   <th className="pb-2.5 font-medium">ຊື່ເອກະສານ</th>
                   <th className="pb-2.5 font-medium">ເລກທີ</th>
                   <th className="pb-2.5 font-medium">ຝ່າຍຮັບຜິດຊອບ</th>
@@ -630,8 +631,11 @@ export default function DashboardNewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {activeDocs.slice(0, 5).map((doc) => (
+                {activeDocs.slice(0, 5).map((doc, idx) => (
                   <tr key={doc.id} className="hover:bg-slate-50/60 transition group">
+                    <td className="py-3 text-center text-slate-400 font-medium whitespace-nowrap">
+                      {idx + 1}
+                    </td>
                     <td className="py-3 font-semibold text-slate-800 flex items-center gap-2">
                       <FileText className="w-4 h-4 text-blue-500 shrink-0" />
                       <span className="truncate max-w-[280px]">{doc.title}</span>

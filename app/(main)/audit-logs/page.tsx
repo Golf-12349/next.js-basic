@@ -265,31 +265,32 @@ export default function AuditLogsPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/75 text-xs font-semibold text-slate-500">
                 <tr>
-                  <th className="px-3 py-2.5">ວັນທີ & ເວລາ</th>
-                  <th className="px-3 py-2.5">ຜູ້ດຳເນີນການ</th>
-                  <th className="px-3 py-2.5">ເຫດການ (Action)</th>
-                  <th className="px-3 py-2.5">ເປົ້າໝາຍ / ລາຍລະອຽດ</th>
-                  <th className="px-3 py-2.5">IP Address & ອຸປະກອນ</th>
-                  <th className="px-3 py-2.5 text-right">ຈັດການ</th>
+                  <th className="px-3.5 py-3 w-12 text-center text-slate-500 whitespace-nowrap">ລ/ດ</th>
+                  <th className="px-3.5 py-3">ວັນທີ & ເວລາ</th>
+                  <th className="px-3.5 py-3">ຜູ້ດຳເນີນການ</th>
+                  <th className="px-3.5 py-3">ເຫດການ (Action)</th>
+                  <th className="px-3.5 py-3">ເປົ້າໝາຍ / ລາຍລະອຽດ</th>
+                  <th className="px-3.5 py-3">IP Address & ອຸປະກອນ</th>
+                  <th className="px-3.5 py-3 text-right">ຈັດການ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-sm text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-sm text-slate-400">
                       <RefreshCw className="mx-auto h-6 w-6 animate-spin text-indigo-500 mb-2" />
                       ກຳລັງໂຫຼດຂໍ້ມູນບັນທຶກຄວາມປອດໄພ...
                     </td>
                   </tr>
                 ) : logs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-sm text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-sm text-slate-400">
                       <Info className="mx-auto h-8 w-8 text-slate-300 mb-2" />
                       ບໍ່ພົບຂໍ້ມູນບັນທຶກຄວາມປອດໄພຕາມເງື່ອນໄຂ
                     </td>
                   </tr>
                 ) : (
-                  logs.map((log) => {
+                  logs.map((log, idx) => {
                     const actionMeta = ACTION_LABELS[log.action] || {
                       label: log.action,
                       color: 'bg-slate-50 text-slate-700 border-slate-200',
@@ -299,8 +300,13 @@ export default function AuditLogsPage() {
 
                     return (
                       <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
+                        {/* Sequence Number */}
+                        <td className="px-3.5 py-3 text-center font-medium text-slate-400 tabular-nums whitespace-nowrap">
+                          {idx + 1}
+                        </td>
+
                         {/* Timestamp */}
-                        <td className="px-3 py-2.5 whitespace-nowrap text-xs font-mono text-slate-500">
+                        <td className="px-3.5 py-3 whitespace-nowrap text-xs font-mono text-slate-500">
                           {formatDate(log.createdAt)}
                         </td>
 

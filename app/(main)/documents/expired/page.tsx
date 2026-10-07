@@ -444,19 +444,20 @@ export default function ExpiredDocumentsPage() {
             <table className="min-w-full text-left">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
-                  <th className="px-3 py-2.5">ເອກະສານ</th>
-                  <th className="px-3 py-2.5">ໝວດໝູ່</th>
-                  <th className="px-3 py-2.5">ເລກທີ</th>
-                  <th className="px-3 py-2.5">ວັນທີໝົດອາຍຸ</th>
-                  <th className="px-3 py-2.5">ຜູ້ອັບໂຫຼດ</th>
-                  <th className="px-3 py-2.5">ສະຖານະ</th>
-                  <th className="px-3 py-2.5 text-center">ການກະທຳ</th>
+                  <th className="px-3.5 py-3 w-12 text-center text-gray-500 whitespace-nowrap">ລ/ດ</th>
+                  <th className="px-3.5 py-3">ເອກະສານ</th>
+                  <th className="px-3.5 py-3">ໝວດໝູ່</th>
+                  <th className="px-3.5 py-3">ເລກທີ</th>
+                  <th className="px-3.5 py-3">ວັນທີໝົດອາຍຸ</th>
+                  <th className="px-3.5 py-3">ຜູ້ອັບໂຫຼດ</th>
+                  <th className="px-3.5 py-3">ສະຖານະ</th>
+                  <th className="px-3.5 py-3 text-center">ການກະທຳ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {paginatedDocs.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center">
+                    <td colSpan={8} className="py-16 text-center">
                       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                         <CheckCircle2 className="h-8 w-8" />
                       </div>
@@ -481,8 +482,13 @@ export default function ExpiredDocumentsPage() {
                           isExpired ? 'bg-rose-50/20' : isUrgent ? 'bg-amber-50/20' : ''
                         }`}
                       >
+                        {/* Sequence Number */}
+                        <td className="px-3.5 py-3 text-center font-medium text-gray-400 tabular-nums whitespace-nowrap">
+                          {(currentPage - 1) * PAGE_SIZE + idx + 1}
+                        </td>
+
                         {/* Title & Organization info */}
-                        <td className="px-3 py-2.5">
+                        <td className="px-3.5 py-3">
                           <div className="font-semibold text-gray-900">{doc.title}</div>
                           {(doc.department || doc.division) && (
                             <div

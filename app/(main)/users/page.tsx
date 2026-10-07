@@ -335,18 +335,19 @@ export default function UsersPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-3 py-2.5 min-w-[220px]">ຜູ້ໃຊ້ງານ</th>
-                  <th className="px-3 py-2.5 min-w-[140px]">ພະແນກ</th>
-                  <th className="px-3 py-2.5 w-40 min-w-[140px] whitespace-nowrap">ສິດນຳໃຊ້</th>
-                  <th className="px-3 py-2.5 w-36 min-w-[130px] whitespace-nowrap">ສະຖານະ</th>
-                  <th className="px-3 py-2.5 w-44 min-w-[150px] whitespace-nowrap">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
-                  <th className="px-3 py-2.5 text-center w-28 min-w-[100px] whitespace-nowrap">ຈັດການ</th>
+                  <th className="px-3.5 py-3 w-12 text-center text-gray-500 whitespace-nowrap">ລ/ດ</th>
+                  <th className="px-3.5 py-3 min-w-[220px]">ຜູ້ໃຊ້ງານ</th>
+                  <th className="px-3.5 py-3 min-w-[140px]">ພະແນກ</th>
+                  <th className="px-3.5 py-3 w-40 min-w-[140px] whitespace-nowrap">ສິດນຳໃຊ້</th>
+                  <th className="px-3.5 py-3 w-36 min-w-[130px] whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-3.5 py-3 w-44 min-w-[150px] whitespace-nowrap">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
+                  <th className="px-3.5 py-3 text-center w-28 min-w-[100px] whitespace-nowrap">ຈັດການ</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
+                    <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">
                       ບໍ່ພົບຜູ້ໃຊ້ງານທີ່ຕົງກັບການຄົ້ນຫາ
                     </td>
                   </tr>
@@ -363,6 +364,10 @@ export default function UsersPage() {
 
                       return (
                         <tr key={u.id} className="border-t border-gray-100 align-top">
+                          {/* Sequence Number */}
+                          <td className="px-3.5 py-3 text-center font-medium text-gray-400 tabular-nums whitespace-nowrap">
+                            {(currentPage - 1) * PAGE_SIZE + idx + 1}
+                          </td>
                           <td className="px-3 py-2.5">
                             <div className="flex items-center gap-3">
                               <UserAvatar

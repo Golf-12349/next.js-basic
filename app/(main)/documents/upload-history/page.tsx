@@ -530,25 +530,31 @@ export default function UploadHistoryPage() {
             <table className="w-full min-w-full divide-y divide-slate-100 text-sm">
               <thead className="bg-slate-50/80">
                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="px-3 py-2.5 whitespace-nowrap">ວັນທີ & ເວລາອັບໂຫຼດ</th>
-                  <th className="px-3 py-2.5 min-w-[220px]">ເອກະສານ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ທິດທາງ & ໝວດໝູ່</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ຝ່າຍ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ພະແນກ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ສະຖານະ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap text-right">ການກະທຳ</th>
+                  <th className="px-3.5 py-3 w-12 text-center text-slate-500 whitespace-nowrap">ລ/ດ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ວັນທີ & ເວລາອັບໂຫຼດ</th>
+                  <th className="px-3.5 py-3 min-w-[220px]">ເອກະສານ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ທິດທາງ & ໝວດໝູ່</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ຝ່າຍ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ພະແນກ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap text-right">ການກະທຳ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {pageItems.map((doc) => {
+                {pageItems.map((doc, idx) => {
                   const stamp = formatUploadStamp(doc.uploadedAt, doc.uploadDate)
                   const place = locationParts(doc)
                   const uploader = resolveUploader(doc)
                   return (
                     <tr key={doc.id} className="transition-colors hover:bg-slate-50/60">
+                      {/* Sequence Number */}
+                      <td className="whitespace-nowrap px-3.5 py-3 text-center font-medium text-slate-400 tabular-nums align-top">
+                        {(page - 1) * PAGE_SIZE + idx + 1}
+                      </td>
+
                       {/* 1 — ວັນທີ & ເວລາອັບໂຫຼດ */}
-                      <td className="whitespace-nowrap px-3 py-2.5 align-top">
+                      <td className="whitespace-nowrap px-3.5 py-3 align-top">
                         <div className="font-medium text-slate-900">
                           {stamp.date}
                           {stamp.time ? <span className="text-slate-500">, {stamp.time}</span> : null}

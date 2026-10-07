@@ -138,16 +138,17 @@ export default function PendingDocumentsPage() {
               <table className="min-w-full text-left">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 border-b border-gray-100">
                   <tr>
-                    <th className="px-3 py-2.5">ເອກະສານ</th>
-                    <th className="px-3 py-2.5">ຕົ້ນທາງ (ສົ່ງມາຈາກ)</th>
-                    <th className="px-3 py-2.5">ປາຍທາງ (ສົ່ງຫາ)</th>
-                    <th className="px-3 py-2.5">ໝາຍເຫດ</th>
-                    <th className="px-3 py-2.5">ວັນທີສົ່ງ</th>
-                    <th className="px-3 py-2.5 text-center">ການກະທຳ</th>
+                    <th className="px-3.5 py-3 w-12 text-center text-gray-500 whitespace-nowrap">ລ/ດ</th>
+                    <th className="px-3.5 py-3">ເອກະສານ</th>
+                    <th className="px-3.5 py-3">ຕົ້ນທາງ (ສົ່ງມາຈາກ)</th>
+                    <th className="px-3.5 py-3">ປາຍທາງ (ສົ່ງຫາ)</th>
+                    <th className="px-3.5 py-3">ໝາຍເຫດ</th>
+                    <th className="px-3.5 py-3">ວັນທີສົ່ງ</th>
+                    <th className="px-3.5 py-3 text-center">ການກະທຳ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {incomingTransfers.map((t) => {
+                  {incomingTransfers.map((t, idx) => {
                     const docItem = t.document
                     const isCross =
                       t.fromDivision &&
@@ -166,7 +167,10 @@ export default function PendingDocumentsPage() {
 
                     return (
                       <tr key={t.id} className="hover:bg-gray-50/60 transition">
-                        <td className="px-3 py-2.5">
+                        <td className="px-3.5 py-3 text-center font-medium text-gray-400 tabular-nums whitespace-nowrap">
+                          {idx + 1}
+                        </td>
+                        <td className="px-3.5 py-3">
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-gray-900">
                               {docItem?.title || 'ເອກະສານບໍ່ລະບຸຊື່'}

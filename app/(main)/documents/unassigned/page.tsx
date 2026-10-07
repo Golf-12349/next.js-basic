@@ -595,7 +595,7 @@ export default function UnassignedDocumentsPage() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/80 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-3.5 w-10 text-center">
+                    <th className="py-3.5 px-3 w-10 text-center">
                       <input
                         type="checkbox"
                         checked={allFilteredSelected}
@@ -604,17 +604,18 @@ export default function UnassignedDocumentsPage() {
                         title="ເລືອກທັງໝົດ"
                       />
                     </th>
-                    <th className="py-3 px-3 min-w-[240px]">ຊື່ເອກະສານ / ເລກທີ</th>
-                    <th className="py-3 px-3 min-w-[140px]">ຝ່າຍ & ພະແນກ</th>
-                    <th className="py-3 px-3 min-w-[110px]">ໝວດໝູ່</th>
-                    <th className="py-3 px-3 min-w-[100px]">ສະຖານະ</th>
-                    <th className="py-3 px-3 min-w-[130px]">ສະຖານະບ່ອນເກັບ</th>
-                    <th className="py-3 px-3 min-w-[110px]">ວັນທີອັບໂຫຼດ</th>
-                    <th className="py-3 px-3 w-32 text-right">ຈັດການ</th>
+                    <th className="py-3.5 px-3 w-12 text-center text-slate-500 whitespace-nowrap">ລ/ດ</th>
+                    <th className="py-3.5 px-3.5 min-w-[260px]">ຊື່ເອກະສານ / ເລກທີ</th>
+                    <th className="py-3.5 px-3 min-w-[160px]">ຝ່າຍ & ພະແນກ</th>
+                    <th className="py-3.5 px-3 min-w-[120px] whitespace-nowrap">ໝວດໝູ່</th>
+                    <th className="py-3.5 px-3 min-w-[110px] whitespace-nowrap">ສະຖານະ</th>
+                    <th className="py-3.5 px-3 min-w-[130px] whitespace-nowrap">ສະຖານະບ່ອນເກັບ</th>
+                    <th className="py-3.5 px-3 min-w-[120px] whitespace-nowrap">ວັນທີອັບໂຫຼດ</th>
+                    <th className="py-3.5 px-3.5 min-w-[160px] text-right whitespace-nowrap">ຈັດການ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredDocs.map((doc) => {
+                  {filteredDocs.map((doc, idx) => {
                     const isSelected = selectedIds.has(doc.id);
                     return (
                       <tr
@@ -624,7 +625,7 @@ export default function UnassignedDocumentsPage() {
                         }`}
                       >
                         {/* Checkbox */}
-                        <td className="py-3 px-3.5 text-center">
+                        <td className="py-3.5 px-3 text-center">
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -633,8 +634,13 @@ export default function UnassignedDocumentsPage() {
                           />
                         </td>
 
+                        {/* Sequence Number */}
+                        <td className="py-3.5 px-3 text-center font-medium text-slate-400 tabular-nums whitespace-nowrap">
+                          {idx + 1}
+                        </td>
+
                         {/* Title & DocNumber */}
-                        <td className="py-3 px-3">
+                        <td className="py-3.5 px-3.5">
                           <div className="flex items-start gap-2.5">
                             <div className="mt-0.5 shrink-0">{getFileIcon(doc.fileType)}</div>
                             <div className="min-w-0">
@@ -645,7 +651,7 @@ export default function UnassignedDocumentsPage() {
                               >
                                 {doc.title}
                               </Link>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                              <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">
                                 <span className="tabular-nums font-mono text-slate-500">
                                   {doc.docNumber || 'ບໍ່ມີເລກທີ'}
                                 </span>
@@ -658,40 +664,40 @@ export default function UnassignedDocumentsPage() {
                         </td>
 
                         {/* Division & Department */}
-                        <td className="py-3 px-3">
-                          <div className="text-slate-800 font-medium truncate max-w-[150px]">
+                        <td className="py-3.5 px-3">
+                          <div className="text-slate-800 font-medium truncate max-w-[160px]">
                             {doc.division || '-'}
                           </div>
-                          <div className="text-[11px] text-slate-400 truncate max-w-[150px]">
+                          <div className="text-[11px] text-slate-400 truncate max-w-[160px]">
                             {doc.department || '-'}
                           </div>
                         </td>
 
                         {/* Category */}
-                        <td className="py-3 px-3">
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-700 whitespace-nowrap">
                             <Tag className="w-2.5 h-2.5 text-slate-400" />
                             {doc.category || 'ທົ່ວໄປ'}
                           </span>
                         </td>
 
                         {/* Document Status */}
-                        <td className="py-3 px-3">{getStatusBadge(doc.status)}</td>
+                        <td className="py-3.5 px-3 whitespace-nowrap">{getStatusBadge(doc.status)}</td>
 
                         {/* Unassigned Badge */}
-                        <td className="py-3 px-3">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 border border-amber-200">
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800 border border-amber-200 whitespace-nowrap">
                             <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
                             ຍັງບໍ່ມີບ່ອນເກັບ
                           </span>
                         </td>
 
                         {/* Upload Date */}
-                        <td className="py-3 px-3 text-slate-500 tabular-nums">
+                        <td className="py-3.5 px-3 text-slate-500 tabular-nums whitespace-nowrap">
                           {doc.uploadDate ? (
                             <div>
                               <div>{doc.uploadDate.slice(0, 10)}</div>
-                              <div className="text-[10px] text-slate-400 truncate max-w-[100px]">
+                              <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
                                 ໂດຍ: {doc.uploadedBy || '-'}
                               </div>
                             </div>
@@ -701,25 +707,25 @@ export default function UnassignedDocumentsPage() {
                         </td>
 
                         {/* Actions */}
-                        <td className="py-3 px-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="py-3.5 px-3.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => setStorageDoc(doc)}
-                              className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-600 hover:text-white transition shadow-2xs"
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-600 hover:text-white transition shadow-2xs whitespace-nowrap shrink-0"
                               title="ກຳນົດບ່ອນຈັດເກັບໃນຄັງ"
                             >
-                              <Layers className="w-3 h-3" />
+                              <Layers className="w-3.5 h-3.5" />
                               <span>ກຳນົດບ່ອນເກັບ</span>
                             </button>
 
                             <button
                               type="button"
                               onClick={() => setPreviewDoc(doc)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition shrink-0"
                               title="ເບິ່ງຕົວຢ່າງ"
                             >
-                              <Eye className="w-3.5 h-3.5" />
+                              <Eye className="w-4 h-4" />
                             </button>
                           </div>
                         </td>

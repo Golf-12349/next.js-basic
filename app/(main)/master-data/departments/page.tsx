@@ -172,6 +172,7 @@ export default function MasterDataDepartmentsPage() {
         <MasterTable
           head={
             <>
+              <Th align="center" className="w-12 whitespace-nowrap">ລ/ດ</Th>
               <Th>ຊື່ພະແນກ</Th>
               <Th>ສັງກັດຝ່າຍ</Th>
               <Th>ຕູ້ເອກະສານ</Th>
@@ -182,15 +183,18 @@ export default function MasterDataDepartmentsPage() {
         >
           {visibleDepartments.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-5 py-12 text-center text-sm text-slate-400">
+              <td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-400">
                 ຍັງບໍ່ມີພະແນກຕາມເງື່ອນໄຂທີ່ເລືອກ
               </td>
             </tr>
           ) : (
-            visibleDepartments.map(({ division, department }) => {
+            visibleDepartments.map(({ division, department }, idx) => {
               const stat = departmentStats.get(`${division}:::${department}`)
               return (
                 <tr key={`${division}:::${department}`} className="transition hover:bg-slate-50/60">
+                  <td className="px-5 py-3.5 text-center font-medium text-slate-400 tabular-nums whitespace-nowrap">
+                    {idx + 1}
+                  </td>
                   <td className="px-5 py-3.5">
                     <span className="font-semibold text-slate-800">🏬 {department}</span>
                   </td>

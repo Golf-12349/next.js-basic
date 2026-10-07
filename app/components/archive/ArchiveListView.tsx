@@ -136,7 +136,7 @@ export default function ArchiveListView<T>({
         <table className="min-w-full text-left">
           <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
             <tr>
-              <th className="w-12 px-3 py-2.5 text-center">#</th>
+              <th className="w-12 px-3 py-2.5 text-center">ລ/ດ</th>
               {columns.map((column) => (
                 <th
                   key={column.key}

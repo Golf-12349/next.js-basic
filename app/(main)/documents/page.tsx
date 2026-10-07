@@ -387,21 +387,25 @@ export default function DocumentsPage() {
             <table className="min-w-full text-left">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
-                  <th className="px-3 py-2.5">ເອກະສານ</th>
-                  <th className="px-3 py-2.5">ໝວດໝູ່</th>
-                  <th className="px-3 py-2.5">ເລກທີ</th>
-                  <th className="px-3 py-2.5">ຮູບແບບ</th>
-                  <th className="px-3 py-2.5">ຂະໜາດ</th>
-                  <th className="px-3 py-2.5">ວັນທີ</th>
-                  <th className="px-3 py-2.5">ຜູ້ອັບໂຫຼດ</th>
-                  <th className="px-3 py-2.5">ສະຖານະ</th>
-                  <th className="px-3 py-2.5 text-center">ການກະທຳ</th>
+                  <th className="px-3.5 py-3 w-12 text-center text-gray-500 whitespace-nowrap">ລ/ດ</th>
+                  <th className="px-3.5 py-3">ເອກະສານ</th>
+                  <th className="px-3.5 py-3">ໝວດໝູ່</th>
+                  <th className="px-3.5 py-3">ເລກທີ</th>
+                  <th className="px-3.5 py-3">ຮູບແບບ</th>
+                  <th className="px-3.5 py-3">ຂະໜາດ</th>
+                  <th className="px-3.5 py-3">ວັນທີ</th>
+                  <th className="px-3.5 py-3">ຜູ້ອັບໂຫຼດ</th>
+                  <th className="px-3.5 py-3">ສະຖານະ</th>
+                  <th className="px-3.5 py-3 text-center">ການກະທຳ</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedDocs.map((doc, idx) => (
                   <tr key={doc.id} className="border-t border-gray-200 align-top hover:bg-gray-50/60 transition-colors">
-                    <td className="px-3 py-2.5">
+                    <td className="px-3.5 py-3 text-center font-medium text-gray-400 tabular-nums whitespace-nowrap">
+                      {(currentPage - 1) * PAGE_SIZE + idx + 1}
+                    </td>
+                    <td className="px-3.5 py-3">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-gray-900">{doc.title}</span>
                         {!(doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName) && (

@@ -127,8 +127,9 @@ export function MasterTable({ head, children }: { head: ReactNode; children: Rea
   )
 }
 
-export function Th({ children, align = 'left' }: { children: ReactNode; align?: 'left' | 'right' }) {
-  return <th className={`px-5 py-3.5 ${align === 'right' ? 'text-right' : ''}`}>{children}</th>
+export function Th({ children, align = 'left', className = '' }: { children: ReactNode; align?: 'left' | 'right' | 'center'; className?: string }) {
+  const alignClass = align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left';
+  return <th className={`px-5 py-3.5 ${alignClass} ${className}`}>{children}</th>
 }
 
 export function RowActions({ children }: { children: ReactNode }) {

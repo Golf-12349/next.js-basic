@@ -102,6 +102,7 @@ export default function MasterDataCategoriesPage() {
         <MasterTable
           head={
             <>
+              <Th align="center" className="w-12 whitespace-nowrap">ລ/ດ</Th>
               <Th>ຊື່ໝວດໝູ່</Th>
               <Th>ຈຳນວນເອກະສານທີ່ໃຊ້</Th>
               <Th align="right">ການກະທຳ</Th>
@@ -110,13 +111,16 @@ export default function MasterDataCategoriesPage() {
         >
           {categories.length === 0 ? (
             <tr>
-              <td colSpan={3} className="px-5 py-12 text-center text-sm text-slate-400">
+              <td colSpan={4} className="px-5 py-12 text-center text-sm text-slate-400">
                 ຍັງບໍ່ມີໝວດໝູ່ເອກະສານໃນລະບົບ
               </td>
             </tr>
           ) : (
-            categories.map((category) => (
+            categories.map((category, idx) => (
               <tr key={category} className="transition hover:bg-slate-50/60">
+                <td className="px-3.5 py-3.5 text-center text-xs font-semibold text-slate-400 whitespace-nowrap">
+                  {idx + 1}
+                </td>
                 <td className="px-5 py-3.5">
                   <span className="font-semibold text-slate-800">🏷️ {category}</span>
                 </td>

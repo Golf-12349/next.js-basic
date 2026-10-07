@@ -272,20 +272,25 @@ export default function TrashPage() {
               <table className="min-w-full text-left">
                 <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                   <tr>
-                    <th className="px-3 py-2.5">ເອກະສານ</th>
-                    <th className="px-3 py-2.5">ໝວດໝູ່ ແລະ ທີ່ຕັ້ງເດີມ</th>
-                    <th className="px-3 py-2.5">ຂະໜາດ</th>
-                    <th className="px-3 py-2.5">ວັນທີອັບໂຫຼດ</th>
-                    <th className="px-3 py-2.5">ຜູ້ອັບໂຫຼດ</th>
-                    <th className="px-3 py-2.5 text-center">ການກະທຳ</th>
+                    <th className="px-3.5 py-3 w-12 text-center text-gray-500 whitespace-nowrap">ລ/ດ</th>
+                    <th className="px-3.5 py-3">ເອກະສານ</th>
+                    <th className="px-3.5 py-3">ໝວດໝູ່ ແລະ ທີ່ຕັ້ງເດີມ</th>
+                    <th className="px-3.5 py-3">ຂະໜາດ</th>
+                    <th className="px-3.5 py-3">ວັນທີອັບໂຫຼດ</th>
+                    <th className="px-3.5 py-3">ຜູ້ອັບໂຫຼດ</th>
+                    <th className="px-3.5 py-3 text-center">ການກະທຳ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedTrash.map((doc) => {
+                  {paginatedTrash.map((doc, idx) => {
                     const { icon: TypeIcon, color: typeColor, label: typeLabel } = fileTypeInfo(doc.fileType)
                     return (
                       <tr key={doc.id} className="border-t border-gray-100 align-top transition hover:bg-gray-50/60">
-                        <td className="px-3 py-2.5">
+                        {/* Sequence Number */}
+                        <td className="px-3.5 py-3 text-center font-medium text-gray-400 tabular-nums whitespace-nowrap">
+                          {(currentPage - 1) * PAGE_SIZE + idx + 1}
+                        </td>
+                        <td className="px-3.5 py-3">
                           <div className="flex items-start gap-3">
                             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${typeColor}`}>
                               <TypeIcon size={18} />

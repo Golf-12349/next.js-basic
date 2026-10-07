@@ -473,18 +473,19 @@ export default function TransferHistoryPage() {
             <table className="w-full min-w-full divide-y divide-slate-100 text-sm">
               <thead className="bg-slate-50/80">
                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <th className="px-3 py-2.5 whitespace-nowrap">ວັນທີສົ່ງ</th>
-                  <th className="px-3 py-2.5 min-w-[200px]">ເອກະສານ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ຕົ້ນທາງ (From)</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ປາຍທາງ (To)</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ຜູ້ສົ່ງ & ໝາຍເຫດ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ຮູບແບບ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap">ສະຖານະ</th>
-                  <th className="px-3 py-2.5 whitespace-nowrap text-right">ການກະທຳ</th>
+                  <th className="px-3.5 py-3 w-12 text-center text-slate-500 whitespace-nowrap">ລ/ດ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ວັນທີສົ່ງ</th>
+                  <th className="px-3.5 py-3 min-w-[200px]">ເອກະສານ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ຕົ້ນທາງ (From)</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ປາຍທາງ (To)</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ຜູ້ສົ່ງ & ໝາຍເຫດ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ຮູບແບບ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-3.5 py-3 whitespace-nowrap text-right">ການກະທຳ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {pageItems.map((item) => {
+                {pageItems.map((item, idx) => {
                   const stamp = formatStamp(item.createdAt)
                   const senderName = item.sender?.name || '—'
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy backend fields may arrive as objects instead of strings
@@ -500,8 +501,13 @@ export default function TransferHistoryPage() {
 
                   return (
                     <tr key={item.id} className="transition-colors hover:bg-slate-50/60">
+                      {/* Sequence Number */}
+                      <td className="whitespace-nowrap px-3.5 py-3 text-center font-medium text-slate-400 tabular-nums align-top">
+                        {(page - 1) * PAGE_SIZE + idx + 1}
+                      </td>
+
                       {/* Date */}
-                      <td className="whitespace-nowrap px-3 py-2.5 align-top">
+                      <td className="whitespace-nowrap px-3.5 py-3 align-top">
                         <div className="font-medium text-slate-900">{stamp.date}</div>
                         {stamp.time && <div className="text-xs text-slate-400">{stamp.time}</div>}
                       </td>
