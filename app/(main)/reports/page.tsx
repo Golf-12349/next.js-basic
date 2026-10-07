@@ -26,6 +26,7 @@ import { useMasterData } from '@/app/(main)/context/MasterDataContext';
 import { useArchive } from '@/app/(main)/context/ArchiveContext';
 import { LAO_MONTHS } from '@/app/components/dashboard/dashboard-utils';
 import { pushToast } from '@/app/components/ui/Toast';
+import ExportPdfModal from '@/app/components/documents/ExportPdfModal';
 
 type TabKey = 'monthly' | 'division' | 'expiry' | 'archive' | 'details';
 
@@ -70,6 +71,7 @@ export default function ReportsPage() {
   const { warehouses, cabinets } = useArchive();
 
   const printRef = useRef<HTMLDivElement>(null);
+  const [exportPdfOpen, setExportPdfOpen] = useState(false);
 
   // ---------- Filters State ----------
   const [activeTab, setActiveTab] = useState<TabKey>('monthly');
@@ -388,12 +390,12 @@ export default function ReportsPage() {
               </button>
               <button
                 type="button"
-                onClick={handlePrint}
-                className="px-3.5 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5"
-                title="ພິມລາຍງານ"
+                onClick={() => setExportPdfOpen(true)}
+                className="px-3.5 py-2 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition shadow-sm flex items-center gap-1.5"
+                title="ສົ່ງອອກໄຟລ໌ PDF ແບບກຳນົດເອງ"
               >
-                <Printer className="w-3.5 h-3.5 text-slate-500" />
-                <span>ພິມລາຍງານ</span>
+                <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Export PDF (Custom Format)</span>
               </button>
               <button
                 type="button"
@@ -1289,6 +1291,13 @@ export default function ReportsPage() {
         </div>
 
       </div>
+
+      <ExportPdfModal
+        open={exportPdfOpen}
+        onClose={() => setExportPdfOpen(false)}
+        initialDocuments={filteredDocs}
+        defaultTitle="ບົດລາຍງານ ແລະ ສະຖິຕິເອກະສານປະຈຳງວດ"
+      />
     </DashboardLayout>
   );
 }
