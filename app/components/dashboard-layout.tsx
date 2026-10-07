@@ -654,7 +654,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Header — sticky + ແຖວຄົ້ນຫາແຍກສຳລັບມືຖື, ບໍ່ໃຫ້ລົ້ນຂອບຈໍ */}
         <header className="sticky top-0 z-30 shrink-0 border-b border-gray-200/70 bg-white/90 backdrop-blur">
-          <div className="flex h-14 items-center gap-1.5 px-3 sm:gap-3 sm:px-4 lg:px-6">
+          <div className="flex h-14 items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8">
             <button
               type="button"
               onClick={() => setMobileNavOpen(true)}

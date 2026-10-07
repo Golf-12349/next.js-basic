@@ -71,7 +71,7 @@ export default function ArchivePage() {
 
   return (
     <DashboardLayout title="ຄັງເກັບເອກກະສານ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <PageHeader
           showCreateButton={false}
           onSearchChange={undefined}
@@ -271,7 +271,7 @@ export default function ArchivePage() {
           onClose={() => archive.setConfirmDelete(null)}
           onConfirm={archive.confirmDeleteNow}
         />
-      </main>
+      </div>
     </DashboardLayout>
   );
 }

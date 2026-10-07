@@ -195,7 +195,7 @@ export default function ExpiredDocumentsPage() {
 
   return (
     <DashboardLayout title="ເອກະສານໝົດອາຍຸ">
-      <div className="w-full space-y-4 p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header Title & Subtitle */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3.5">

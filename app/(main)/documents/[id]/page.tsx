@@ -132,7 +132,7 @@ export default function DocumentDetailPage() {
 
   return (
     <DashboardLayout title="ເອກະສານ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">ລາຍລະອຽດເອກະສານ</h1>
@@ -479,7 +479,7 @@ export default function DocumentDetailPage() {
           onSuccess={() => void reload()}
         />
 
-      </main>
+      </div>
     </DashboardLayout>
   )
 }

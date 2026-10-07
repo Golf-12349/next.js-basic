@@ -110,7 +110,7 @@ export default function MoveFolderPage() {
 
   return (
     <DashboardLayout title="ຍ້າຍແຟ້ມເອກະສານ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <RelocateHeader
           icon="📁"
           title="ຍ້າຍແຟ້ມເອກະສານ"
@@ -235,7 +235,7 @@ export default function MoveFolderPage() {
             )}
           </RelocatePanel>
         </div>
-      </main>
+      </div>
     </DashboardLayout>
   )
 }

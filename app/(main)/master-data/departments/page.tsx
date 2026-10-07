@@ -98,7 +98,7 @@ export default function MasterDataDepartmentsPage() {
 
   return (
     <DashboardLayout title="ຈັດການພະແນກ">
-      <div className="w-full min-w-0 space-y-4 p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <MasterDataHeader
           icon={<Users className="h-6 w-6" />}
           title="ຈັດການພະແນກ"

@@ -28,7 +28,7 @@ const masterDataOptions = [
 export default function MasterDataPage() {
   return (
     <DashboardLayout title="ຈັດການຂໍ້ມູນພື້ນຖານ">
-      <div className="w-full min-w-0 space-y-4 p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
             ຈັດການຂໍ້ມູນພື້ນຖານ (Master Data)

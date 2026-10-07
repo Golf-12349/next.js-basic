@@ -102,7 +102,7 @@ export default function PendingDocumentsPage() {
 
   return (
     <DashboardLayout title="ເອກະສານສົ່ງຂ້າມມາຫາທ່ານ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
@@ -395,7 +395,7 @@ export default function PendingDocumentsPage() {
             </div>
           )}
         </Modal>
-      </main>
+      </div>
     </DashboardLayout>
   )
 }

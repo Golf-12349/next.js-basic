@@ -190,7 +190,7 @@ export default function PersonalProfilePage() {
 
   return (
     <DashboardLayout title="ການຕັ້ງຄ່າສ່ວນຕົວ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Page Header */}
         <div className="mb-4">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-600">
@@ -695,7 +695,7 @@ export default function PersonalProfilePage() {
             </section>
           </div>
         )}
-      </main>
+      </div>
     </DashboardLayout>
   );
 }

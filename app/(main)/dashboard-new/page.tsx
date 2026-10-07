@@ -196,7 +196,7 @@ export default function DashboardNewPage() {
 
   return (
     <DashboardLayout title="ໜ້າຫຼັກ (ດີໄຊໃໝ່)">
-      <div className="w-full space-y-5 p-3 sm:p-4 lg:p-6 max-w-[1600px] mx-auto">
+      <div className="w-full min-w-0 space-y-6 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
         {/* =========================================================================
             HEADER BANNER & VIEW SWITCHER
            ========================================================================= */}

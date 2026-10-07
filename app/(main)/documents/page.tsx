@@ -244,7 +244,7 @@ export default function DocumentsPage() {
 
   return (
     <DashboardLayout title="ເອກກະສານທັງໝົດ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-4">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">ເອກກະສານທັງໝົດ</h1>
@@ -819,7 +819,7 @@ export default function DocumentsPage() {
           onClose={() => setRenewDoc(null)}
           onSuccess={() => void reload()}
         />
-      </main>
+      </div>
     </DashboardLayout>
   )
 }

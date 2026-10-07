@@ -215,7 +215,7 @@ export default function UsersPage() {
 
   return (
     <DashboardLayout title="ຈັດການຜູ້ໃຊ້ງານ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-4">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">ຈັດການຜູ້ໃຊ້ງານ</h1>
@@ -569,7 +569,7 @@ export default function UsersPage() {
           onClose={() => setResetPasswordTarget(null)}
           onReset={handleResetPassword}
         />
-      </main>
+      </div>
     </DashboardLayout>
   )
 }

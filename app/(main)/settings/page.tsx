@@ -86,7 +86,7 @@ export default function SystemSettingsPage() {
 
   return (
     <DashboardLayout title="ຕັ້ງຄ່າລະບົບ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header */}
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -321,7 +321,7 @@ export default function SystemSettingsPage() {
             </section>
           </div>
         </div>
-      </main>
+      </div>
     </DashboardLayout>
   );
 }

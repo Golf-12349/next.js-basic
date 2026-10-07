@@ -86,7 +86,7 @@ export default function MasterDataDivisionsPage() {
 
   return (
     <DashboardLayout title="ຈັດການຝ່າຍ">
-      <div className="w-full min-w-0 space-y-4 p-3 sm:p-4 lg:p-5">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <MasterDataHeader
           icon={<Building2 className="h-6 w-6" />}
           title="ຈັດການຝ່າຍ (ໂຄງສ້າງອົງກອນ)"

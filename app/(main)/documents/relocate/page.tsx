@@ -31,8 +31,8 @@ const relocateOptions = [
 export default function RelocatePage() {
   return (
     <DashboardLayout title="ຍ້າຍສະຖານທີ່ຈັດເກັບ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
-        <div className="mb-4">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
+        <div>
           <h1 className="text-xl font-bold text-gray-900">📦 ຍ້າຍສະຖານທີ່ຈັດເກັບ</h1>
           <p className="mt-1 text-sm text-gray-500">
             ເລືອກປະເພດທີ່ຕ້ອງການຍ້າຍ: ຕູ້ເອກະສານ ➡️ ຊັ້ນວາງເອກະສານ ➡️ ແຟ້ມເກັບເອກະສານ
@@ -63,7 +63,7 @@ export default function RelocatePage() {
             </Link>
           ))}
         </div>
-      </main>
+      </div>
     </DashboardLayout>
   )
 }

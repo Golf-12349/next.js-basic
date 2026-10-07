@@ -143,7 +143,7 @@ export default function TrashPage() {
 
   return (
     <DashboardLayout title="ຖັງຂີ້ເຫຍື້ອ">
-      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5 space-y-4">
+      <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* ── Header & Actions ───────────────────────────────────── */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -496,7 +496,7 @@ export default function TrashPage() {
             </div>
           </div>
         </Modal>
-      </main>
+      </div>
     </DashboardLayout>
   )
 }
