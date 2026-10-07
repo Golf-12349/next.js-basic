@@ -56,6 +56,7 @@
   font-weight: 400;
   font-display: swap;
   src: url('/fonts/phetsarath/Phetsarath-Regular.ttf') format('truetype');
+  unicode-range: U+0E80-0EFF, U+200B-200D, U+25CC;
 }
 
 @font-face {
@@ -64,13 +65,14 @@
   font-weight: 700;
   font-display: swap;
   src: url('/fonts/phetsarath/Phetsarath-Bold.ttf') format('truetype');
+  unicode-range: U+0E80-0EFF, U+200B-200D, U+25CC;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), sans-serif;
-  --font-mono: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), monospace;
+  --font-sans: var(--font-inter), var(--font-noto-sans), var(--font-phetsarath), 'Phetsarath', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace, var(--font-phetsarath), 'Phetsarath';
 }
 
 html,
@@ -80,7 +82,7 @@ button,
 select,
 textarea,
 optgroup {
-  font-family: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), sans-serif;
+  font-family: var(--font-inter), var(--font-noto-sans), var(--font-phetsarath), 'Phetsarath', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 html {
@@ -102,7 +104,7 @@ code,
 pre,
 kbd,
 samp {
-  font-family: var(--font-phetsarath), 'Phetsarath', var(--font-noto-sans), monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace, var(--font-phetsarath), 'Phetsarath';
 }
 
 /* ---------- Dashboard: hide scrollbar on horizontal strips ---------- */

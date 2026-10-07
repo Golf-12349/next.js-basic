@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Noto_Sans } from "next/font/google";
+import { Inter, Noto_Sans } from "next/font/google";
 import "./globals.css";
 import { DMSProvider } from './(main)/_dms-context'
 import { CurrentUserProvider } from './(main)/context/CurrentUserContext'
@@ -23,12 +23,26 @@ const phetsarath = localFont({
   ],
   variable: "--font-phetsarath",
   display: "swap",
+  declarations: [
+    {
+      prop: "unicode-range",
+      value: "U+0E80-0EFF, U+200B-200D, U+25CC",
+    },
+  ],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
 const notoSans = Noto_Sans({
   variable: "--font-noto-sans",
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -40,13 +54,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="lo"
-      className={`${phetsarath.variable} ${notoSans.variable} h-full antialiased`}
+      className={`${phetsarath.variable} ${inter.variable} ${notoSans.variable} h-full antialiased`}
     >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet" />
-      </head>
       <body className="min-h-full flex flex-col font-sans">
         <Toaster />
         <DMSProvider>
