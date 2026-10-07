@@ -263,29 +263,6 @@ export default function DocumentsPage() {
           </button>
         </div>
 
-        {unassignedCount > 0 && filterWarehouse !== 'unassigned' && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-amber-900 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xl">
-                ⚠️
-              </span>
-              <div>
-                <div className="text-sm font-semibold text-amber-900">
-                  ມີ {unassignedCount} ເອກະສານທີ່ຍັງບໍ່ທັນໄດ້ກຳນົດບ່ອນຈັດເກັບໃນຄັງ
-                </div>
-                <div className="text-xs text-amber-700">
-                  ເອກະສານເຫຼົ່ານີ້ຍັງບໍ່ມີ ສາງ/ຕູ້/ຊັ້ນ/ແຟ້ມ ເພື່ອຄວາມເປັນລະບຽບ ກະລຸນາກຳນົດບ່ອນເກັບໃຫ້ຄົບຖ້ວນ
-                </div>
-              </div>
-            </div>
-            <Link
-              href="/documents/unassigned"
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 transition shrink-0"
-            >
-              🔍 ໄປທີ່ໜ້າຈັດການເອກະສານຍັງບໍ່ມີບ່ອນເກັບ →
-            </Link>
-          </div>
-        )}
 
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
