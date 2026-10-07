@@ -39,6 +39,7 @@ import Modal from '@/app/components/ui/Modal';
 import DocumentPreview from '@/app/components/ui/DocumentPreview';
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal';
 import EditDocumentModal from '@/app/components/documents/EditDocumentModal';
+import ExportPdfModal from '@/app/components/documents/ExportPdfModal';
 import type { Document } from '@/types/document';
 
 function getFileIcon(type?: string) {
@@ -107,6 +108,7 @@ export default function UnassignedDocumentsPage() {
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [editDoc, setEditDoc] = useState<Document | null>(null);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [exportPdfOpen, setExportPdfOpen] = useState(false);
 
   // Batch assignment state
   const [batchWarehouseId, setBatchWarehouseId] = useState('');
@@ -300,6 +302,16 @@ export default function UnassignedDocumentsPage() {
             </div>
 
             <div className="flex items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setExportPdfOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-sm hover:bg-indigo-100 transition"
+                title="ສົ່ງອອກບົດລາຍງານ PDF"
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                <span>📄 ສົ່ງອອກ PDF</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => void reload()}
@@ -585,14 +597,26 @@ export default function UnassignedDocumentsPage() {
 
               <div className="flex items-center gap-2">
                 {!isSelectionMode ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsSelectionMode(true)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition"
-                  >
-                    <CheckSquare className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>ເລືອກຫຼາຍລາຍການ</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setExportPdfOpen(true)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition"
+                      title="ສົ່ງອອກ PDF"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>ສົ່ງອອກ PDF</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsSelectionMode(true)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>ເລືອກຫຼາຍລາຍການ</span>
+                    </button>
+                  </>
                 ) : (
                   <div className="flex items-center gap-2">
                     {selectedIds.size > 0 && (
@@ -972,6 +996,13 @@ export default function UnassignedDocumentsPage() {
           doc={editDoc}
           onClose={() => setEditDoc(null)}
           onSuccess={() => void reload()}
+        />
+
+        <ExportPdfModal
+          open={exportPdfOpen}
+          onClose={() => setExportPdfOpen(false)}
+          initialDocuments={filteredDocs}
+          defaultTitle="ບົດລາຍງານເອກະສານຄ້າງຈັດເກັບ"
         />
       </div>
     </DashboardLayout>
