@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../context/DocumentsContext'
 import { useMasterData } from '../context/MasterDataContext'
+import { Bookmark, Briefcase, Building2, Clock, Layers, Tag } from 'lucide-react'
 
 export default function MasterDataPage() {
   const { categories } = useDocuments()
@@ -23,7 +24,7 @@ export default function MasterDataPage() {
   const masterDataOptions = [
     {
       href: '/master-data/categories',
-      icon: '🏷️',
+      icon: <Tag className="h-6 w-6" />,
       title: 'ປະເພດ / ໝວດໝູ່ເອກະສານ',
       description: 'ກຳນົດ ແລະ ຈັດການໝວດໝູ່ເອກະສານທີ່ໃຊ້ໃນລະບົບ',
       count: `${categories.length} ໝວດໝູ່`,
@@ -31,7 +32,7 @@ export default function MasterDataPage() {
     },
     {
       href: '/master-data/divisions',
-      icon: '🏢',
+      icon: <Building2 className="h-6 w-6" />,
       title: 'ຈັດການຝ່າຍ',
       description: 'ໂຄງສ້າງຝ່າຍ / ຫ້ອງການພາຍໃນອົງກອນ EDL',
       count: `${divisions.length} ຝ່າຍ`,
@@ -39,7 +40,7 @@ export default function MasterDataPage() {
     },
     {
       href: '/master-data/departments',
-      icon: '🏬',
+      icon: <Layers className="h-6 w-6" />,
       title: 'ຈັດການພະແນກ',
       description: 'ພະແນກພາຍໃນແຕ່ລະຝ່າຍ ແລະ ຈຳນວນຕູ້ / ຜູ້ໃຊ້ງານ',
       count: `${totalDepartments} ພະແນກ`,
@@ -47,7 +48,7 @@ export default function MasterDataPage() {
     },
     {
       href: '/master-data/retention',
-      icon: '⏳',
+      icon: <Clock className="h-6 w-6" />,
       title: 'ອາຍຸການເກັບຮັກສາ (Retention)',
       description: 'ກຳນົດນະໂຍບາຍອາຍຸເອກະສານ ເພື່ອແຈ້ງເຕືອນການໝົດອາຍຸອັດຕະໂນມັດ',
       count: `${retentionPeriods.length} ໄລຍະເວລາ`,
@@ -55,7 +56,7 @@ export default function MasterDataPage() {
     },
     {
       href: '/master-data/tags',
-      icon: '🔖',
+      icon: <Bookmark className="h-6 w-6" />,
       title: 'ປ້າຍກຳກັບ / ແທັກ (Tags)',
       description: 'ກຳນົດແທັກ ແລະ ຄຳຄົ້ນຫາສຳລັບຈັດໝວດໝູ່ເອກະສານເພີ່ມເຕີມ',
       count: `${tags.length} ແທັກ`,
@@ -63,7 +64,7 @@ export default function MasterDataPage() {
     },
     {
       href: '/master-data/positions',
-      icon: '💼',
+      icon: <Briefcase className="h-6 w-6" />,
       title: 'ຈັດການຕຳແໜ່ງງານ (Positions)',
       description: 'ລາຍການຕຳແໜ່ງງານມາດຕະຖານໃນອົງກອນ ສຳລັບກຳນົດໃຫ້ຜູ້ໃຊ້ງານ',
       count: `${positions.length} ຕຳແໜ່ງ`,

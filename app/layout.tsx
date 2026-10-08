@@ -49,9 +49,9 @@ export const metadata: Metadata = {
   title: "EDL-DMS - ລະບົບຄຸ້ມຄອງເອກະສານ",
   description: "Electronic Document Management System - Electricite du Laos",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon.png",
   },
 };
 
