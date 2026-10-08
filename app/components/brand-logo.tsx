@@ -1,11 +1,11 @@
 'use client';
 
-import { FolderOpen } from 'lucide-react';
+import Image from 'next/image';
 
 type BrandLogoProps = {
   /**
    * 'sm' → compact icon-only brand mark (header bars)
-   * 'md' → full logo: gradient icon + "DMS" wordmark + subtitle (login/sidebar)
+   * 'md' → full logo: samurai icon + "DMS" wordmark + subtitle (login/sidebar)
    */
   size?: 'sm' | 'md';
   /**
@@ -18,40 +18,50 @@ type BrandLogoProps = {
   className?: string;
 };
 
-const ICON_BOX_CLASS =
-  'flex shrink-0 items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30';
-
 export function BrandLogo({
   size = 'md',
   variant = 'light',
   subtitle = 'ລະບົບເອກກະສານ',
   className = '',
 }: BrandLogoProps) {
+  const isDark = variant === 'dark';
+
   return (
     <div
       className={`flex items-center ${size === 'md' ? 'gap-3' : ''} ${className}`}
     >
       <div
-        className={`${ICON_BOX_CLASS} ${
-          size === 'sm' ? 'h-9 w-9 rounded-lg' : 'h-11 w-11 rounded-xl'
+        className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl border transition-all ${
+          size === 'sm' ? 'h-9 w-9 p-0.5' : 'h-11 w-11 p-1'
+        } ${
+          isDark
+            ? 'border-slate-800 bg-white shadow-md shadow-black/20'
+            : 'border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/5'
         }`}
         aria-hidden="true"
       >
-        <FolderOpen className={size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
+        <Image
+          src="/logo.png"
+          alt="Logo"
+          width={size === 'sm' ? 36 : 44}
+          height={size === 'sm' ? 36 : 44}
+          className="h-full w-full object-contain"
+          priority
+        />
       </div>
 
       {size === 'md' && (
         <div className="min-w-0">
           <div
-            className={`text-sm font-bold ${
-              variant === 'dark' ? 'text-white' : 'text-slate-900'
+            className={`text-sm font-bold tracking-tight ${
+              isDark ? 'text-white' : 'text-slate-900'
             }`}
           >
             DMS
           </div>
           <div
             className={`text-[11px] font-medium tracking-wide ${
-              variant === 'dark' ? 'text-slate-400' : 'text-slate-500'
+              isDark ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
             {subtitle}
@@ -60,4 +70,4 @@ export function BrandLogo({
       )}
     </div>
   );
-}
+}

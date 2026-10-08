@@ -356,7 +356,10 @@ export default function LoginForm() {
           <div className="w-full max-w-md rounded-2xl border border-white/60 bg-white/80 p-5 shadow-lg shadow-blue-500/10 backdrop-blur sm:p-8">
             {/* Card Header */}
             <div className="mb-8">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30">
+              <div className="mb-5 lg:hidden">
+                <BrandLogo subtitle="Document Management System" />
+              </div>
+              <div className="hidden lg:inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30">
                 <Lock size={22} />
               </div>
               <h2 className="mt-3 text-xl font-bold text-slate-900">
