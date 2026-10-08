@@ -2,30 +2,75 @@
 
 import Link from 'next/link'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
-
-// ── ສ່ວນຕ່າງໆຂອງຂໍ້ມູນພື້ນຖານ ────────────────────────────────────
-const masterDataOptions = [
-  {
-    href: '/master-data/categories',
-    icon: '🏷️',
-    title: 'ປະເພດ / ໝວດໝູ່ເອກະສານ',
-    description: 'ກຳນົດ ແລະ ຈັດການໝວດໝູ່ເອກະສານທີ່ໃຊ້ໃນລະບົບ',
-  },
-  {
-    href: '/master-data/divisions',
-    icon: '🏢',
-    title: 'ຈັດການຝ່າຍ',
-    description: 'ໂຄງສ້າງຝ່າຍ / ຫ້ອງການພາຍໃນອົງກອນ',
-  },
-  {
-    href: '/master-data/departments',
-    icon: '🏬',
-    title: 'ຈັດການພະແນກ',
-    description: 'ພະແນກພາຍໃນແຕ່ລະຝ່າຍ ແລະ ຈຳນວນຕູ້ / ຜູ້ໃຊ້ງານ',
-  },
-]
+import { useDocuments } from '../context/DocumentsContext'
+import { useMasterData } from '../context/MasterDataContext'
 
 export default function MasterDataPage() {
+  const { categories } = useDocuments()
+  const {
+    divisions,
+    departmentsByDivision,
+    retentionPeriods,
+    tags,
+    positions,
+  } = useMasterData()
+
+  const totalDepartments = Object.values(departmentsByDivision).reduce(
+    (acc, list) => acc + list.length,
+    0
+  )
+
+  const masterDataOptions = [
+    {
+      href: '/master-data/categories',
+      icon: '🏷️',
+      title: 'ປະເພດ / ໝວດໝູ່ເອກະສານ',
+      description: 'ກຳນົດ ແລະ ຈັດການໝວດໝູ່ເອກະສານທີ່ໃຊ້ໃນລະບົບ',
+      count: `${categories.length} ໝວດໝູ່`,
+      color: 'bg-indigo-50 text-indigo-600',
+    },
+    {
+      href: '/master-data/divisions',
+      icon: '🏢',
+      title: 'ຈັດການຝ່າຍ',
+      description: 'ໂຄງສ້າງຝ່າຍ / ຫ້ອງການພາຍໃນອົງກອນ EDL',
+      count: `${divisions.length} ຝ່າຍ`,
+      color: 'bg-blue-50 text-blue-600',
+    },
+    {
+      href: '/master-data/departments',
+      icon: '🏬',
+      title: 'ຈັດການພະແນກ',
+      description: 'ພະແນກພາຍໃນແຕ່ລະຝ່າຍ ແລະ ຈຳນວນຕູ້ / ຜູ້ໃຊ້ງານ',
+      count: `${totalDepartments} ພະແນກ`,
+      color: 'bg-emerald-50 text-emerald-600',
+    },
+    {
+      href: '/master-data/retention',
+      icon: '⏳',
+      title: 'ອາຍຸການເກັບຮັກສາ (Retention)',
+      description: 'ກຳນົດນະໂຍບາຍອາຍຸເອກະສານ ເພື່ອແຈ້ງເຕືອນການໝົດອາຍຸອັດຕະໂນມັດ',
+      count: `${retentionPeriods.length} ໄລຍະເວລາ`,
+      color: 'bg-amber-50 text-amber-600',
+    },
+    {
+      href: '/master-data/tags',
+      icon: '🔖',
+      title: 'ປ້າຍກຳກັບ / ແທັກ (Tags)',
+      description: 'ກຳນົດແທັກ ແລະ ຄຳຄົ້ນຫາສຳລັບຈັດໝວດໝູ່ເອກະສານເພີ່ມເຕີມ',
+      count: `${tags.length} ແທັກ`,
+      color: 'bg-purple-50 text-purple-600',
+    },
+    {
+      href: '/master-data/positions',
+      icon: '💼',
+      title: 'ຈັດການຕຳແໜ່ງງານ (Positions)',
+      description: 'ລາຍການຕຳແໜ່ງງານມາດຕະຖານໃນອົງກອນ ສຳລັບກຳນົດໃຫ້ຜູ້ໃຊ້ງານ',
+      count: `${positions.length} ຕຳແໜ່ງ`,
+      color: 'bg-rose-50 text-rose-600',
+    },
+  ]
+
   return (
     <DashboardLayout title="ຈັດການຂໍ້ມູນພື້ນຖານ">
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
@@ -34,30 +79,36 @@ export default function MasterDataPage() {
             ຈັດການຂໍ້ມູນພື້ນຖານ (Master Data)
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            ເລືອກສ່ວນທີ່ຕ້ອງການຈັດການ: ໝວດໝູ່ເອກະສານ ➡️ ຝ່າຍ ➡️ ພະແນກ
+            ເລືອກຂໍ້ມູນພື້ນຖານທີ່ຕ້ອງການຕັ້ງຄ່າ ແລະ ຈັດການພາຍໃນລະບົບ
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {masterDataOptions.map(({ href, icon, title, description }) => (
+          {masterDataOptions.map(({ href, icon, title, description, count, color }) => (
             <Link
               key={href}
               href={href}
-              className="group flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
+              className="group flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
             >
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-xl transition group-hover:scale-105">
-                  {icon}
+                <div className="flex items-center justify-between">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${color} text-2xl transition group-hover:scale-105`}>
+                    {icon}
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                    {count}
+                  </span>
                 </div>
-                <h2 className="mt-3 text-base font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
+                <h2 className="mt-4 text-base font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
                   {title}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">{description}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{description}</p>
               </div>
 
-              <span className="mt-3 inline-block border-t border-slate-100 pt-3 text-sm font-semibold text-indigo-600">
-                ເປີດຈັດການ ➡️
-              </span>
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-semibold text-indigo-600">
+                <span>ເປີດຈັດການ</span>
+                <span className="transition-transform group-hover:translate-x-1">➡️</span>
+              </div>
             </Link>
           ))}
         </div>

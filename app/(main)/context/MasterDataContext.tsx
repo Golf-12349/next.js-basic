@@ -6,6 +6,50 @@ import * as orgService from '@/lib/dms/orgService'
 import type { ApiDivision } from '@/lib/dms/orgService'
 
 const STORAGE_KEY = 'dms_master_org_structure'
+const POSITIONS_KEY = 'dms_master_positions'
+const RETENTION_KEY = 'dms_master_retention'
+const TAGS_KEY = 'dms_master_tags'
+
+export interface RetentionPeriod {
+  id: string
+  name: string
+  durationMonths: number
+  description?: string
+}
+
+export interface DocumentTag {
+  id: string
+  name: string
+  color: string
+  description?: string
+}
+
+export const DEFAULT_RETENTION_PERIODS: RetentionPeriod[] = [
+  { id: 'ret-1', name: '6 ເດືອນ', durationMonths: 6, description: 'ເອກະສານຊົ່ວຄາວ, ບັນທຶກປະຈຳວັນ' },
+  { id: 'ret-2', name: '1 ປີ', durationMonths: 12, description: 'ເອກະສານປະຈຳປີທົ່ວໄປ' },
+  { id: 'ret-3', name: '3 ປີ', durationMonths: 36, description: 'ເອກະສານໂຄງການໄລຍະສັ້ນ' },
+  { id: 'ret-4', name: '5 ປີ', durationMonths: 60, description: 'ເອກະສານບັນຊີການເງິນ, ບົດລາຍງານມາດຕະຖານ' },
+  { id: 'ret-5', name: '10 ປີ', durationMonths: 120, description: 'ສັນຍາສຳຄັນ, ເອກະສານນິຕິກຳ ແລະ ອົງກອນ' },
+  { id: 'ret-6', name: 'ເກັບຮັກສາຖາວອນ', durationMonths: 0, description: 'ເອກະສານປະຫວັດສາດ ແລະ ກົດໝາຍທີ່ບໍ່ມີກຳນົດທຳລາຍ' },
+]
+
+export const DEFAULT_TAGS: DocumentTag[] = [
+  { id: 'tag-1', name: 'ສັນຍາ', color: '#2563eb', description: 'ສັນຍາຮ່ວມທຶນ, ສັນຍາຈັດຊື້ຈັດຈ້າງ' },
+  { id: 'tag-2', name: 'ໃບສະເໜີ', color: '#059669', description: 'ໃບສະເໜີຂໍອະນຸມັດ ແລະ ໂຄງການ' },
+  { id: 'tag-3', name: 'ບົດລາຍງານ', color: '#7c3aed', description: 'ບົດລາຍງານປະຈຳເດືອນ, ງວດ, ປີ' },
+  { id: 'tag-4', name: 'ການເງິນ', color: '#d97706', description: 'ເອກະສານບັນຊີ ແລະ ການເງິນ' },
+  { id: 'tag-5', name: 'ແຈ້ງການ', color: '#db2777', description: 'ແຈ້ງການພາຍໃນ ແລະ ພາຍນອກ' },
+  { id: 'tag-6', name: 'ດ່ວນທີ່ສຸດ', color: '#dc2626', description: 'ເອກະສານດ່ວນທີ່ຕ້ອງດຳເນີນການທັນທີ' },
+]
+
+export const DEFAULT_POSITIONS: string[] = [
+  'ຫົວໜ້າ',
+  'ຮອງຫົວໜ້າ',
+  'ວິຊາການ',
+  'ເລຂາ',
+  'ພະນັກງານບັນຊີ',
+  'ພະນັກງານທົ່ວໄປ',
+]
 
 export interface MasterDataContextValue {
   divisions: string[]
@@ -20,6 +64,27 @@ export interface MasterDataContextValue {
   getDepartments: (division?: string) => string[]
   resetToDefaults: () => void
   reloadFromBackend: () => Promise<void>
+
+  // ── ຕຳແໜ່ງງານ (Positions) ──
+  positions: string[]
+  addPosition: (name: string) => { success: boolean; message?: string }
+  updatePosition: (oldName: string, newName: string) => { success: boolean; message?: string }
+  deletePosition: (name: string) => { success: boolean; message?: string }
+  resetPositions: () => void
+
+  // ── ອາຍຸການເກັບຮັກສາ (Retention Periods) ──
+  retentionPeriods: RetentionPeriod[]
+  addRetentionPeriod: (item: Omit<RetentionPeriod, 'id'>) => { success: boolean; message?: string }
+  updateRetentionPeriod: (id: string, item: Partial<Omit<RetentionPeriod, 'id'>>) => { success: boolean; message?: string }
+  deleteRetentionPeriod: (id: string) => { success: boolean; message?: string }
+  resetRetentionPeriods: () => void
+
+  // ── ປ້າຍກຳກັບ / ແທັກ (Tags) ──
+  tags: DocumentTag[]
+  addTag: (item: Omit<DocumentTag, 'id'>) => { success: boolean; message?: string }
+  updateTag: (id: string, item: Partial<Omit<DocumentTag, 'id'>>) => { success: boolean; message?: string }
+  deleteTag: (id: string) => { success: boolean; message?: string }
+  resetTags: () => void
 }
 
 const MasterDataContext = createContext<MasterDataContextValue | undefined>(undefined)
@@ -234,6 +299,171 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
     } catch {}
   }, [])
 
+  // ── ຕຳແໜ່ງງານ (Positions) State & Actions ─────────────────────────
+  const [positions, setPositions] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return DEFAULT_POSITIONS
+    try {
+      const stored = localStorage.getItem(POSITIONS_KEY) || sessionStorage.getItem(POSITIONS_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {}
+    return DEFAULT_POSITIONS
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(POSITIONS_KEY, JSON.stringify(positions))
+      sessionStorage.setItem(POSITIONS_KEY, JSON.stringify(positions))
+    } catch {}
+  }, [positions])
+
+  const addPosition = useCallback((name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) return { success: false, message: 'ກະລຸນາປ້ອນຊື່ຕຳແໜ່ງ' }
+    if (positions.includes(trimmed)) return { success: false, message: 'ຕຳແໜ່ງນີ້ມີຢູ່ແລ້ວ' }
+    setPositions((prev) => [...prev, trimmed])
+    return { success: true }
+  }, [positions])
+
+  const updatePosition = useCallback((oldName: string, newName: string) => {
+    const trimmedOld = oldName.trim()
+    const trimmedNew = newName.trim()
+    if (!trimmedNew) return { success: false, message: 'ກະລຸນາປ້ອນຊື່ຕຳແໜ່ງໃໝ່' }
+    if (trimmedOld !== trimmedNew && positions.includes(trimmedNew)) {
+      return { success: false, message: 'ຊື່ຕຳແໜ່ງນີ້ມີຢູ່ແລ້ວ' }
+    }
+    setPositions((prev) => prev.map((p) => (p === trimmedOld ? trimmedNew : p)))
+    return { success: true }
+  }, [positions])
+
+  const deletePosition = useCallback((name: string) => {
+    setPositions((prev) => prev.filter((p) => p !== name.trim()))
+    return { success: true }
+  }, [])
+
+  const resetPositions = useCallback(() => {
+    setPositions(DEFAULT_POSITIONS)
+  }, [])
+
+  // ── ອາຍຸການເກັບຮັກສາ (Retention Periods) State & Actions ─────────
+  const [retentionPeriods, setRetentionPeriods] = useState<RetentionPeriod[]>(() => {
+    if (typeof window === 'undefined') return DEFAULT_RETENTION_PERIODS
+    try {
+      const stored = localStorage.getItem(RETENTION_KEY) || sessionStorage.getItem(RETENTION_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {}
+    return DEFAULT_RETENTION_PERIODS
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(RETENTION_KEY, JSON.stringify(retentionPeriods))
+      sessionStorage.setItem(RETENTION_KEY, JSON.stringify(retentionPeriods))
+    } catch {}
+  }, [retentionPeriods])
+
+  const addRetentionPeriod = useCallback((item: Omit<RetentionPeriod, 'id'>) => {
+    const trimmed = item.name.trim()
+    if (!trimmed) return { success: false, message: 'ກະລຸນາປ້ອນຊື່ໄລຍະເວລາ' }
+    const newItem: RetentionPeriod = {
+      id: `ret-${Date.now()}`,
+      name: trimmed,
+      durationMonths: Number(item.durationMonths) || 0,
+      description: item.description?.trim(),
+    }
+    setRetentionPeriods((prev) => [...prev, newItem])
+    return { success: true }
+  }, [])
+
+  const updateRetentionPeriod = useCallback((id: string, patch: Partial<Omit<RetentionPeriod, 'id'>>) => {
+    setRetentionPeriods((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r
+        return {
+          ...r,
+          ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+          ...(patch.durationMonths !== undefined ? { durationMonths: Number(patch.durationMonths) } : {}),
+          ...(patch.description !== undefined ? { description: patch.description.trim() } : {}),
+        }
+      })
+    )
+    return { success: true }
+  }, [])
+
+  const deleteRetentionPeriod = useCallback((id: string) => {
+    setRetentionPeriods((prev) => prev.filter((r) => r.id !== id))
+    return { success: true }
+  }, [])
+
+  const resetRetentionPeriods = useCallback(() => {
+    setRetentionPeriods(DEFAULT_RETENTION_PERIODS)
+  }, [])
+
+  // ── ປ້າຍກຳກັບ / ແທັກ (Tags) State & Actions ─────────────────────────
+  const [tags, setTags] = useState<DocumentTag[]>(() => {
+    if (typeof window === 'undefined') return DEFAULT_TAGS
+    try {
+      const stored = localStorage.getItem(TAGS_KEY) || sessionStorage.getItem(TAGS_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {}
+    return DEFAULT_TAGS
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TAGS_KEY, JSON.stringify(tags))
+      sessionStorage.setItem(TAGS_KEY, JSON.stringify(tags))
+    } catch {}
+  }, [tags])
+
+  const addTag = useCallback((item: Omit<DocumentTag, 'id'>) => {
+    const trimmed = item.name.trim()
+    if (!trimmed) return { success: false, message: 'ກະລຸນາປ້ອນຊື່ແທັກ' }
+    if (tags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())) {
+      return { success: false, message: 'ຊື່ແທັກນີ້ມີຢູ່ແລ້ວ' }
+    }
+    const newTag: DocumentTag = {
+      id: `tag-${Date.now()}`,
+      name: trimmed,
+      color: item.color || '#3b82f6',
+      description: item.description?.trim(),
+    }
+    setTags((prev) => [...prev, newTag])
+    return { success: true }
+  }, [tags])
+
+  const updateTag = useCallback((id: string, patch: Partial<Omit<DocumentTag, 'id'>>) => {
+    setTags((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t
+        return {
+          ...t,
+          ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+          ...(patch.color !== undefined ? { color: patch.color } : {}),
+          ...(patch.description !== undefined ? { description: patch.description.trim() } : {}),
+        }
+      })
+    )
+    return { success: true }
+  }, [])
+
+  const deleteTag = useCallback((id: string) => {
+    setTags((prev) => prev.filter((t) => t.id !== id))
+    return { success: true }
+  }, [])
+
+  const resetTags = useCallback(() => {
+    setTags(DEFAULT_TAGS)
+  }, [])
+
   const value = useMemo(
     () => ({
       divisions,
@@ -248,6 +478,27 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       getDepartments,
       resetToDefaults,
       reloadFromBackend,
+
+      // Positions
+      positions,
+      addPosition,
+      updatePosition,
+      deletePosition,
+      resetPositions,
+
+      // Retention Periods
+      retentionPeriods,
+      addRetentionPeriod,
+      updateRetentionPeriod,
+      deleteRetentionPeriod,
+      resetRetentionPeriods,
+
+      // Tags
+      tags,
+      addTag,
+      updateTag,
+      deleteTag,
+      resetTags,
     }),
     [
       divisions,
@@ -262,6 +513,21 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       getDepartments,
       resetToDefaults,
       reloadFromBackend,
+      positions,
+      addPosition,
+      updatePosition,
+      deletePosition,
+      resetPositions,
+      retentionPeriods,
+      addRetentionPeriod,
+      updateRetentionPeriod,
+      deleteRetentionPeriod,
+      resetRetentionPeriods,
+      tags,
+      addTag,
+      updateTag,
+      deleteTag,
+      resetTags,
     ]
   )
 

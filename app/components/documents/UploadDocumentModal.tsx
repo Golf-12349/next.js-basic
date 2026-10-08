@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDocuments } from '@/app/(main)/context/DocumentsContext'
 import { useArchive } from '@/app/(main)/context/ArchiveContext'
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
+import { useMasterData } from '@/app/(main)/context/MasterDataContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { DocumentFileType, DocumentStatus } from '@/types/document'
 import { AlertTriangle, CheckCircle2, FileText, Loader2, Lock, RefreshCw, Trash2, Upload, WifiOff, X } from 'lucide-react'
@@ -144,6 +145,24 @@ export default function UploadDocumentModal({
       ),
     [categories],
   )
+
+  const { retentionPeriods } = useMasterData()
+
+  const expiryPresets = useMemo(() => {
+    const list = retentionPeriods?.filter((r) => r.durationMonths > 0) || []
+    if (list.length > 0) {
+      return list.map((r) => ({
+        label: r.name,
+        val: addMonths(r.durationMonths),
+      }))
+    }
+    return [
+      { label: '6 ເດືອນ', val: addMonths(6) },
+      { label: '1 ປີ', val: addMonths(12) },
+      { label: '3 ປີ', val: addMonths(36) },
+      { label: '5 ປີ', val: addMonths(60) },
+    ]
+  }, [retentionPeriods])
 
   const visibleWarehouses = useMemo(() => {
     if (currentUser?.role === 'SuperAdmin') return warehouses
@@ -787,12 +806,7 @@ export default function UploadDocumentModal({
 
                   {/* Quick Presets */}
                   <div className="mb-2 grid grid-cols-4 gap-1.5">
-                    {[
-                      { label: '6 ເດືອນ', val: addMonths(6) },
-                      { label: '1 ປີ', val: addYears(1) },
-                      { label: '3 ປີ', val: addYears(3) },
-                      { label: '5 ປີ', val: addYears(5) },
-                    ].map((p) => (
+                    {expiryPresets.slice(0, 4).map((p) => (
                       <button
                         key={p.label}
                         type="button"

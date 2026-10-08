@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import type { User, UserRole, UserStatus } from '@/types/user'
 import { edlStructure, USER_POSITIONS } from '@/types/user'
+import { useMasterData } from '@/app/(main)/context/MasterDataContext'
 import { compressAndResizeAvatar } from '@/lib/dms/avatarUtils'
 import {
   Mail,
@@ -268,10 +269,13 @@ export function UserFormModal({
   onClose: () => void
   onSubmit: (values: UserFormValues) => void
 }) {
+  const { positions } = useMasterData()
   const [form, setForm] = useState<UserFormValues>(emptyForm)
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const availablePositions = positions && positions.length > 0 ? positions : USER_POSITIONS
 
   useEffect(() => {
     if (!open) return
@@ -520,7 +524,7 @@ export function UserFormModal({
               className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400"
             >
               <option value="">— ເລືອກຕຳແໜ່ງ —</option>
-              {USER_POSITIONS.map((pos) => (
+              {availablePositions.map((pos) => (
                 <option key={pos} value={pos}>
                   {pos}
                 </option>
