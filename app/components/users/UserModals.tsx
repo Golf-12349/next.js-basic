@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import type { User, UserRole, UserStatus } from '@/types/user'
 import { edlStructure, USER_POSITIONS } from '@/types/user'
+import { compressAndResizeAvatar } from '@/lib/dms/avatarUtils'
 import {
   Mail,
   Phone,
@@ -327,15 +328,15 @@ export function UserFormModal({
     })
   }
 
-  function handleAvatarFile(file?: File) {
+  async function handleAvatarFile(file?: File) {
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        handleChange('avatarUrl', reader.result)
-      }
+    try {
+      const compressed = await compressAndResizeAvatar(file)
+      handleChange('avatarUrl', compressed)
+    } catch (err) {
+      console.error('Avatar compression error:', err)
+      setError('ບໍ່ສາມາດໂຫຼດຮູບພາບໄດ້ ກະລຸນາເລືອກໄຟລ໌ຮູບພາບທີ່ຖືກຕ້ອງ')
     }
-    reader.readAsDataURL(file)
   }
 
   // Determine available roles based on who is performing the action

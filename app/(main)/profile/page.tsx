@@ -24,6 +24,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { avatarColors, isAvatarImage } from "@/app/components/users/UserModals";
+import { compressAndResizeAvatar } from "@/lib/dms/avatarUtils";
 import { useUsers } from "../context/UsersContext";
 import { useCurrentUser } from "@/app/(main)/context/CurrentUserContext";
 import { edlStructure, roleLabel } from "@/types/user";
@@ -84,15 +85,18 @@ export default function PersonalProfilePage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   // ---- Avatar helpers ----
-  function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") setAvatarUrl(reader.result);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
+    try {
+      const compressed = await compressAndResizeAvatar(file);
+      setAvatarUrl(compressed);
+    } catch (err) {
+      console.error("Avatar compression error:", err);
+      pushToast({ title: "ບໍ່ສາມາດໂຫຼດຮູບພາບໄດ້", description: "ກະລຸນາເລືອກໄຟລ໌ຮູບພາບທີ່ຖືກຕ້ອງ" });
+    } finally {
+      e.target.value = "";
+    }
   }
 
   const userInitials = (name || "JD")
@@ -123,18 +127,17 @@ export default function PersonalProfilePage() {
       name: name.trim(),
       email: email.trim(),
       phone: phone.trim() || undefined,
-      avatarUrl: avatarUrl || undefined,
+      avatarUrl: avatarUrl ? avatarUrl : "",
     };
     const result = await updateProfile(profilePatch);
 
     if (currentUserId) {
-      try {
-        await userService.updateOwnProfile({ name: name.trim(), phone: phone.trim(), department, avatarUrl });
-      } catch (err) {
-        console.warn("ບໍ່ສາມາດບັນທຶກໂປຣໄຟລ໌ຂຶ້ນ backend ໄດ້:", err);
-      }
-      const patch: Partial<User> = { name: name.trim(), email: email.trim(), phone: phone.trim() };
-      if (avatarUrl) patch.avatarUrl = avatarUrl;
+      const patch: Partial<User> = {
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim() || undefined,
+        avatarUrl: avatarUrl || undefined,
+      };
       setUsers((prev) => prev.map((u) => (u.id === currentUserId ? { ...u, ...patch } : u)));
     }
 

@@ -112,13 +112,11 @@ export async function fetchMe(): Promise<CurrentUser | null> {
 function profilePatchPayload(patch: Partial<CurrentUser>): Record<string, unknown> {
   const payload: Record<string, unknown> = {}
   if (patch.name !== undefined) payload.name = patch.name
-  if (patch.email !== undefined) payload.email = patch.email
   if (patch.phone !== undefined) payload.phone = patch.phone
   if (patch.department !== undefined) payload.department = patch.department
   if (patch.division !== undefined) payload.division = patch.division
   if (patch.position !== undefined) payload.position = patch.position
   if (patch.avatarUrl !== undefined) payload.avatarUrl = patch.avatarUrl
-  if (patch.status !== undefined) payload.status = patch.status
   return payload
 }
 
@@ -129,8 +127,7 @@ export interface UpdateMyProfileResult {
 }
 
 /**
- * PATCH ໂປຣໄຟລ໌ຂອງຕົນເອງ — ລອງ /auth/me, /users/me, ສຸດທ້າຍ /users/:id
- * (ໃຊ້ກັບ backend ທີ່ບໍ່ມີ /auth/me / /users/me).
+ * PATCH ໂປຣໄຟລ໌ຂອງຕົນເອງ — ລອງ /users/me/profile, /users/me, /auth/me, ສຸດທ້າຍ /users/:id.
  * ຄືນຂໍ້ມູນຜູ້ໃຊ້ງານທີ່ຖືກອັບເດດ (ຖ້າ backend ກັບຄືນ).
  */
 export async function updateMyProfile(
@@ -139,8 +136,9 @@ export async function updateMyProfile(
 ): Promise<UpdateMyProfileResult> {
   const payload = profilePatchPayload(patch)
   const paths = [
-    '/auth/me',
+    '/users/me/profile',
     '/users/me',
+    '/auth/me',
     ...(ownId ? [`/users/${encodeURIComponent(ownId)}`] : []),
   ]
   let lastError: unknown = null
@@ -157,8 +155,8 @@ export async function updateMyProfile(
     } catch (err) {
       lastError = err
       const status = isAxiosError(err) ? err.response?.status : null
-      // 404/405 = ບໍ່ມີ endpoint ນີ້ — ລອງ ຕໍ່ໄປ; ຜິດພາດອື່ໆ (403/500...) ເຊົາ ແລະ ລາຍງານກັບຄືນ
-      if (status === 404 || status === 405) continue
+      // 404/405/403 = ບໍ່ມີ endpoint ນີ້ ຫຼື ຕິດ guard — ລອງ path ຖັດໄປ
+      if (status === 404 || status === 405 || status === 403) continue
       break
     }
   }
