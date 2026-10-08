@@ -4,7 +4,7 @@ import { Building2, Plus, Trash2, Search, RotateCcw } from 'lucide-react'
 import type { Cabinet, Document, Folder, Warehouse } from '@/types/document'
 import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
-import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import ArchiveListView, { useArchiveSort } from './ArchiveListView'
 import { ArchiveDetailModal, toWarehouseDetail } from './ArchiveDetailModal'
 import type { ArchiveDetailTarget } from './ArchiveDetailModal'
 import type { ArchiveColumn } from './ArchiveListView'
@@ -316,7 +316,6 @@ export default function WarehouseView({
           </div>
 
           <div className="flex items-center gap-2">
-            {onViewModeChange && <ViewToggle mode={viewMode} onChange={onViewModeChange} />}
             <span className="text-xs text-gray-500">
               ພົບ <strong className="font-semibold text-gray-800">{filteredWarehouses.length}</strong> ຄັງ
             </span>

@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { FileText, Plus, Trash2, Search, RotateCcw, FolderInput } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
-import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import ArchiveListView, { useArchiveSort } from './ArchiveListView'
 import { ArchiveDetailModal, toFolderDetail } from './ArchiveDetailModal'
 import { MoveFolderModal } from './MoveFolderModal'
 import type { ArchiveDetailTarget } from './ArchiveDetailModal'
@@ -501,7 +501,6 @@ export default function FolderView({
           </div>
 
           <div className="flex items-center gap-2">
-            {onViewModeChange && <ViewToggle mode={viewMode} onChange={onViewModeChange} />}
             <span className="text-xs text-gray-500">
               ພົບ <strong className="font-semibold text-gray-800">{filteredFolders.length}</strong> ແຟ້ມ
             </span>

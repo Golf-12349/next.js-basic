@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { FileText, FolderArchive, Plus, Trash2, Search, RotateCcw, FolderInput } from 'lucide-react'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import Pagination from '@/app/components/ui/Pagination'
-import ArchiveListView, { ViewToggle, useArchiveSort } from './ArchiveListView'
+import ArchiveListView, { useArchiveSort } from './ArchiveListView'
 import { ArchiveDetailModal, toShelfDetail } from './ArchiveDetailModal'
 import { MoveShelfModal } from './MoveShelfModal'
 import type { ArchiveDetailTarget } from './ArchiveDetailModal'
@@ -442,7 +442,6 @@ export default function ShelfView({
           </div>
 
           <div className="flex items-center gap-2">
-            {onViewModeChange && <ViewToggle mode={viewMode} onChange={onViewModeChange} />}
             <span className="text-xs text-gray-500">
               ພົບ <strong className="font-semibold text-gray-800">{filteredShelves.length}</strong> ຊັ້ນວາງ
             </span>

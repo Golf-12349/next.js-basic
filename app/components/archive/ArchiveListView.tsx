@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowUpDown, Eye, FolderInput, LayoutGrid, List, Trash2 } from 'lucide-react'
+import { ArrowUpDown, Eye, FolderInput, List, Trash2 } from 'lucide-react'
 import type { ViewMode } from './useArchive'
 
 // ── Column definition ────────────────────────────────────────
@@ -19,40 +19,14 @@ export interface ArchiveColumn<T> {
   render: (item: T) => ReactNode
 }
 
-// ── Grid / List toggle ───────────────────────────────────────
-interface ViewToggleProps {
-  mode: ViewMode
-  onChange: (mode: ViewMode) => void
+// ── Grid / List toggle (Deprecated: Card view removed per user request) ───
+export interface ViewToggleProps {
+  mode?: ViewMode
+  onChange?: (mode: ViewMode) => void
 }
 
-export function ViewToggle({ mode, onChange }: ViewToggleProps) {
-  const base = 'inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition'
-  return (
-    <div
-      role="group"
-      aria-label="ມຸມມອງການສະແດງຜົນ"
-      className="inline-flex items-center gap-0.5 rounded-xl border border-gray-200 bg-gray-50/60 p-0.5"
-    >
-      <button
-        type="button"
-        onClick={() => onChange('grid')}
-        aria-pressed={mode === 'grid'}
-        title="ມຸມມອງບັດ"
-        className={`${base} ${mode === 'grid' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-      >
-        <LayoutGrid size={13} /> ບັດ
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('list')}
-        aria-pressed={mode === 'list'}
-        title="ມຸມມອງລາຍການ"
-        className={`${base} ${mode === 'list' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-      >
-        <List size={13} /> ລາຍການ
-      </button>
-    </div>
-  )
+export function ViewToggle(_props?: ViewToggleProps) {
+  return null
 }
 
 // ── Sorting helper ───────────────────────────────────────────

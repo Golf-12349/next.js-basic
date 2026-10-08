@@ -45,9 +45,8 @@ export function useArchive(
   const queryCabinetId = searchParams.get('cabinetId') || undefined;
   const queryShelfId = searchParams.get('shelfId') || undefined;
   const queryFolderId = searchParams.get('folderId') || undefined;
-  // ມຸມມອງ ບັດ/ລາຍການ ເກັບໃນ URL ເພື່ອໃຫ້ຄ່າຄົງຢູ່ເມື່ອເຂົ້າ-ອອກລະດັບ ແລະ ແຊຣ໌ລິ້ງຫາກັນໄດ້
-  // ຄ່າເລີ່ມຕົ້ນແມ່ນ ລາຍການ (list) — ຈະເປັນ ບັດ (grid) ກໍ່ຕໍ່ເມື່ອມີ ?view=grid ໃນ URL ເທົ່ານັ້ນ
-  const viewMode: ViewMode = searchParams.get('view') === 'grid' ? 'grid' : 'list';
+  // ມຸມມອງລາຍການ (list) ເປັນມຸມມອງຫຼັກ (ຕັດມຸມມອງບັດ grid ອອກຕາມຄຳສັ່ງ)
+  const viewMode: ViewMode = 'list';
 
   const view: ViewState = useMemo(() => {
     if (queryLevel === 'documents') {
@@ -99,10 +98,7 @@ export function useArchive(
       if ('folderId' in nextView && nextView.folderId) {
         params.set('folderId', nextView.folderId);
       }
-      // ຮັກສາມຸມມອງ (grid/list) ໄວ້ຄືເກົ່າ ເມື່ອຍ້າຍໄປລະດັບອື່ນ — list ເປັນຄ່າເລີ່ມຕົ້ນ ຈຶ່ງເກັບສະເພາະ grid
-      if (viewMode === 'grid') {
-        params.set('view', 'grid');
-      }
+      params.delete('view');
       const query = params.toString();
       const newUrl = query ? `/documents/archive?${query}` : '/documents/archive';
       router.push(newUrl);
@@ -115,21 +111,14 @@ export function useArchive(
         );
       }
     },
-    [router, viewMode]
+    [router]
   );
 
   const setViewMode = useCallback(
-    (mode: ViewMode) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (mode === 'grid') {
-        params.set('view', 'grid');
-      } else {
-        params.delete('view');
-      }
-      const query = params.toString();
-      router.push(query ? `/documents/archive?${query}` : '/documents/archive');
+    (_mode: ViewMode) => {
+      // Locked to list view
     },
-    [router, searchParams]
+    []
   );
 
   const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
