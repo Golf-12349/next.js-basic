@@ -374,7 +374,6 @@ export default function DocumentsPage() {
                   <th className="px-3.5 py-3">ຮູບແບບ</th>
                   <th className="px-3.5 py-3">ຂະໜາດ</th>
                   <th className="px-3.5 py-3">ວັນທີ</th>
-                  <th className="px-3.5 py-3">ຜູ້ອັບໂຫຼດ</th>
                   <th className="px-3.5 py-3">ສະຖານະ</th>
                   <th className="px-3.5 py-3 text-center">ການກະທຳ</th>
                 </tr>
@@ -428,7 +427,6 @@ export default function DocumentsPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-3 py-2.5 text-sm text-gray-700">{doc.uploadedBy}</td>
                     <td className="px-3 py-2.5">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
                         {statusLabels[doc.status]}
