@@ -593,6 +593,8 @@ export default function CabinetView({
             totalItems={filteredCabinets.length}
             pageSize={PAGE_SIZE}
             onPageChange={setCurrentPage}
+            className="rounded-2xl border border-gray-200/80 shadow-xs mt-4"
+            itemLabel="ຕູ້ເອກະສານ"
           />
         </div>
       )}

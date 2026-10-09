@@ -605,6 +605,8 @@ export default function FolderView({
             totalItems={filteredFolders.length}
             pageSize={PAGE_SIZE}
             onPageChange={setCurrentPage}
+            className="rounded-2xl border border-gray-200/80 shadow-xs mt-4"
+            itemLabel="ແຟ້ມເອກະສານ"
           />
         </div>
       )}

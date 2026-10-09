@@ -78,6 +78,7 @@ export type Document = {
   shelfName?: string;
   folderId?: string;
   folderName?: string;
+  tags?: string[];
   transfers?: DocumentTransfer[];
 };
 

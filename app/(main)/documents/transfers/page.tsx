@@ -634,16 +634,17 @@ export default function TransferHistoryPage() {
               </p>
             </div>
           )}
-        </div>
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          totalItems={filtered.length}
-          pageSize={PAGE_SIZE}
-          onPageChange={setCurrentPage}
-        />
+          {/* Pagination */}
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+            itemLabel="ລາຍການ"
+          />
+        </div>
 
         {/* Detail Modal */}
         <Modal

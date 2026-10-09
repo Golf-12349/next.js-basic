@@ -129,9 +129,34 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       if (serverCategories.length > 0) {
         setCategories(serverCategories.map((c) => c.name))
       }
+      const currentStored = (() => {
+        try {
+          const s = localStorage.getItem(DOCS_STORAGE_KEY)
+          return s ? (JSON.parse(s) as Document[]) : []
+        } catch {
+          return []
+        }
+      })()
+      const tagMap = new Map<string, string[]>()
+      currentStored.forEach((d) => {
+        if (d.id && Array.isArray(d.tags) && d.tags.length > 0) tagMap.set(d.id, d.tags)
+      })
+
       const fetchedDocs = [
-        ...activeDocs.map(toFrontendDocument),
-        ...deletedDocs.map(toFrontendDocument),
+        ...activeDocs.map((d) => {
+          const doc = toFrontendDocument(d)
+          if ((!doc.tags || doc.tags.length === 0) && tagMap.has(doc.id)) {
+            doc.tags = tagMap.get(doc.id)
+          }
+          return doc
+        }),
+        ...deletedDocs.map((d) => {
+          const doc = toFrontendDocument(d)
+          if ((!doc.tags || doc.tags.length === 0) && tagMap.has(doc.id)) {
+            doc.tags = tagMap.get(doc.id)
+          }
+          return doc
+        }),
       ]
       setDocuments(fetchedDocs)
       try {
@@ -231,18 +256,27 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         cabinetId: doc.cabinetId,
         folderId: doc.folderId,
       })
-      newDoc = toFrontendDocument(apiDoc)
+      newDoc = {
+        ...toFrontendDocument(apiDoc),
+        tags: doc.tags || [],
+      }
     } catch (err) {
       console.warn('Backend createDocument error, persisting locally:', err)
       newDoc = {
         ...doc,
+        tags: doc.tags || [],
         id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         deleted: false,
       }
     }
     setDocuments((prev) => {
       const filtered = prev.filter((d) => d.id !== newDoc.id)
-      return [newDoc, ...filtered]
+      const updated = [newDoc, ...filtered]
+      try {
+        localStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(updated))
+        sessionStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(updated))
+      } catch {}
+      return updated
     })
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('dms:documents-changed', { detail: { action: 'create', doc: newDoc } }))
@@ -290,7 +324,14 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       console.error('Backend updateDocument error:', err)
       throw err
     }
-    setDocuments((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)))
+    setDocuments((prev) => {
+      const updated = prev.map((d) => (d.id === id ? { ...d, ...patch } : d))
+      try {
+        localStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(updated))
+        sessionStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(updated))
+      } catch {}
+      return updated
+    })
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('dms:documents-changed', { detail: { action: 'update', id } }))
     }

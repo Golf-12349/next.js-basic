@@ -384,14 +384,14 @@ export default function AuditLogsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="border-t border-slate-100 p-4">
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                totalItems={totalCount}
-                onPageChange={(p) => setPage(p)}
-              />
-            </div>
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              pageSize={20}
+              onPageChange={(p) => setPage(p)}
+              itemLabel="ບັນທຶກ"
+            />
           )}
         </div>
       </div>

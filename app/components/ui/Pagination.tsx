@@ -10,81 +10,99 @@ export interface PaginationProps {
   pageSize?: number
   onPageChange: (page: number) => void
   itemLabel?: string
+  className?: string
 }
 
 export default function Pagination({
   currentPage,
   totalPages,
   totalItems,
+  pageSize = 10,
   onPageChange,
+  itemLabel = 'ລາຍການ',
+  className = '',
 }: PaginationProps) {
   if (totalItems === 0) return null
 
   const safeTotalPages = Math.max(totalPages, 1)
+  const startItem = (currentPage - 1) * pageSize + 1
+  const endItem = Math.min(currentPage * pageSize, totalItems)
 
   return (
-    <aside
-      aria-label="Pagination Navigation"
-      className="fixed bottom-6 right-6 z-40 flex h-10 items-stretch overflow-hidden rounded-lg border border-gray-300 bg-white shadow-md select-none"
+    <div
+      className={`flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200/80 bg-white px-4 py-3 sm:px-6 select-none ${className}`}
     >
-      {/* 1. Page Selector (01 ⌵) */}
-      <div className="relative flex h-full items-center transition hover:bg-gray-50">
-        <select
-          value={currentPage}
-          onChange={(e) => onPageChange(Number(e.target.value))}
-          aria-label="ເລືອກໜ້າ"
-          className="h-full cursor-pointer appearance-none bg-transparent pl-3.5 pr-7 text-sm font-bold text-gray-900 outline-none"
+      {/* 1. Summary Label */}
+      <div className="text-xs sm:text-sm text-gray-500 font-medium">
+        ສະແດງ <span className="font-semibold text-gray-800 tabular-nums">{startItem}</span> ຫາ{' '}
+        <span className="font-semibold text-gray-800 tabular-nums">{endItem}</span> ຈາກທັງໝົດ{' '}
+        <span className="font-semibold text-gray-800 tabular-nums">{totalItems}</span> {itemLabel}
+      </div>
+
+      {/* 2. Control Pill */}
+      <nav
+        aria-label="Pagination Navigation"
+        className="inline-flex h-9 items-stretch overflow-hidden rounded-lg border border-gray-300 bg-white shadow-xs"
+      >
+        {/* Page Selector (01 ⌵) */}
+        <div className="relative flex h-full items-center transition hover:bg-gray-50">
+          <select
+            value={currentPage}
+            onChange={(e) => onPageChange(Number(e.target.value))}
+            aria-label="ເລືອກໜ້າ"
+            className="h-full cursor-pointer appearance-none bg-transparent pl-3 pr-6 text-sm font-semibold text-gray-800 outline-none"
+          >
+            {Array.from({ length: safeTotalPages }, (_, i) => i + 1).map((p) => (
+              <option key={p} value={p}>
+                {String(p).padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={13}
+            strokeWidth={2.5}
+            className="pointer-events-none absolute right-1.5 text-gray-500"
+          />
+        </div>
+
+        {/* Divider 1 */}
+        <div className="w-[1px] h-full bg-gray-200 shrink-0" />
+
+        {/* "of X pages" Label */}
+        <div className="flex h-full items-center px-3 text-xs sm:text-sm font-medium text-gray-500 whitespace-nowrap bg-gray-50/50">
+          of {safeTotalPages} {safeTotalPages === 1 ? 'page' : 'pages'}
+        </div>
+
+        {/* Divider 2 */}
+        <div className="w-[1px] h-full bg-gray-200 shrink-0" />
+
+        {/* Previous Button (<) */}
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+          title="Previous page"
+          aria-label="Previous page"
+          className="flex h-full w-9 items-center justify-center text-gray-600 transition hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
         >
-          {Array.from({ length: safeTotalPages }, (_, i) => i + 1).map((p) => (
-            <option key={p} value={p}>
-              {String(p).padStart(2, '0')}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          size={14}
-          strokeWidth={2.5}
-          className="pointer-events-none absolute right-2 text-gray-600"
-        />
-      </div>
+          <ChevronLeft size={15} strokeWidth={2.5} />
+        </button>
 
-      {/* Divider 1 */}
-      <div className="w-[1px] h-full bg-gray-200 shrink-0" />
+        {/* Divider 3 */}
+        <div className="w-[1px] h-full bg-gray-200 shrink-0" />
 
-      {/* 2. "of X pages" Label */}
-      <div className="flex h-full items-center px-4 text-sm font-normal text-[#5c6479] whitespace-nowrap">
-        of {safeTotalPages} {safeTotalPages === 1 ? 'page' : 'pages'}
-      </div>
-
-      {/* Divider 2 */}
-      <div className="w-[1px] h-full bg-gray-200 shrink-0" />
-
-      {/* 3. Previous Button (<) */}
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage <= 1}
-        title="Previous page"
-        aria-label="Previous page"
-        className="flex h-full w-10 items-center justify-center text-gray-700 transition hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
-      >
-        <ChevronLeft size={16} strokeWidth={2.5} />
-      </button>
-
-      {/* Divider 3 - Full height divider between < and > */}
-      <div className="w-[1px] h-full bg-gray-200 shrink-0" />
-
-      {/* 4. Next Button (>) */}
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage >= safeTotalPages}
-        title="Next page"
-        aria-label="Next page"
-        className="flex h-full w-10 items-center justify-center text-gray-700 transition hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
-      >
-        <ChevronRight size={16} strokeWidth={2.5} />
-      </button>
-    </aside>
+        {/* Next Button (>) */}
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= safeTotalPages}
+          title="Next page"
+          aria-label="Next page"
+          className="flex h-full w-9 items-center justify-center text-gray-600 transition hover:bg-gray-50 active:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+        >
+          <ChevronRight size={15} strokeWidth={2.5} />
+        </button>
+      </nav>
+    </div>
   )
 }

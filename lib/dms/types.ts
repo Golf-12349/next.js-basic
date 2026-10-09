@@ -169,6 +169,19 @@ export function toFrontendDocument(doc: any): Document {
     shelfName: typeof doc.shelfName === 'string' ? doc.shelfName : (doc.shelf?.name ?? doc.folder?.shelf?.name),
     folderId: doc.folderId ?? undefined,
     folderName: typeof doc.folderName === 'string' ? doc.folderName : doc.folder?.name,
+    tags: Array.isArray(doc.tags)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- backend tag items can be strings or objects
+      ? doc.tags.map((t: any) => (typeof t === 'string' ? t : (t?.name ?? ''))).filter(Boolean)
+      : typeof doc.tags === 'string'
+        ? (() => {
+            try {
+              const parsed = JSON.parse(doc.tags)
+              return Array.isArray(parsed) ? parsed : []
+            } catch {
+              return doc.tags.split(',').map((s: string) => s.trim()).filter(Boolean)
+            }
+          })()
+        : [],
     transfers: doc.transfers,
   }
 }

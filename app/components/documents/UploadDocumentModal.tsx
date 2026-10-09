@@ -146,7 +146,8 @@ export default function UploadDocumentModal({
     [categories],
   )
 
-  const { retentionPeriods } = useMasterData()
+  const { retentionPeriods, tags: masterTags } = useMasterData()
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
 
   const expiryPresets = useMemo(() => {
     const list = retentionPeriods?.filter((r) => r.durationMonths > 0) || []
@@ -408,6 +409,7 @@ export default function UploadDocumentModal({
         shelfName: selectedShelf?.name,
         folderId: folderId || undefined,
         folderName: selectedFolder?.name,
+        tags: selectedTags,
       })
 
       // ແຈ້ງ toast ແລະ ປິດ modal ທັນທີ
@@ -832,6 +834,53 @@ export default function UploadDocumentModal({
                   <p className="mt-1 text-[11px] text-slate-400">
                     ຖ້າບໍ່ເລືອກ ລະບົບຈະຖືວ່າເອກະສານນີ້ບໍ່ມີກຳນົດໝົດອາຍຸ
                   </p>
+                </div>
+
+                {/* ປ້າຍກຳກັບ / ແທັກ (Tags & Keywords) */}
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label className="text-sm font-medium text-slate-300">
+                      ປ້າຍກຳກັບ / ແທັກ (Tags) <span className="text-xs text-slate-400">(ເລືອກໄດ້ຫຼາຍອັນ)</span>
+                    </label>
+                    {selectedTags.length > 0 && (
+                      <span className="text-[11px] text-indigo-400 font-medium">
+                        ເລືອກແລ້ວ {selectedTags.length} ແທັກ
+                      </span>
+                    )}
+                  </div>
+                  {masterTags && masterTags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 rounded-lg border border-slate-700 bg-slate-900/50 p-2.5">
+                      {masterTags.map((tag) => {
+                        const isSelected = selectedTags.includes(tag.name)
+                        return (
+                          <button
+                            type="button"
+                            key={tag.id}
+                            onClick={() => {
+                              setSelectedTags((prev) =>
+                                prev.includes(tag.name)
+                                  ? prev.filter((t) => t !== tag.name)
+                                  : [...prev, tag.name],
+                              )
+                            }}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                              isSelected
+                                ? 'bg-indigo-600 text-white ring-1 ring-indigo-400 shadow-sm'
+                                : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700/80'
+                            }`}
+                          >
+                            <span
+                              className="h-2 w-2 rounded-full shrink-0"
+                              style={{ backgroundColor: tag.color || '#6366f1' }}
+                            />
+                            <span>{tag.name}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">ບໍ່ມີແທັກໃນລະບົບ (ສາມາດເພີ່ມໄດ້ທີ່ ຂໍ້ມູນພື້ນຖານ &gt; ແທັກ)</p>
+                  )}
                 </div>
               </div>
             </div>

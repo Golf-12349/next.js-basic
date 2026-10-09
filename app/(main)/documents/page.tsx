@@ -9,6 +9,7 @@ import { useDocuments } from '../context/DocumentsContext'
 import { useUploadModal } from '../context/UploadModalContext'
 import { useArchive } from '../context/ArchiveContext'
 import { useCurrentUser } from '../context/CurrentUserContext'
+import { useMasterData } from '../context/MasterDataContext'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -100,8 +101,10 @@ export default function DocumentsPage() {
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
   const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
+  const [filterTag, setFilterTag] = useState('ທັງໝົດ')
   const [filterDivision, setFilterDivision] = useState('ທັງໝົດ')
   const [filterDepartment, setFilterDepartment] = useState('ທັງໝົດ')
+  const { tags: masterTags } = useMasterData()
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [detailDoc, setDetailDoc] = useState<Document | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Document | null>(null)
@@ -132,13 +135,15 @@ export default function DocumentsPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset pagination when filters change
     setCurrentPage(1)
-  }, [debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDivision, filterDepartment])
+  }, [debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterTag, filterDivision, filterDepartment])
 
   const visible = useMemo(() => {
     return documents.filter((d) => !d.deleted && d.status !== 'pending').filter((d) => {
       const q = debouncedQuery.trim().toLowerCase()
       if (q) {
-        if (!(d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q))) return false
+        const matchesTitleOrNum = d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q)
+        const matchesTag = Array.isArray(d.tags) && d.tags.some((t) => t.toLowerCase().includes(q))
+        if (!matchesTitleOrNum && !matchesTag) return false
       }
       if (filterWarehouse !== 'ທັງໝົດ') {
         if (filterWarehouse === 'unassigned') {
@@ -159,6 +164,9 @@ export default function DocumentsPage() {
       }
       if (filterCategory !== 'ທັງໝົດ' && d.category !== filterCategory) return false
       if (filterCabinet !== 'ທັງໝົດ' && d.cabinetId !== filterCabinet) return false
+      if (filterTag !== 'ທັງໝົດ') {
+        if (!Array.isArray(d.tags) || !d.tags.includes(filterTag)) return false
+      }
       if (filterStatus !== 'ທັງໝົດ') {
         if (filterStatus === 'ຮ່າງ' && d.status !== 'draft') return false
         if (filterStatus === 'ອະນຸມັດ' && d.status !== 'approved') return false
@@ -178,7 +186,7 @@ export default function DocumentsPage() {
       if (filterDepartment !== 'ທັງໝົດ' && d.department !== filterDepartment) return false
       return true
     })
-  }, [documents, debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterDivision, filterDepartment])
+  }, [documents, debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterTag, filterDivision, filterDepartment])
 
   const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1
   const paginatedDocs = useMemo(() => {
@@ -359,6 +367,22 @@ export default function DocumentsPage() {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ປ້າຍກຳກັບ / ແທັກ</label>
+              <select
+                value={filterTag}
+                onChange={(e) => setFilterTag(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400"
+              >
+                <option value="ທັງໝົດ">ທັງໝົດ ({masterTags.length} ແທັກ)</option>
+                {masterTags.map((tag) => (
+                  <option key={tag.id} value={tag.name}>
+                    🏷️ {tag.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -404,6 +428,25 @@ export default function DocumentsPage() {
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
                             🔄 ກຳລັງໂອນຍ້າຍຫາ: {doc.transfers[0].toDepartment}{doc.transfers[0].keepCopy && ' (ເກັບສຳເນົາ)'}
                           </span>
+                        </div>
+                      )}
+                      {doc.tags && doc.tags.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {doc.tags.map((tagName, i) => {
+                            const tagObj = masterTags.find((t) => t.name === tagName)
+                            return (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200/60"
+                              >
+                                <span
+                                  className="h-1.5 w-1.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: tagObj?.color || '#6366f1' }}
+                                />
+                                <span>{tagName}</span>
+                              </span>
+                            )
+                          })}
                         </div>
                       )}
                     </td>
@@ -765,6 +808,31 @@ export default function DocumentsPage() {
                   </button>
                 )}
               </div>
+
+              {detailDoc.tags && detailDoc.tags.length > 0 && (
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    ປ້າຍກຳກັບ / ແທັກ (Tags)
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {detailDoc.tags.map((tagName, i) => {
+                      const tagObj = masterTags.find((t) => t.name === tagName)
+                      return (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold bg-white border border-gray-200 text-gray-800 shadow-2xs"
+                        >
+                          <span
+                            className="h-2 w-2 rounded-full shrink-0"
+                            style={{ backgroundColor: tagObj?.color || '#6366f1' }}
+                          />
+                          <span>{tagName}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </Modal>
