@@ -566,11 +566,18 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                 <Icon className={`h-4 w-4 shrink-0 ${isParentActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
                                 <span className="truncate whitespace-nowrap">{item.name}</span>
                               </div>
-                              <ChevronDown
-                                className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white ${
-                                  isExpanded ? 'rotate-0' : '-rotate-90'
-                                }`}
-                              />
+                              <div className="flex items-center gap-2">
+                                {itemBadge ? (
+                                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeClass}`}>
+                                    {itemBadge}
+                                  </span>
+                                ) : null}
+                                <ChevronDown
+                                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white ${
+                                    isExpanded ? 'rotate-0' : '-rotate-90'
+                                  }`}
+                                />
+                              </div>
                             </button>
 
                             {/* Collapsible Children Submenu with vertical guide line like in example picture */}
@@ -603,7 +610,14 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                       }`}
                                     >
                                       <ChildIcon className={`h-3.5 w-3.5 shrink-0 transition-colors ${isChildActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                                      <span className="truncate">{child.name}</span>
+                                      <div className="flex min-w-0 flex-1 items-center justify-between gap-1">
+                                        <span className="truncate">{child.name}</span>
+                                        {child.href === '/documents/incoming' && incomingTransferCount > 0 && (
+                                          <span className="rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                                            {incomingTransferCount}
+                                          </span>
+                                        )}
+                                      </div>
                                     </Link>
                                   );
                                 })}
