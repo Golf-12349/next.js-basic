@@ -18,7 +18,7 @@ import {
 } from '@/lib/dms/documentService'
 import { toFrontendDocument } from '@/lib/dms/types'
 import { useDebounce } from '@/hooks/useDebounce'
-import { CheckCircle2, Clock, Download, Send, XCircle } from 'lucide-react'
+import { CheckCircle2, Clock } from 'lucide-react'
 
 const PAGE_SIZE = 15
 
@@ -110,15 +110,6 @@ export default function IncomingDocumentsPage() {
       setSection(tabParam as SectionTab)
     }
   }, [searchParams])
-
-  const switchSection = (newTab: SectionTab) => {
-    setSection(newTab)
-    setCurrentPage(1)
-    if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', `/documents/incoming?tab=${newTab}`)
-      window.dispatchEvent(new CustomEvent('dms:transfer-tab-changed', { detail: { tab: newTab } }))
-    }
-  }
 
   const userDept = currentUser?.department?.trim().toLowerCase()
   const userDiv = currentUser?.division?.trim().toLowerCase()
@@ -313,65 +304,6 @@ export default function IncomingDocumentsPage() {
           >
             {loadingTransfers ? 'ກຳລັງໂຫຼດ...' : '🔄 ໂຫຼດຄືນໃໝ່'}
           </button>
-        </div>
-
-        {/* Master Section Navigation Bar (Classic Tabs) */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex gap-6">
-            <button
-              type="button"
-              onClick={() => switchSection('incoming')}
-              className={`flex items-center gap-2 pb-3.5 px-1 text-sm font-semibold border-b-2 transition-all ${
-                section === 'incoming'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Download className="h-4 w-4" />
-              <span>ເອກະສານຂາເຂົ້າ</span>
-              {incomingTransfers.length > 0 && (
-                <span className="rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-xs font-bold">
-                  {incomingTransfers.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => switchSection('outgoing')}
-              className={`flex items-center gap-2 pb-3.5 px-1 text-sm font-semibold border-b-2 transition-all ${
-                section === 'outgoing'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Send className="h-4 w-4" />
-              <span>ເອກະສານຂາອອກ</span>
-              {outgoingList.length > 0 && (
-                <span className="rounded-full bg-slate-100 text-slate-700 px-2 py-0.5 text-xs font-bold">
-                  {outgoingList.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => switchSection('rejected')}
-              className={`flex items-center gap-2 pb-3.5 px-1 text-sm font-semibold border-b-2 transition-all ${
-                section === 'rejected'
-                  ? 'border-rose-600 text-rose-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <XCircle className="h-4 w-4" />
-              <span>ເອກະສານຕີກັບ</span>
-              {rejectedList.length > 0 && (
-                <span className="rounded-full bg-rose-100 text-rose-700 px-2 py-0.5 text-xs font-bold">
-                  {rejectedList.length}
-                </span>
-              )}
-            </button>
-          </nav>
         </div>
 
         {/* View Switcher only for Incoming: หน้ารอรับ VS หน้าประวัติ */}
