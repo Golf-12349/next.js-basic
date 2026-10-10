@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useCurrentUser } from '../../context/CurrentUserContext'
+import { useDocuments } from '../../context/DocumentsContext'
 import { pushToast } from '@/app/components/ui/Toast'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
 import Pagination from '@/app/components/ui/Pagination'
-import { cancelTransfer, fetchTransferHistory } from '@/lib/dms/documentService'
+import { cancelTransfer } from '@/lib/dms/documentService'
 import type { Document, DocumentTransfer, TransferStatus } from '@/types/document'
 import { toFrontendDocument } from '@/lib/dms/types'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -37,10 +38,14 @@ function getField(value: unknown): string {
 }
 
 export default function OutgoingTransfersPage() {
+  const {
+    transferHistory,
+    loadingTransfers,
+    reloadTransfers,
+    reload,
+  } = useDocuments()
   const { user: currentUser } = useCurrentUser()
 
-  const [historyTransfers, setHistoryTransfers] = useState<DocumentTransfer[]>([])
-  const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | TransferStatus>('all')
   const [currentPage, setCurrentPage] = useState(1)
@@ -51,35 +56,23 @@ export default function OutgoingTransfersPage() {
 
   const debouncedQuery = useDebounce(query, 250)
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const histRes = await fetchTransferHistory()
-      setHistoryTransfers(Array.isArray(histRes) ? histRes : [])
-    } catch {
-      // silent
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    void reloadTransfers()
+  }, [reloadTransfers])
 
   const userDept = currentUser?.department?.trim().toLowerCase()
   const userDiv = currentUser?.division?.trim().toLowerCase()
 
   // Filter outgoing transfers (sent from current user's department)
   const outgoingTransfers = useMemo(() => {
-    return historyTransfers.filter((item) => {
+    return transferHistory.filter((item) => {
       const fromDept = getField(item.fromDepartment).trim().toLowerCase()
       const fromDiv = getField(item.fromDivision).trim().toLowerCase()
       if (userDept) return fromDept === userDept || item.senderId === currentUser?.id
       if (userDiv) return fromDiv === userDiv || item.senderId === currentUser?.id
       return true
     })
-  }, [historyTransfers, currentUser, userDept, userDiv])
+  }, [transferHistory, currentUser, userDept, userDiv])
 
   const filtered = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
@@ -104,12 +97,13 @@ export default function OutgoingTransfersPage() {
   )
 
   const handleCancel = async (transferId: string) => {
-    if (!confirm('ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຍົກເລີກການສົ່ງຕໍ່ນີ້?')) return
+    if (!confirm('ທ່ານແນ່ໃຈບໍ່ว่าຕ້ອງການຍົກເລີກການສົ່ງຕໍ່ນີ້?')) return
     setCancellingId(transferId)
     try {
       await cancelTransfer(transferId)
       pushToast({ title: 'ຍົກເລີກສຳເລັດ' })
-      void loadData()
+      void reload()
+      void reloadTransfers()
     } catch {
       pushToast({ title: 'ບໍ່ສາມາດຍົກເລີກໄດ້' })
     } finally {
@@ -130,11 +124,11 @@ export default function OutgoingTransfersPage() {
           </div>
           <button
             type="button"
-            onClick={() => { void loadData(); pushToast({ title: 'ໂຫຼດຂໍ້ມູນຄືນໃໝ່ແລ້ວ' }) }}
-            disabled={loading}
+            onClick={() => { void reloadTransfers(); pushToast({ title: 'ໂຫຼດຂໍ້ມູນຄືນໃໝ່ແລ້ວ' }) }}
+            disabled={loadingTransfers}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
           >
-            {loading ? 'ກຳລັງໂຫຼດ...' : '🔄 ໂຫຼດຄືນໃໝ່'}
+            {loadingTransfers ? 'ກຳລັງໂຫຼດ...' : '🔄 ໂຫຼດຄືນໃໝ່'}
           </button>
         </div>
 
@@ -189,14 +183,14 @@ export default function OutgoingTransfersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {loading && (
+                {loadingTransfers && filtered.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center text-sm text-gray-500">
                       ກຳລັງໂຫຼດຂໍ້ມູນ...
                     </td>
                   </tr>
                 )}
-                {!loading && pageItems.length === 0 && (
+                {(!loadingTransfers || filtered.length > 0) && pageItems.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-14 text-center">
                       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-2xl">
@@ -207,7 +201,7 @@ export default function OutgoingTransfersPage() {
                     </td>
                   </tr>
                 )}
-                {!loading && pageItems.map((item, idx) => {
+                {pageItems.map((item, idx) => {
                   const docItem = item.document
                   const toDept = getField(item.toDepartment) || '—'
                   const toDiv = getField(item.toDivision)

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import type { Document } from '@/types/document'
+import type { Document, DocumentTransfer } from '@/types/document'
 import * as categoryService from '@/lib/dms/categoryService'
 import * as documentService from '@/lib/dms/documentService'
 import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
@@ -13,6 +13,12 @@ export interface DocumentsContextValue {
   categories: string[]
   setCategories: React.Dispatch<React.SetStateAction<string[]>>
   loading: boolean
+  incomingTransfers: DocumentTransfer[]
+  setIncomingTransfers: React.Dispatch<React.SetStateAction<DocumentTransfer[]>>
+  transferHistory: DocumentTransfer[]
+  setTransferHistory: React.Dispatch<React.SetStateAction<DocumentTransfer[]>>
+  loadingTransfers: boolean
+  reloadTransfers: () => Promise<void>
   uploadFile: (file: File, onProgress?: (percent: number) => void) => Promise<documentService.UploadFileResult>
   addDocument: (doc: Omit<Document, 'id' | 'deleted'>) => Promise<Document>
   updateDocument: (id: string, patch: Partial<Document>) => Promise<void>
@@ -31,6 +37,8 @@ const DocumentsContext = createContext<DocumentsContextValue | undefined>(undefi
 
 const DOCS_STORAGE_KEY = 'dms_documents'
 const CATEGORIES_STORAGE_KEY = 'dms_categories'
+const INCOMING_STORAGE_KEY = 'dms_incoming_transfers'
+const HISTORY_STORAGE_KEY = 'dms_history_transfers'
 
 // ກັນການ seed ຊ້ຳພ້ອມກັນ ເມື່ອ reload ຖືກເອີ້ນຫຼາຍຄັ້ງພ້ອມກັນ (mount + realtime events)
 let seedingDefaultCategories = false
@@ -60,6 +68,32 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
   const [categoryList, setCategoryList] = useState<ApiCategory[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [incomingTransfers, setIncomingTransfers] = useState<DocumentTransfer[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem(INCOMING_STORAGE_KEY) || sessionStorage.getItem(INCOMING_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) return parsed
+      }
+    } catch {}
+    return []
+  })
+
+  const [transferHistory, setTransferHistory] = useState<DocumentTransfer[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const stored = localStorage.getItem(HISTORY_STORAGE_KEY) || sessionStorage.getItem(HISTORY_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) return parsed
+      }
+    } catch {}
+    return []
+  })
+
+  const [loadingTransfers, setLoadingTransfers] = useState(false)
+
   // Persist documents across page refreshes
   useEffect(() => {
     try {
@@ -79,6 +113,54 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {}
   }, [categories])
+
+  // Persist incoming transfers across page refreshes
+  useEffect(() => {
+    try {
+      if (incomingTransfers.length > 0) {
+        localStorage.setItem(INCOMING_STORAGE_KEY, JSON.stringify(incomingTransfers))
+        sessionStorage.setItem(INCOMING_STORAGE_KEY, JSON.stringify(incomingTransfers))
+      }
+    } catch {}
+  }, [incomingTransfers])
+
+  // Persist transfer history across page refreshes
+  useEffect(() => {
+    try {
+      if (transferHistory.length > 0) {
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(transferHistory))
+        sessionStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(transferHistory))
+      }
+    } catch {}
+  }, [transferHistory])
+
+  const reloadTransfers = useCallback(async () => {
+    setLoadingTransfers(true)
+    try {
+      const [incRes, histRes] = await Promise.allSettled([
+        documentService.fetchIncomingTransfers(),
+        documentService.fetchTransferHistory(),
+      ])
+      if (incRes.status === 'fulfilled' && Array.isArray(incRes.value)) {
+        setIncomingTransfers(incRes.value)
+        try {
+          localStorage.setItem(INCOMING_STORAGE_KEY, JSON.stringify(incRes.value))
+          sessionStorage.setItem(INCOMING_STORAGE_KEY, JSON.stringify(incRes.value))
+        } catch {}
+      }
+      if (histRes.status === 'fulfilled' && Array.isArray(histRes.value)) {
+        setTransferHistory(histRes.value)
+        try {
+          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(histRes.value))
+          sessionStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(histRes.value))
+        } catch {}
+      }
+    } catch (err) {
+      console.error('ໂຫຼດຂໍ້ມູນ transfers ລົ້ມເຫຼວ:', err)
+    } finally {
+      setLoadingTransfers(false)
+    }
+  }, [])
 
   const isReloadingRef = useRef(false)
   const pendingReloadRef = useRef(false)
@@ -101,10 +183,12 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
     isReloadingRef.current = true
 
     try {
-      const [fetchedCategories, activeDocs, deletedDocs] = await Promise.all([
+      const [fetchedCategories, activeDocs, deletedDocs, incList, histList] = await Promise.all([
         categoryService.fetchCategories(),
         documentService.fetchDocuments({ limit: 1000 }),
         documentService.fetchDocuments({ limit: 1000, deleted: 'true' }),
+        documentService.fetchIncomingTransfers().catch(() => [] as DocumentTransfer[]),
+        documentService.fetchTransferHistory().catch(() => [] as DocumentTransfer[]),
       ])
       let serverCategories = fetchedCategories
       // Auto-seed: ຖ້າ backend ຍັງບໍ່ມີໝວດໝູ່ເລີຍ (ຖານຂໍ້ມູນໃໝ່) ໃຫ້ສ້າງໝວດໝູ່ເລີ່ມຕົ້ນໃຫ້
@@ -159,6 +243,20 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         }),
       ]
       setDocuments(fetchedDocs)
+      if (Array.isArray(incList)) {
+        setIncomingTransfers(incList)
+        try {
+          localStorage.setItem(INCOMING_STORAGE_KEY, JSON.stringify(incList))
+          sessionStorage.setItem(INCOMING_STORAGE_KEY, JSON.stringify(incList))
+        } catch {}
+      }
+      if (Array.isArray(histList)) {
+        setTransferHistory(histList)
+        try {
+          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(histList))
+          sessionStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(histList))
+        } catch {}
+      }
       try {
         localStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(fetchedDocs))
         sessionStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(fetchedDocs))
@@ -410,6 +508,12 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       categories,
       setCategories,
       loading,
+      incomingTransfers,
+      setIncomingTransfers,
+      transferHistory,
+      setTransferHistory,
+      loadingTransfers,
+      reloadTransfers,
       uploadFile,
       addDocument,
       updateDocument,
@@ -427,6 +531,12 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       categories,
       setCategories,
       loading,
+      incomingTransfers,
+      setIncomingTransfers,
+      transferHistory,
+      setTransferHistory,
+      loadingTransfers,
+      reloadTransfers,
       uploadFile,
       addDocument,
       updateDocument,

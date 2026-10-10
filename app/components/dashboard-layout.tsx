@@ -46,7 +46,6 @@ import { useNotifications } from '../(main)/context/NotificationsContext';
 import apiClient from '@/config/axiosClient';
 import { useCurrentUser } from '../(main)/context/CurrentUserContext';
 import { roleLabel } from '@/types/user';
-import { fetchIncomingTransfers } from '@/lib/dms/documentService';
 import { BrandLogo } from './brand-logo';
 import { UserAvatar } from './users/UserModals';
 
@@ -191,20 +190,8 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const pathname = usePathname();
   const router = useRouter();
   const { user: currentUser, clearUser } = useCurrentUser();
-  const { documents } = useDocuments();
-  const [incomingTransferCount, setIncomingTransferCount] = useState<number>(0);
-
-  useEffect(() => {
-    let active = true;
-    fetchIncomingTransfers()
-      .then((list) => {
-        if (active && Array.isArray(list)) setIncomingTransferCount(list.length);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [pathname]);
+  const { documents, incomingTransfers } = useDocuments();
+  const incomingTransferCount = incomingTransfers.length;
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
   // eslint-disable-next-line react-hooks/purity -- sidebar expiry window derived from the current date

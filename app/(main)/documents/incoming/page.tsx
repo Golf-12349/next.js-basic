@@ -13,8 +13,6 @@ import SelectStorageLocationModal from '@/app/components/documents/SelectStorage
 import {
   approveTransfer,
   cancelTransfer,
-  fetchIncomingTransfers,
-  fetchTransferHistory,
   rejectTransfer,
 } from '@/lib/dms/documentService'
 import { toFrontendDocument } from '@/lib/dms/types'
@@ -48,14 +46,16 @@ function getField(value: unknown): string {
 }
 
 export default function IncomingDocumentsPage() {
-  const { reload } = useDocuments()
+  const {
+    incomingTransfers,
+    transferHistory,
+    loadingTransfers,
+    reloadTransfers,
+    reload,
+  } = useDocuments()
   const { user: currentUser } = useCurrentUser()
 
   const [activeTab, setActiveTab] = useState<TabType>('pending')
-
-  const [pendingTransfers, setPendingTransfers] = useState<DocumentTransfer[]>([])
-  const [historyTransfers, setHistoryTransfers] = useState<DocumentTransfer[]>([])
-  const [loading, setLoading] = useState(true)
 
   const [query, setQuery] = useState('')
   const [historyStatusFilter, setHistoryStatusFilter] = useState<'all' | TransferStatus>('all')
@@ -71,53 +71,31 @@ export default function IncomingDocumentsPage() {
 
   const debouncedQuery = useDebounce(query, 250)
 
-  // Load all incoming data concurrently
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [pendingRes, histRes] = await Promise.allSettled([
-        fetchIncomingTransfers(),
-        fetchTransferHistory(),
-      ])
-
-      if (pendingRes.status === 'fulfilled' && Array.isArray(pendingRes.value)) {
-        setPendingTransfers(pendingRes.value)
-      }
-      if (histRes.status === 'fulfilled' && Array.isArray(histRes.value)) {
-        setHistoryTransfers(histRes.value)
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    void reloadTransfers()
+  }, [reloadTransfers])
 
   const userDept = currentUser?.department?.trim().toLowerCase()
   const userDiv = currentUser?.division?.trim().toLowerCase()
 
   // Filter history transfers for incoming only
   const incomingHistoryList = useMemo(() => {
-    return historyTransfers.filter((item) => {
+    return transferHistory.filter((item) => {
       const toDept = getField(item.toDepartment).trim().toLowerCase()
       const toDiv = getField(item.toDivision).trim().toLowerCase()
       if (userDept) return toDept === userDept
       if (userDiv) return toDiv === userDiv
       return true
     })
-  }, [historyTransfers, userDept, userDiv])
+  }, [transferHistory, userDept, userDiv])
 
   // Current active list based on selected view
   const currentList = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
 
     if (activeTab === 'pending') {
-      if (!q) return pendingTransfers
-      return pendingTransfers.filter((t) => {
+      if (!q) return incomingTransfers
+      return incomingTransfers.filter((t) => {
         const title = t.document?.title?.toLowerCase() || ''
         const docNum = t.document?.docNumber?.toLowerCase() || ''
         const fromDept = (t.fromDepartment || '').toLowerCase()
@@ -141,7 +119,7 @@ export default function IncomingDocumentsPage() {
         return true
       })
     }
-  }, [activeTab, pendingTransfers, incomingHistoryList, historyStatusFilter, debouncedQuery])
+  }, [activeTab, incomingTransfers, incomingHistoryList, historyStatusFilter, debouncedQuery])
 
   const totalPages = Math.max(1, Math.ceil(currentList.length / PAGE_SIZE))
   const page = Math.min(currentPage, totalPages)
@@ -167,7 +145,7 @@ export default function IncomingDocumentsPage() {
       })
       setTransferToApprove(null)
       void reload()
-      void loadData()
+      void reloadTransfers()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'ເກີດຂໍ້ຜິດພາດໃນການຮັບເອກະສານ'
       pushToast({ title: 'ບໍ່ສາມາດຮັບເອກະສານໄດ້', description: msg })
@@ -186,7 +164,7 @@ export default function IncomingDocumentsPage() {
       setTransferToReject(null)
       setRejectionReason('')
       void reload()
-      void loadData()
+      void reloadTransfers()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'ເກີດຂໍ້ຜິດພາດໃນການປະຕິເສດ'
       pushToast({ title: 'ບໍ່ສາມາດປະຕິເສດໄດ້', description: msg })
@@ -202,7 +180,7 @@ export default function IncomingDocumentsPage() {
       await cancelTransfer(transferId)
       pushToast({ title: 'ຍົກເລີກສຳເລັດ' })
       void reload()
-      void loadData()
+      void reloadTransfers()
     } catch {
       pushToast({ title: 'ບໍ່ສາມາດຍົກເລີກໄດ້' })
     } finally {
@@ -223,11 +201,11 @@ export default function IncomingDocumentsPage() {
           </div>
           <button
             type="button"
-            onClick={() => { void loadData(); pushToast({ title: 'ໂຫຼດຂໍ້ມູນຄືນໃໝ່ແລ້ວ' }) }}
-            disabled={loading}
+            onClick={() => { void reloadTransfers(); pushToast({ title: 'ໂຫຼດຂໍ້ມູນຄືນໃໝ່ແລ້ວ' }) }}
+            disabled={loadingTransfers}
             className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
           >
-            {loading ? 'ກຳລັງໂຫຼດ...' : '🔄 ໂຫຼດຄືນໃໝ່'}
+            {loadingTransfers ? 'ກຳລັງໂຫຼດ...' : '🔄 ໂຫຼດຄືນໃໝ່'}
           </button>
         </div>
 
@@ -244,11 +222,11 @@ export default function IncomingDocumentsPage() {
           >
             <Clock className="h-4 w-4" />
             <span>ເອກະສານລໍຖ້າຮັບ</span>
-            {pendingTransfers.length > 0 && (
+            {incomingTransfers.length > 0 && (
               <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                 activeTab === 'pending' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
               }`}>
-                {pendingTransfers.length}
+                {incomingTransfers.length}
               </span>
             )}
           </button>
@@ -329,14 +307,14 @@ export default function IncomingDocumentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {loading && (
+                {loadingTransfers && currentList.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center text-sm text-gray-500">
                       ກຳລັງໂຫຼດຂໍ້ມູນ...
                     </td>
                   </tr>
                 )}
-                {!loading && pageItems.length === 0 && (
+                {(!loadingTransfers || currentList.length > 0) && pageItems.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-14 text-center">
                       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-2xl">
@@ -353,7 +331,7 @@ export default function IncomingDocumentsPage() {
                     </td>
                   </tr>
                 )}
-                {!loading && pageItems.map((t, idx) => {
+                {pageItems.map((t, idx) => {
                   const docItem = t.document
                   const fromDept = getField(t.fromDepartment) || '—'
                   const fromDiv = getField(t.fromDivision)
