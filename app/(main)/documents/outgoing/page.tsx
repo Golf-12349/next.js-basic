@@ -1,8 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../../context/DocumentsContext'
 import { useCurrentUser } from '../../context/CurrentUserContext'
@@ -55,33 +53,7 @@ function getField(value: unknown): string {
   return (value as string) || ''
 }
 
-function SubNav() {
-  const pathname = usePathname()
-  const links = [
-    { href: '/documents/incoming', label: '📥 ຂາເຂົ້າ' },
-    { href: '/documents/outgoing', label: '📤 ຂາອອກ' },
-    { href: '/documents/rejected', label: '🔴 ຕີກັບ' },
-  ]
-  return (
-    <div className="border-b border-gray-200 mb-6">
-      <nav className="-mb-px flex gap-4">
-        {links.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className={`pb-3 px-1 text-sm font-medium border-b-2 ${
-              pathname === l.href
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
-    </div>
-  )
-}
+
 
 export default function OutgoingTransfersPage() {
   const { documents, reload } = useDocuments()
@@ -178,8 +150,6 @@ export default function OutgoingTransfersPage() {
   return (
     <DashboardLayout title="ປະຫວັດການສົ່ງອອກ">
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
-        <SubNav />
-
         {/* Header */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
