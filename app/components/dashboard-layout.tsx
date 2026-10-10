@@ -145,8 +145,9 @@ const menuSections: MenuSection[] = [
         href: '/documents/incoming',
         icon: ArrowRightLeft,
         children: [
-          { name: 'ຂາເຂົ້າ (ຮັບໂອນ)', href: '/documents/incoming', icon: Download },
-          { name: 'ຂາອອກ (ສົ່ງຕໍ່)', href: '/documents/outgoing', icon: Send },
+          { name: 'ເອກະສານລໍຖ້າຮັບ', href: '/documents/incoming', icon: Download },
+          { name: 'ປະຫວັດເອກະສານຂາເຂົ້າ', href: '/documents/incoming/history', icon: History },
+          { name: 'ປະຫວັດເອກະສານຂາອອກ', href: '/documents/outgoing', icon: Send },
           { name: 'ເອກະສານຕີກັບ', href: '/documents/rejected', icon: XCircle },
         ],
       },
@@ -553,41 +554,25 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                       if (hasChildren) {
                         return (
                           <div key={item.name} className="space-y-1">
-                            <div
+                            <button
+                              type="button"
                               onClick={() => toggleExpand(item.href)}
-                              className={`group flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all select-none ${
+                              className={`group flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all select-none ${
                                 isParentActive
                                   ? 'bg-indigo-600 text-white font-semibold shadow-sm'
                                   : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                               }`}
                             >
-                              <Link
-                                href={item.href}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedMenus((prev) => ({ ...prev, [item.href]: true }));
-                                }}
-                                className="flex flex-1 items-center gap-3"
-                              >
+                              <div className="flex flex-1 items-center gap-3">
                                 <Icon className={`h-4 w-4 shrink-0 ${isParentActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
                                 <span>{item.name}</span>
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleExpand(item.href);
-                                }}
-                                className="p-0.5 text-slate-400 transition-colors hover:text-white"
-                                title={isExpanded ? 'ຍຸບເມນູ' : 'ຂະຫຍາຍເມນູ'}
-                              >
-                                <ChevronDown
-                                  className={`h-4 w-4 transition-transform duration-200 ${
-                                    isExpanded ? 'rotate-0' : '-rotate-90'
-                                  }`}
-                                />
-                              </button>
-                            </div>
+                              </div>
+                              <ChevronDown
+                                className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white ${
+                                  isExpanded ? 'rotate-0' : '-rotate-90'
+                                }`}
+                              />
+                            </button>
 
                             {/* Collapsible Children Submenu with vertical guide line like in example picture */}
                             {isExpanded && allowedChildren.length > 0 && (
