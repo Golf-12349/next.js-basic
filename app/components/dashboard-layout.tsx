@@ -141,13 +141,12 @@ const menuSections: MenuSection[] = [
       { name: 'ຍັງບໍ່ມີບ່ອນເກັບ', href: '/documents/unassigned', icon: PackageOpen },
       { name: 'ປະຫວັດການອັບໂຫຼດ', href: '/documents/upload-history', icon: History },
       {
-        name: 'ເອກະສານຂາເຂົ້າ-ຂາອອກ',
+        name: 'ເອກະສານຂາເຂົ້າ-ອອກ',
         href: '/documents/incoming',
         icon: ArrowRightLeft,
         children: [
-          { name: 'ເອກະສານລໍຖ້າຮັບ', href: '/documents/incoming', icon: Download },
-          { name: 'ປະຫວັດເອກະສານຂາເຂົ້າ', href: '/documents/incoming/history', icon: History },
-          { name: 'ປະຫວັດເອກະສານຂາອອກ', href: '/documents/outgoing', icon: Send },
+          { name: 'ເອກະສານຂາເຂົ້າ', href: '/documents/incoming', icon: Download },
+          { name: 'ເອກະສານຂາອອກ', href: '/documents/outgoing', icon: Send },
           { name: 'ເອກະສານຕີກັບ', href: '/documents/rejected', icon: XCircle },
         ],
       },
@@ -557,15 +556,15 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                             <button
                               type="button"
                               onClick={() => toggleExpand(item.href)}
-                              className={`group flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all select-none ${
+                              className={`group flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors select-none ${
                                 isParentActive
                                   ? 'bg-indigo-600 text-white font-semibold shadow-sm'
                                   : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                               }`}
                             >
-                              <div className="flex flex-1 items-center gap-3">
+                              <div className="flex min-w-0 flex-1 items-center gap-2.5">
                                 <Icon className={`h-4 w-4 shrink-0 ${isParentActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
-                                <span>{item.name}</span>
+                                <span className="truncate whitespace-nowrap">{item.name}</span>
                               </div>
                               <ChevronDown
                                 className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white ${
