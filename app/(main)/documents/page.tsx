@@ -20,13 +20,11 @@ import {
   Download,
   RefreshCw,
   Archive,
-  ArrowRightLeft,
   Trash2,
   ChevronDown,
 } from 'lucide-react'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
-import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
@@ -70,7 +68,6 @@ export default function DocumentsPage() {
   }, [searchParams, openUpload, router])
   const { user: currentUser } = useCurrentUser()
   const { warehouses, cabinets, assignDocument } = useArchive()
-  const [transferDoc, setTransferDoc] = useState<Document | null>(null)
   const [storageDoc, setStorageDoc] = useState<Document | null>(null)
   const [renewDoc, setRenewDoc] = useState<Document | null>(null)
   const [editDoc, setEditDoc] = useState<Document | null>(null)
@@ -423,13 +420,6 @@ export default function DocumentsPage() {
                           </button>
                         )}
                       </div>
-                      {doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending' && (
-                        <div className="mt-1">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-                            🔄 ກຳລັງໂອນຍ້າຍຫາ: {doc.transfers[0].toDepartment}{doc.transfers[0].keepCopy && ' (ເກັບສຳເນົາ)'}
-                          </span>
-                        </div>
-                      )}
                       {doc.tags && doc.tags.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {doc.tags.map((tagName, i) => {
@@ -577,18 +567,6 @@ export default function DocumentsPage() {
                               >
                                 <Archive className="h-4 w-4 text-blue-500" />
                                 <span>ບ່ອນຈັດເກັບໃນຄັງ</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveDropdownId(null)
-                                  setTransferDoc(doc)
-                                }}
-                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 transition"
-                              >
-                                <ArrowRightLeft className="h-4 w-4 text-amber-500" />
-                                <span>ສົ່ງຂ້າມພະແນກ</span>
                               </button>
 
                               <div className="my-1 border-t border-gray-100" />
@@ -854,14 +832,6 @@ export default function DocumentsPage() {
           onAdd={handleAddCategory}
           onRemove={handleRemoveCategory}
           countDocs={countDocsInCategory}
-        />
-
-        <TransferDocumentModal
-          open={!!transferDoc}
-          doc={transferDoc}
-          currentUser={currentUser}
-          onClose={() => setTransferDoc(null)}
-          onSuccess={() => void reload()}
         />
 
         <SelectStorageLocationModal

@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Clock,
   Database,
+  Download,
   FileText,
   FolderArchive,
   History,
@@ -29,6 +30,7 @@ import {
   Menu,
   PackageOpen,
   Search,
+  Send,
   Settings,
   ShieldCheck,
   Tag,
@@ -37,6 +39,7 @@ import {
   UserPlus,
   Users,
   X,
+  XCircle,
 } from 'lucide-react';
 import { useDocuments } from '../(main)/context/DocumentsContext';
 import { useNotifications } from '../(main)/context/NotificationsContext';
@@ -137,8 +140,16 @@ const menuSections: MenuSection[] = [
       },
       { name: 'ຍັງບໍ່ມີບ່ອນເກັບ', href: '/documents/unassigned', icon: PackageOpen },
       { name: 'ປະຫວັດການອັບໂຫຼດ', href: '/documents/upload-history', icon: History },
-      { name: 'ເອກະສານສົ່ງຂ້າມ', href: '/documents/pending', icon: ArrowRightLeft },
-      { name: 'ປະຫວັດການສົ່ງຂ້າມ', href: '/documents/transfers', icon: ArrowRightLeft },
+      {
+        name: 'ເອກະສານຂາເຂົ້າ-ຂາອອກ',
+        href: '/documents/incoming',
+        icon: ArrowRightLeft,
+        children: [
+          { name: 'ຂາເຂົ້າ (ຮັບໂອນ)', href: '/documents/incoming', icon: Download },
+          { name: 'ຂາອອກ (ສົ່ງຕໍ່)', href: '/documents/outgoing', icon: Send },
+          { name: 'ເອກະສານຕີກັບ', href: '/documents/rejected', icon: XCircle },
+        ],
+      },
     ],
   },
   {
@@ -319,6 +330,10 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
     if (pathname.startsWith('/documents/archive')) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the archive submenu when on an archive route
       setExpandedMenus((prev) => ({ ...prev, '/documents/archive': true }));
+    }
+    if (pathname.startsWith('/documents/incoming') || pathname.startsWith('/documents/outgoing') || pathname.startsWith('/documents/rejected')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the incoming/outgoing/rejected submenu when on those routes
+      setExpandedMenus((prev) => ({ ...prev, '/documents/incoming': true }));
     }
   }, [pathname]);
 
@@ -514,7 +529,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                       let itemBadge: string | undefined = item.badge;
                       let badgeClass = 'bg-amber-400 text-slate-900';
 
-                      if (item.href === '/documents/pending' && incomingTransferCount > 0) {
+                      if (item.href === '/documents/incoming' && incomingTransferCount > 0) {
                         itemBadge = String(incomingTransferCount);
                         badgeClass = 'bg-indigo-600 text-white font-bold shadow-sm';
                       } else if (item.href === '/documents/unassigned' && unassignedCount > 0) {
@@ -580,17 +595,21 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                 {allowedChildren.map((child) => {
                                   const ChildIcon = child.icon;
                                   const childLevel = child.href.includes('level=') ? child.href.split('level=')[1] : '';
-                                  const isChildActive =
-                                    pathname === '/documents/archive' && activeArchiveLevel === childLevel;
+                                  const isArchiveChild = child.href.includes('level=');
+                                  const isChildActive = isArchiveChild
+                                    ? pathname === '/documents/archive' && activeArchiveLevel === childLevel
+                                    : pathname === child.href || pathname.startsWith(child.href + '?');
 
                                   return (
                                     <Link
                                       key={child.name}
                                       href={child.href}
                                       onClick={() => {
-                                        setActiveArchiveLevel(childLevel);
-                                        window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
-                                        window.dispatchEvent(new CustomEvent('dms:archive-level-changed', { detail: { level: childLevel } }));
+                                        if (isArchiveChild) {
+                                          setActiveArchiveLevel(childLevel);
+                                          window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
+                                          window.dispatchEvent(new CustomEvent('dms:archive-level-changed', { detail: { level: childLevel } }));
+                                        }
                                         setMobileNavOpen(false);
                                       }}
                                       className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-all ${
