@@ -144,9 +144,9 @@ const menuSections: MenuSection[] = [
         href: '/documents/incoming',
         icon: ArrowRightLeft,
         children: [
-          { name: 'ເອກະສານຂາເຂົ້າ', href: '/documents/incoming', icon: Download },
-          { name: 'ເອກະສານຂາອອກ', href: '/documents/outgoing', icon: Send },
-          { name: 'ເອກະສານຕີກັບ', href: '/documents/rejected', icon: XCircle },
+          { name: 'ເອກະສານຂາເຂົ້າ', href: '/documents/incoming?tab=incoming', icon: Download },
+          { name: 'ເອກະສານຂາອອກ', href: '/documents/incoming?tab=outgoing', icon: Send },
+          { name: 'ເອກະສານຕີກັບ', href: '/documents/incoming?tab=rejected', icon: XCircle },
         ],
       },
     ],
@@ -231,9 +231,11 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
 
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     '/documents/archive': true,
+    '/documents/incoming': true,
   });
   const [, setCurrentQuery] = useState('');
   const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
+  const [activeTransferTab, setActiveTransferTab] = useState<string>('incoming');
 
   // ── Responsive shell: ຈໍນ້ອຍ (ມືຖື/ແທັບເລັດ) ໃຊ້ off-canvas drawer ສຳລັບເມນູ ──
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -290,6 +292,18 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   }, []);
 
   useEffect(() => {
+    const handleTransferTabChanged = (e: Event) => {
+      const custom = e as CustomEvent<{ tab: string }>;
+      if (custom.detail?.tab) {
+        setActiveTransferTab(custom.detail.tab);
+      }
+    };
+
+    window.addEventListener('dms:transfer-tab-changed', handleTransferTabChanged);
+    return () => window.removeEventListener('dms:transfer-tab-changed', handleTransferTabChanged);
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const lvl = params.get('level');
@@ -298,6 +312,17 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
         setActiveArchiveLevel(lvl);
       } else if (pathname === '/documents/archive') {
         setActiveArchiveLevel(currentUser?.role === 'DepartmentAdmin' ? 'cabinets' : 'warehouses');
+      }
+
+      const tTab = params.get('tab');
+      if (tTab) {
+        setActiveTransferTab(tTab);
+      } else if (pathname === '/documents/incoming') {
+        setActiveTransferTab('incoming');
+      } else if (pathname === '/documents/outgoing') {
+        setActiveTransferTab('outgoing');
+      } else if (pathname === '/documents/rejected') {
+        setActiveTransferTab('rejected');
       }
     }
   }, [pathname, currentUser]);
@@ -512,7 +537,13 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                       const isParentActive =
                         pathname === item.href ||
                         (item.href === '/dashboard' && pathname === '/') ||
-                        (hasChildren && pathname.startsWith(item.href));
+                        (hasChildren && (
+                          pathname.startsWith(item.href) ||
+                          item.children?.some((child) => {
+                            const childBase = child.href.split('?')[0];
+                            return pathname === childBase || pathname.startsWith(childBase + '/');
+                          })
+                        ));
                       let itemBadge: string | undefined = item.badge;
                       let badgeClass = 'bg-amber-400 text-slate-900';
 
@@ -574,19 +605,35 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                   const ChildIcon = child.icon;
                                   const childLevel = child.href.includes('level=') ? child.href.split('level=')[1] : '';
                                   const isArchiveChild = child.href.includes('level=');
+                                  const childTab = child.href.includes('tab=') ? child.href.split('tab=')[1] : '';
+                                  const isTransferChild = child.href.includes('tab=') || child.href.startsWith('/documents/incoming');
                                   const isChildActive = isArchiveChild
                                     ? pathname === '/documents/archive' && activeArchiveLevel === childLevel
+                                    : isTransferChild
+                                    ? (pathname === '/documents/incoming' && (childTab ? activeTransferTab === childTab : activeTransferTab === 'incoming')) ||
+                                      (childTab === 'outgoing' && pathname === '/documents/outgoing') ||
+                                      (childTab === 'rejected' && pathname === '/documents/rejected')
                                     : pathname === child.href || pathname.startsWith(child.href + '?');
 
                                   return (
                                     <Link
                                       key={child.name}
                                       href={child.href}
-                                      onClick={() => {
+                                      onClick={(e) => {
                                         if (isArchiveChild) {
                                           setActiveArchiveLevel(childLevel);
                                           window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
                                           window.dispatchEvent(new CustomEvent('dms:archive-level-changed', { detail: { level: childLevel } }));
+                                        }
+                                        if (isTransferChild) {
+                                          const targetTab = childTab || 'incoming';
+                                          setActiveTransferTab(targetTab);
+                                          window.dispatchEvent(new CustomEvent('dms:set-transfer-tab', { detail: { tab: targetTab } }));
+                                          window.dispatchEvent(new CustomEvent('dms:transfer-tab-changed', { detail: { tab: targetTab } }));
+                                          if (pathname === '/documents/incoming') {
+                                            e.preventDefault();
+                                            window.history.pushState(null, '', child.href);
+                                          }
                                         }
                                         setMobileNavOpen(false);
                                       }}
@@ -599,7 +646,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                       <ChildIcon className={`h-3.5 w-3.5 shrink-0 transition-colors ${isChildActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
                                       <div className="flex min-w-0 flex-1 items-center justify-between gap-1">
                                         <span className="truncate">{child.name}</span>
-                                        {child.href === '/documents/incoming' && incomingTransferCount > 0 && (
+                                        {(childTab === 'incoming' || child.href === '/documents/incoming') && incomingTransferCount > 0 && (
                                           <span className="rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
                                             {incomingTransferCount}
                                           </span>

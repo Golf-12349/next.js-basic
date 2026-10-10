@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../../context/DocumentsContext'
 import { useCurrentUser } from '../../context/CurrentUserContext'
@@ -17,11 +18,12 @@ import {
 } from '@/lib/dms/documentService'
 import { toFrontendDocument } from '@/lib/dms/types'
 import { useDebounce } from '@/hooks/useDebounce'
-import { CheckCircle2, Clock, FileText } from 'lucide-react'
+import { CheckCircle2, Clock, Download, Send, XCircle } from 'lucide-react'
 
 const PAGE_SIZE = 15
 
-type TabType = 'pending' | 'history'
+type SectionTab = 'incoming' | 'outgoing' | 'rejected'
+type IncomingSubTab = 'pending' | 'history'
 
 const statusBadgeStyles: Record<TransferStatus, string> = {
   pending: 'bg-amber-100 text-amber-800 ring-amber-200',
@@ -46,6 +48,7 @@ function getField(value: unknown): string {
 }
 
 export default function IncomingDocumentsPage() {
+  const searchParams = useSearchParams()
   const {
     incomingTransfers,
     transferHistory,
@@ -55,12 +58,23 @@ export default function IncomingDocumentsPage() {
   } = useDocuments()
   const { user: currentUser } = useCurrentUser()
 
-  const [activeTab, setActiveTab] = useState<TabType>('pending')
+  // Main Section: 'incoming' | 'outgoing' | 'rejected'
+  const [section, setSection] = useState<SectionTab>(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'outgoing' || tabParam === 'rejected') return tabParam
+    return 'incoming'
+  })
 
+  // Subtab for incoming section: 'pending' | 'history'
+  const [incomingSubTab, setIncomingSubTab] = useState<IncomingSubTab>('pending')
+
+  // Search and status filters
   const [query, setQuery] = useState('')
-  const [historyStatusFilter, setHistoryStatusFilter] = useState<'all' | TransferStatus>('all')
+  const [incomingHistoryFilter, setIncomingHistoryFilter] = useState<'all' | TransferStatus>('all')
+  const [outgoingStatusFilter, setOutgoingStatusFilter] = useState<'all' | TransferStatus>('all')
   const [currentPage, setCurrentPage] = useState(1)
 
+  // Modals & Action states
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [detailTransfer, setDetailTransfer] = useState<DocumentTransfer | null>(null)
   const [transferToApprove, setTransferToApprove] = useState<DocumentTransfer | null>(null)
@@ -71,14 +85,45 @@ export default function IncomingDocumentsPage() {
 
   const debouncedQuery = useDebounce(query, 250)
 
+  // Initial load
   useEffect(() => {
     void reloadTransfers()
   }, [reloadTransfers])
 
+  // Sync tab with sidebar custom events
+  useEffect(() => {
+    const handleSetTab = (e: Event) => {
+      const custom = e as CustomEvent<{ tab: string }>
+      if (custom.detail?.tab && ['incoming', 'outgoing', 'rejected'].includes(custom.detail.tab)) {
+        setSection(custom.detail.tab as SectionTab)
+        setCurrentPage(1)
+      }
+    }
+    window.addEventListener('dms:set-transfer-tab', handleSetTab)
+    return () => window.removeEventListener('dms:set-transfer-tab', handleSetTab)
+  }, [])
+
+  // Sync tab with URL search parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && ['incoming', 'outgoing', 'rejected'].includes(tabParam)) {
+      setSection(tabParam as SectionTab)
+    }
+  }, [searchParams])
+
+  const switchSection = (newTab: SectionTab) => {
+    setSection(newTab)
+    setCurrentPage(1)
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', `/documents/incoming?tab=${newTab}`)
+      window.dispatchEvent(new CustomEvent('dms:transfer-tab-changed', { detail: { tab: newTab } }))
+    }
+  }
+
   const userDept = currentUser?.department?.trim().toLowerCase()
   const userDiv = currentUser?.division?.trim().toLowerCase()
 
-  // Filter history transfers for incoming only
+  // 1. Filtered data for INCOMING history
   const incomingHistoryList = useMemo(() => {
     return transferHistory.filter((item) => {
       const toDept = getField(item.toDepartment).trim().toLowerCase()
@@ -89,37 +134,88 @@ export default function IncomingDocumentsPage() {
     })
   }, [transferHistory, userDept, userDiv])
 
-  // Current active list based on selected view
+  // 2. Filtered data for OUTGOING transfers
+  const outgoingList = useMemo(() => {
+    return transferHistory.filter((item) => {
+      const fromDept = getField(item.fromDepartment).trim().toLowerCase()
+      const fromDiv = getField(item.fromDivision).trim().toLowerCase()
+      if (userDept) return fromDept === userDept || item.senderId === currentUser?.id
+      if (userDiv) return fromDiv === userDiv || item.senderId === currentUser?.id
+      return true
+    })
+  }, [transferHistory, currentUser, userDept, userDiv])
+
+  // 3. Filtered data for REJECTED transfers
+  const rejectedList = useMemo(() => {
+    return transferHistory.filter((item) => item.status === 'rejected')
+  }, [transferHistory])
+
+  // Current active list based on active section and filters
   const currentList = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
 
-    if (activeTab === 'pending') {
-      if (!q) return incomingTransfers
-      return incomingTransfers.filter((t) => {
-        const title = t.document?.title?.toLowerCase() || ''
-        const docNum = t.document?.docNumber?.toLowerCase() || ''
-        const fromDept = (t.fromDepartment || '').toLowerCase()
-        const sender = (t.sender?.name || '').toLowerCase()
-        const note = (t.note || '').toLowerCase()
-        return title.includes(q) || docNum.includes(q) || fromDept.includes(q) || sender.includes(q) || note.includes(q)
-      })
-    } else {
-      return incomingHistoryList.filter((item) => {
-        if (historyStatusFilter !== 'all' && item.status !== historyStatusFilter) return false
+    if (section === 'incoming') {
+      if (incomingSubTab === 'pending') {
+        if (!q) return incomingTransfers
+        return incomingTransfers.filter((t) => {
+          const title = t.document?.title?.toLowerCase() || ''
+          const docNum = t.document?.docNumber?.toLowerCase() || ''
+          const fromDept = (t.fromDepartment || '').toLowerCase()
+          const sender = (t.sender?.name || '').toLowerCase()
+          const note = (t.note || '').toLowerCase()
+          return title.includes(q) || docNum.includes(q) || fromDept.includes(q) || sender.includes(q) || note.includes(q)
+        })
+      } else {
+        return incomingHistoryList.filter((item) => {
+          if (incomingHistoryFilter !== 'all' && item.status !== incomingHistoryFilter) return false
+          if (q) {
+            const title = item.document?.title?.toLowerCase() || ''
+            const docNum = item.document?.docNumber?.toLowerCase() || ''
+            const fromDept = getField(item.fromDepartment).toLowerCase()
+            const sender = (item.sender?.name || '').toLowerCase()
+            const note = (item.note || '').toLowerCase()
+            if (!title.includes(q) && !docNum.includes(q) && !fromDept.includes(q) && !sender.includes(q) && !note.includes(q)) {
+              return false
+            }
+          }
+          return true
+        })
+      }
+    } else if (section === 'outgoing') {
+      return outgoingList.filter((item) => {
+        if (outgoingStatusFilter !== 'all' && item.status !== outgoingStatusFilter) return false
         if (q) {
           const title = item.document?.title?.toLowerCase() || ''
           const docNum = item.document?.docNumber?.toLowerCase() || ''
-          const fromDept = getField(item.fromDepartment).toLowerCase()
-          const sender = (item.sender?.name || '').toLowerCase()
+          const toDept = getField(item.toDepartment).toLowerCase()
           const note = (item.note || '').toLowerCase()
-          if (!title.includes(q) && !docNum.includes(q) && !fromDept.includes(q) && !sender.includes(q) && !note.includes(q)) {
-            return false
-          }
+          if (!title.includes(q) && !docNum.includes(q) && !toDept.includes(q) && !note.includes(q)) return false
         }
         return true
       })
+    } else {
+      // rejected
+      if (!q) return rejectedList
+      return rejectedList.filter((item) => {
+        const title = item.document?.title?.toLowerCase() || ''
+        const docNum = item.document?.docNumber?.toLowerCase() || ''
+        const fromDept = getField(item.fromDepartment).toLowerCase()
+        const toDept = getField(item.toDepartment).toLowerCase()
+        const reason = (item.rejectionReason || '').toLowerCase()
+        return title.includes(q) || docNum.includes(q) || fromDept.includes(q) || toDept.includes(q) || reason.includes(q)
+      })
     }
-  }, [activeTab, incomingTransfers, incomingHistoryList, historyStatusFilter, debouncedQuery])
+  }, [
+    section,
+    incomingSubTab,
+    debouncedQuery,
+    incomingTransfers,
+    incomingHistoryList,
+    incomingHistoryFilter,
+    outgoingList,
+    outgoingStatusFilter,
+    rejectedList,
+  ])
 
   const totalPages = Math.max(1, Math.ceil(currentList.length / PAGE_SIZE))
   const page = Math.min(currentPage, totalPages)
@@ -174,7 +270,7 @@ export default function IncomingDocumentsPage() {
   }
 
   async function handleCancel(transferId: string) {
-    if (!confirm('ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການຍົກເລີກການສົ່ງຕໍ່ນີ້?')) return
+    if (!confirm('ທ່ານແນ່ໃຈບໍ່ว่าຕ້ອງການຍົກເລີກການສົ່ງຕໍ່ນີ້?')) return
     setCancellingId(transferId)
     try {
       await cancelTransfer(transferId)
@@ -189,14 +285,24 @@ export default function IncomingDocumentsPage() {
   }
 
   return (
-    <DashboardLayout title="ເອກະສານຂາເຂົ້າ">
+    <DashboardLayout title="ເອກະສານຂາເຂົ້າ-ອອກ">
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">ເອກະສານຂາເຂົ້າ</h1>
+            <h1 className="text-xl font-bold text-gray-900">
+              {section === 'incoming'
+                ? 'ເອກະສານຂາເຂົ້າ'
+                : section === 'outgoing'
+                ? 'ປະຫວັດເອກະສານຂາອອກ'
+                : 'ເອກະສານຕີກັບ (ປະຕິເສດ)'}
+            </h1>
             <p className="mt-1 text-sm text-gray-500">
-              ຈັດການເອກະສານຂາເຂົ້າທັງໝົດ — ທັງເອກະສານລໍຖ້າຮັບ ແລະ ປະຫວັດເອກະສານຂາເຂົ້າ
+              {section === 'incoming'
+                ? 'ຈັດການເອກະສານຂາເຂົ້າທັງໝົດ — ທັງເອກະສານລໍຖ້າຮັບ ແລະ ປະຫວັດເອກະສານຂາເຂົ້າ'
+                : section === 'outgoing'
+                ? 'ປະຫວັດເອກະສານທີ່ສົ່ງອອກຈາກພະແນກຂອງທ່ານໄປຍັງພະແນກ / ຝ່າຍອື່ນ'
+                : 'ລາຍການເອກະສານທີ່ຖືກປະຕິເສດການຮັບໂອນ — ທັງຂາເຂົ້າ ແລະ ຂາອອກ'}
             </p>
           </div>
           <button
@@ -209,48 +315,109 @@ export default function IncomingDocumentsPage() {
           </button>
         </div>
 
-        {/* View Switcher: หน้ารอรับ VS หน้าประวัติ */}
-        <div className="flex border-b border-gray-200 gap-2">
-          <button
-            type="button"
-            onClick={() => { setActiveTab('pending'); setCurrentPage(1) }}
-            className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
-              activeTab === 'pending'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Clock className="h-4 w-4" />
-            <span>ເອກະສານລໍຖ້າຮັບ</span>
-            {incomingTransfers.length > 0 && (
-              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                activeTab === 'pending' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
-              }`}>
-                {incomingTransfers.length}
-              </span>
-            )}
-          </button>
+        {/* Master Section Navigation Bar (Classic Tabs) */}
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex gap-6">
+            <button
+              type="button"
+              onClick={() => switchSection('incoming')}
+              className={`flex items-center gap-2 pb-3.5 px-1 text-sm font-semibold border-b-2 transition-all ${
+                section === 'incoming'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Download className="h-4 w-4" />
+              <span>ເອກະສານຂາເຂົ້າ</span>
+              {incomingTransfers.length > 0 && (
+                <span className="rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-xs font-bold">
+                  {incomingTransfers.length}
+                </span>
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => { setActiveTab('history'); setCurrentPage(1) }}
-            className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
-              activeTab === 'history'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            <span>ປະຫວັດເອກະສານຂາເຂົ້າ</span>
-            {incomingHistoryList.length > 0 && (
-              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                activeTab === 'history' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
-              }`}>
-                {incomingHistoryList.length}
-              </span>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={() => switchSection('outgoing')}
+              className={`flex items-center gap-2 pb-3.5 px-1 text-sm font-semibold border-b-2 transition-all ${
+                section === 'outgoing'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Send className="h-4 w-4" />
+              <span>ເອກະສານຂາອອກ</span>
+              {outgoingList.length > 0 && (
+                <span className="rounded-full bg-slate-100 text-slate-700 px-2 py-0.5 text-xs font-bold">
+                  {outgoingList.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchSection('rejected')}
+              className={`flex items-center gap-2 pb-3.5 px-1 text-sm font-semibold border-b-2 transition-all ${
+                section === 'rejected'
+                  ? 'border-rose-600 text-rose-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <XCircle className="h-4 w-4" />
+              <span>ເອກະສານຕີກັບ</span>
+              {rejectedList.length > 0 && (
+                <span className="rounded-full bg-rose-100 text-rose-700 px-2 py-0.5 text-xs font-bold">
+                  {rejectedList.length}
+                </span>
+              )}
+            </button>
+          </nav>
         </div>
+
+        {/* View Switcher only for Incoming: หน้ารอรับ VS หน้าประวัติ */}
+        {section === 'incoming' && (
+          <div className="flex border-b border-gray-200 gap-2">
+            <button
+              type="button"
+              onClick={() => { setIncomingSubTab('pending'); setCurrentPage(1) }}
+              className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+                incomingSubTab === 'pending'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Clock className="h-4 w-4" />
+              <span>ເອກະສານລໍຖ້າຮັບ</span>
+              {incomingTransfers.length > 0 && (
+                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                  incomingSubTab === 'pending' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {incomingTransfers.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setIncomingSubTab('history'); setCurrentPage(1) }}
+              className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+                incomingSubTab === 'history'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span>ປະຫວັດເອກະສານຂາເຂົ້າ</span>
+              {incomingHistoryList.length > 0 && (
+                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                  incomingSubTab === 'history' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {incomingHistoryList.length}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Filter bar */}
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -263,18 +430,25 @@ export default function IncomingDocumentsPage() {
                 type="text"
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setCurrentPage(1) }}
-                placeholder="ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ຜູ້ສົ່ງ..."
+                placeholder={
+                  section === 'incoming'
+                    ? 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ຜູ້ສົ່ງ...'
+                    : section === 'outgoing'
+                    ? 'ຊື່ເອກະສານ, ເລກທີ, ປາຍທາງ...'
+                    : 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ປາຍທາງ...'
+                }
                 className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-400 focus:bg-white"
               />
             </div>
-            {activeTab === 'history' && (
+
+            {section === 'incoming' && incomingSubTab === 'history' && (
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
                   ສະຖານະ
                 </label>
                 <select
-                  value={historyStatusFilter}
-                  onChange={(e) => { setHistoryStatusFilter(e.target.value as 'all' | TransferStatus); setCurrentPage(1) }}
+                  value={incomingHistoryFilter}
+                  onChange={(e) => { setIncomingHistoryFilter(e.target.value as 'all' | TransferStatus); setCurrentPage(1) }}
                   className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-indigo-400 focus:bg-white"
                 >
                   <option value="all">ທັງໝົດ</option>
@@ -285,9 +459,28 @@ export default function IncomingDocumentsPage() {
                 </select>
               </div>
             )}
+
+            {section === 'outgoing' && (
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  ສະຖານະ
+                </label>
+                <select
+                  value={outgoingStatusFilter}
+                  onChange={(e) => { setOutgoingStatusFilter(e.target.value as 'all' | TransferStatus); setCurrentPage(1) }}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-indigo-400 focus:bg-white"
+                >
+                  <option value="all">ທັງໝົດ</option>
+                  <option value="pending">ລໍຖ້າອະນຸມັດ</option>
+                  <option value="approved">ອະນຸມັດແລ້ວ</option>
+                  <option value="rejected">ປະຕິເສດ</option>
+                  <option value="cancelled">ຍົກເລີກແລ້ວ</option>
+                </select>
+              </div>
+            )}
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            ພົບ {currentList.length} ລາຍການ {activeTab === 'pending' ? 'ລໍຖ້າຮັບ' : 'ໃນປະຫວັດ'}
+            ພົບ {currentList.length} ລາຍການ
           </p>
         </div>
 
@@ -299,10 +492,34 @@ export default function IncomingDocumentsPage() {
                 <tr>
                   <th className="px-3.5 py-3 w-12 text-center whitespace-nowrap">ລ/ດ</th>
                   <th className="px-3.5 py-3 min-w-[200px]">ເອກະສານ</th>
-                  <th className="px-3.5 py-3 whitespace-nowrap">ຕົ້ນທາງ (From)</th>
-                  <th className="px-3.5 py-3 whitespace-nowrap">ຜູ້ສົ່ງ</th>
-                  <th className="px-3.5 py-3 whitespace-nowrap">ວັນທີ</th>
-                  <th className="px-3.5 py-3 whitespace-nowrap">ສະຖານະ</th>
+
+                  {section === 'incoming' && (
+                    <>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ຕົ້ນທາງ (From)</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ຜູ້ສົ່ງ</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ວັນທີ</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ສະຖານະ</th>
+                    </>
+                  )}
+
+                  {section === 'outgoing' && (
+                    <>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ປາຍທາງ (To)</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ວັນທີສົ່ງ</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ຮູບແບບ</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ສະຖານະ</th>
+                    </>
+                  )}
+
+                  {section === 'rejected' && (
+                    <>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ຕົ້ນທາງ</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ປາຍທາງ</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ເຫດຜົນທີ່ຕີກັບ</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ວັນທີ</th>
+                    </>
+                  )}
+
                   <th className="px-3.5 py-3 text-center whitespace-nowrap">ການກະທຳ</th>
                 </tr>
               </thead>
@@ -318,15 +535,25 @@ export default function IncomingDocumentsPage() {
                   <tr>
                     <td colSpan={7} className="px-4 py-14 text-center">
                       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-2xl">
-                        {activeTab === 'pending' ? '📥' : '📋'}
+                        {section === 'incoming' ? (incomingSubTab === 'pending' ? '📥' : '📋') : section === 'outgoing' ? '📤' : '🔴'}
                       </div>
                       <p className="text-sm font-semibold text-gray-700">
-                        {activeTab === 'pending' ? 'ບໍ່ມີເອກະສານລໍຖ້າຮັບ' : 'ບໍ່ມີປະຫວັດເອກະສານຂາເຂົ້າ'}
+                        {section === 'incoming'
+                          ? incomingSubTab === 'pending'
+                            ? 'ບໍ່ມີເອກະສານລໍຖ້າຮັບ'
+                            : 'ບໍ່ມີປະຫວັດເອກະສານຂາເຂົ້າ'
+                          : section === 'outgoing'
+                          ? 'ບໍ່ພົບປະຫວັດການສົ່ງອອກ'
+                          : 'ບໍ່ມີເອກະສານຕີກັບ'}
                       </p>
                       <p className="mt-1 text-xs text-gray-400">
-                        {activeTab === 'pending'
-                          ? 'ເມື່ອມີພະແນກອື່ນສົ່ງເອກະສານຫາພະແນກຂອງທ່ານ ລາຍການຈະສະແດງຢູ່ນີ້'
-                          : 'ຍັງບໍ່ມີປະຫວັດການຮັບໂອນ ຫຼື ບໍ່ກົງກັບເງື່ອນໄຂຄົ້ນຫາ'}
+                        {section === 'incoming'
+                          ? incomingSubTab === 'pending'
+                            ? 'ເມື່ອມີພະແນກອື່ນສົ່ງເອກະສານຫາພະແນກຂອງທ່ານ ລາຍການຈະສະແດງຢູ່ນີ້'
+                            : 'ຍັງບໍ່ມີປະຫວັດການຮັບໂອນ ຫຼື ບໍ່ກົງກັບເງື່ອນໄຂຄົ້ນຫາ'
+                          : section === 'outgoing'
+                          ? 'ຍັງບໍ່ມີເອກະສານທີ່ສົ່ງອອກ ຫຼື ບໍ່ກົງກັບເງື່ອນໄຂຄົ້ນຫາ'
+                          : 'ບໍ່ມີລາຍການທີ່ຖືກປະຕິເສດການຮັບໂອນ'}
                       </p>
                     </td>
                   </tr>
@@ -335,6 +562,8 @@ export default function IncomingDocumentsPage() {
                   const docItem = t.document
                   const fromDept = getField(t.fromDepartment) || '—'
                   const fromDiv = getField(t.fromDivision)
+                  const toDept = getField(t.toDepartment) || '—'
+                  const toDiv = getField(t.toDivision)
                   const isCross =
                     t.fromDivision &&
                     t.toDivision &&
@@ -349,90 +578,151 @@ export default function IncomingDocumentsPage() {
                       <td className="px-3.5 py-3 text-center font-medium text-gray-400 tabular-nums whitespace-nowrap">
                         {(page - 1) * PAGE_SIZE + idx + 1}
                       </td>
+
+                      {/* Document info */}
                       <td className="px-3.5 py-3">
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-gray-900">
                             {docItem?.title || `ເອກະສານ #${t.documentId?.slice(0, 8)}`}
                           </span>
-                          {docItem?.docNumber && (
-                            <span className="mt-0.5 text-xs text-gray-500 font-mono">
-                              {docItem.docNumber}
-                            </span>
-                          )}
-                          {t.keepCopy && (
-                            <span className="mt-1 inline-flex w-fit items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 border border-blue-200">
-                              📑 ຕົ້ນທາງເກັບສຳເນົາໄວ້
-                            </span>
-                          )}
+                          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                            {docItem?.docNumber && <span className="font-mono">{docItem.docNumber}</span>}
+                            {isCross && (
+                              <span className="rounded bg-indigo-50 px-1.5 py-0.2 text-[10px] font-semibold text-indigo-700 border border-indigo-200">
+                                ຂ້າມຝ່າຍ
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
-                      <td className="px-3.5 py-3 text-xs whitespace-nowrap">
-                        <p className="font-semibold text-gray-800">🏬 {fromDept}</p>
-                        {fromDiv && <p className="text-gray-400">🏢 {fromDiv}</p>}
-                      </td>
-                      <td className="px-3.5 py-3 text-xs text-gray-700 whitespace-nowrap">
-                        {t.sender?.name || '—'}
-                      </td>
-                      <td className="px-3.5 py-3 text-xs text-gray-500 whitespace-nowrap">
-                        {t.createdAt?.slice(0, 10) || '—'}
-                      </td>
-                      <td className="px-3.5 py-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${statusBadgeStyles[t.status]}`}>
-                          {statusLabels[t.status]}
-                        </span>
-                      </td>
+
+                      {/* Section: Incoming Columns */}
+                      {section === 'incoming' && (
+                        <>
+                          <td className="px-3.5 py-3 text-xs whitespace-nowrap">
+                            <p className="font-semibold text-gray-800">🏬 {fromDept}</p>
+                            {fromDiv && <p className="text-gray-400">🏢 {fromDiv}</p>}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs text-gray-600 whitespace-nowrap">
+                            👤 {t.sender?.name || '—'}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs text-gray-500 whitespace-nowrap">
+                            {t.createdAt?.slice(0, 10) || '—'}
+                          </td>
+                          <td className="px-3.5 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${statusBadgeStyles[t.status]}`}>
+                              {statusLabels[t.status]}
+                            </span>
+                          </td>
+                        </>
+                      )}
+
+                      {/* Section: Outgoing Columns */}
+                      {section === 'outgoing' && (
+                        <>
+                          <td className="px-3.5 py-3 text-xs whitespace-nowrap">
+                            <p className="font-semibold text-indigo-700">🏬 {toDept}</p>
+                            {toDiv && <p className="text-indigo-400">🏢 {toDiv}</p>}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs text-gray-500 whitespace-nowrap">
+                            {t.createdAt?.slice(0, 10) || '—'}
+                          </td>
+                          <td className="px-3.5 py-3 whitespace-nowrap">
+                            {t.keepCopy ? (
+                              <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200">
+                                ເກັບສຳເນົາ
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-600">
+                                ຍ້າຍຕົ້ນສະບັບ
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3.5 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${statusBadgeStyles[t.status]}`}>
+                              {statusLabels[t.status]}
+                            </span>
+                          </td>
+                        </>
+                      )}
+
+                      {/* Section: Rejected Columns */}
+                      {section === 'rejected' && (
+                        <>
+                          <td className="px-3.5 py-3 text-xs whitespace-nowrap">
+                            <p className="font-semibold text-gray-800">🏬 {fromDept}</p>
+                            {fromDiv && <p className="text-gray-400">🏢 {fromDiv}</p>}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs whitespace-nowrap">
+                            <p className="font-semibold text-indigo-700">🏬 {toDept}</p>
+                            {toDiv && <p className="text-indigo-400">🏢 {toDiv}</p>}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs text-rose-700">
+                            {t.rejectionReason ? (
+                              <span className="inline-block rounded-md bg-rose-50 border border-rose-200 px-2 py-1 leading-relaxed">
+                                {t.rejectionReason}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 italic">ບໍ່ໄດ້ລະບຸເຫດຜົນ</span>
+                            )}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs text-gray-500 whitespace-nowrap">
+                            {t.createdAt?.slice(0, 10) || '—'}
+                          </td>
+                        </>
+                      )}
+
+                      {/* Action buttons */}
                       <td className="px-3.5 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setDetailTransfer(t)}
+                            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                          >
+                            ລາຍລະອຽດ
+                          </button>
+
                           {docItem && (
                             <button
                               type="button"
                               onClick={() => setPreviewDoc(toFrontendDocument(docItem))}
-                              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                              className="rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100 transition"
                             >
-                              ເບິ່ງ
+                              ເບິ່ງໄຟລ໌
                             </button>
                           )}
-                          {activeTab === 'pending' && t.status === 'pending' ? (
-                            canApproveTransfer ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => setTransferToApprove(t)}
-                                  className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700 transition shadow-sm"
-                                >
-                                  ອະນຸມັດ
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setTransferToReject(t)}
-                                  className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 transition"
-                                >
-                                  ປະຕິເສດ
-                                </button>
-                              </>
-                            ) : (
-                              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                                ລໍຖ້າ Admin ຝ່າຍ
-                              </span>
-                            )
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setDetailTransfer(t)}
-                              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 transition shadow-sm"
-                            >
-                              ລາຍລະອຽດ
-                            </button>
+
+                          {section === 'incoming' && incomingSubTab === 'pending' && t.status === 'pending' && canApproveTransfer && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setTransferToApprove(t)}
+                                className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 transition shadow-sm"
+                              >
+                                ຮັບເອກະສານ
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTransferToReject(t)
+                                  setRejectionReason('')
+                                }}
+                                className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition"
+                              >
+                                ຕີກັບ
+                              </button>
+                            </>
                           )}
-                          {t.status === 'pending' && currentUser?.role === 'SuperAdmin' && (
+
+                          {(section === 'incoming' || section === 'outgoing') && t.status === 'pending' && t.senderId === currentUser?.id && (
                             <button
                               type="button"
                               onClick={() => void handleCancel(t.id)}
                               disabled={cancellingId === t.id}
-                              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 hover:bg-gray-50 transition"
-                              title="ຍົກເລີກ"
+                              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
                             >
-                              ຍົກເລີກ
+                              {cancellingId === t.id ? '...' : 'ຍົກເລີກ'}
                             </button>
                           )}
                         </div>
@@ -443,6 +733,7 @@ export default function IncomingDocumentsPage() {
               </tbody>
             </table>
           </div>
+
           {currentList.length > 0 && (
             <Pagination
               currentPage={page}
@@ -455,47 +746,51 @@ export default function IncomingDocumentsPage() {
           )}
         </div>
 
-        {/* Modal: Select Storage Location for Approval */}
-        <SelectStorageLocationModal
-          open={!!transferToApprove}
-          docTitle={transferToApprove?.document?.title}
-          department={transferToApprove?.toDepartment}
-          division={transferToApprove?.toDivision}
-          onClose={() => setTransferToApprove(null)}
-          onConfirm={handleConfirmTransferStorage}
-        />
+        {/* Modal: Select Storage on Approve */}
+        {transferToApprove && (
+          <SelectStorageLocationModal
+            open={Boolean(transferToApprove)}
+            onClose={() => setTransferToApprove(null)}
+            docTitle={transferToApprove.document?.title || ''}
+            docNumber={transferToApprove.document?.docNumber || ''}
+            confirmLabel="ຮັບ ແລະ ຈັດເກັບ"
+            onConfirm={handleConfirmTransferStorage}
+          />
+        )}
 
-        {/* Modal: Rejection Reason */}
+        {/* Modal: Reject Transfer Reason */}
         <Modal
           open={!!transferToReject}
-          onClose={() => setTransferToReject(null)}
-          title="❌ ປະຕິເສດການຮັບໂອນເອກະສານ"
+          onClose={() => {
+            if (!rejecting) setTransferToReject(null)
+          }}
+          title="ປະຕິເສດການຮັບໂອນເອກະສານ"
           footer={
-            <div className="flex w-full items-center justify-between">
+            <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setTransferToReject(null)}
                 disabled={rejecting}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
               >
                 ຍົກເລີກ
               </button>
               <button
                 type="button"
-                onClick={handleConfirmReject}
+                onClick={() => void handleConfirmReject()}
                 disabled={rejecting}
-                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
               >
-                {rejecting ? 'ກຳລັງປະຕິເສດ...' : 'ຢືນຢັນການປະຕິເສດ'}
+                {rejecting ? 'ກຳລັງດຳເນີນການ...' : 'ຢືນຢັນປະຕິເສດ'}
               </button>
             </div>
           }
         >
-          <div className="space-y-4">
+          <div className="space-y-3">
             <p className="text-sm text-gray-600">
-              ທ່ານຕ້ອງການປະຕິເສດການຮັບໂອນເອກະສານ{' '}
-              <strong className="text-gray-900">{transferToReject?.document?.title}</strong> ແມ່ນບໍ່?
-              ເອກະສານຈະຖືກສົ່ງກັບຄືນໄປຫາພະແນກຕົ້ນທາງ ({transferToReject?.fromDepartment}).
+              ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການປະຕິເສດການຮັບໂອນເອກະສານ{' '}
+              <strong className="text-gray-900">{transferToReject?.document?.title}</strong>?
+              ເອກະສານຈະຖືກຕີກັບຄືນພະແນກຕົ້ນທາງ.
             </p>
             <div>
               <label className="block text-xs font-semibold uppercase text-gray-700">
@@ -516,7 +811,7 @@ export default function IncomingDocumentsPage() {
         <Modal
           open={!!detailTransfer}
           onClose={() => setDetailTransfer(null)}
-          title="ລາຍລະອຽດເອກະສານຂາເຂົ້າ"
+          title="ລາຍລະອຽດເອກະສານ"
         >
           {detailTransfer && (
             <div className="space-y-4 text-sm">
