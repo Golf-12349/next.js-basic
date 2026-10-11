@@ -301,25 +301,6 @@ export default function IncomingDocumentsPage() {
         {/* View Switcher only for Incoming: หน้ารอรับ VS หน้าประวัติ */}
         {section === 'incoming' && (
           <div className="flex border-b border-gray-200 gap-2">
-            <button
-              type="button"
-              onClick={() => { setIncomingSubTab('pending'); setCurrentPage(1) }}
-              className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
-                incomingSubTab === 'pending'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Clock className="h-4 w-4" />
-              <span>ເອກະສານລໍຖ້າຮັບ</span>
-              {incomingTransfers.length > 0 && (
-                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                  incomingSubTab === 'pending' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {incomingTransfers.length}
-                </span>
-              )}
-            </button>
 
             <button
               type="button"
