@@ -520,17 +520,6 @@ export default function DocumentsPage() {
                     </td>
                     <td className="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                       <div className="relative inline-flex items-center justify-center gap-1.5">
-                        {/* Quick Route Journey Button */}
-                        <button
-                          type="button"
-                          onClick={() => setJourneyDoc(doc)}
-                          title="ເບິ່ງເສັ້ນທາງເອກະສານ"
-                          className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-xs font-semibold text-purple-700 shadow-xs hover:bg-purple-100 hover:border-purple-300 transition cursor-pointer"
-                        >
-                          <Route className="h-3.5 w-3.5 text-purple-600" />
-                          <span>ເສັ້ນທາງ</span>
-                        </button>
-
                         {/* Quick View Button */}
                         <button
                           type="button"
