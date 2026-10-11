@@ -704,21 +704,21 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Header — sticky + ແຖວຄົ້ນຫາແຍກສຳລັບມືຖື, ບໍ່ໃຫ້ລົ້ນຂອບຈໍ */}
         <header className="sticky top-0 z-30 shrink-0 border-b border-gray-200/70 bg-white/90 backdrop-blur">
-          <div className="flex h-14 items-center gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8">
-            <button
-              type="button"
-              onClick={() => setMobileNavOpen(true)}
-              className="-ml-1 shrink-0 rounded-xl p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 active:bg-gray-200 lg:hidden"
-              aria-label="ເປີດເມນູນຳທາງ"
-              aria-expanded={mobileNavOpen}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+          <div className="flex h-14 items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6 lg:px-8">
             <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen(true)}
+                className="-ml-1 shrink-0 rounded-xl p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 active:bg-gray-200 lg:hidden"
+                aria-label="ເປີດເມນູນຳທາງ"
+                aria-expanded={mobileNavOpen}
+              >
+                <Menu className="h-5 w-5" />
+              </button>
               <BrandLogo size="sm" variant="light" className="shrink-0 lg:hidden" />
             </div>
 
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+            <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
 
             {/* Notification Bell Dropdown */}
             <div className="relative" ref={notifRef}>
