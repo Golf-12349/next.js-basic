@@ -147,15 +147,7 @@ export default function IncomingDocumentsPage() {
 
     if (section === 'incoming') {
       if (incomingSubTab === 'pending') {
-        if (!q) return incomingTransfers
-        return incomingTransfers.filter((t) => {
-          const title = t.document?.title?.toLowerCase() || ''
-          const docNum = t.document?.docNumber?.toLowerCase() || ''
-          const fromDept = (t.fromDepartment || '').toLowerCase()
-          const sender = (t.sender?.name || '').toLowerCase()
-          const note = (t.note || '').toLowerCase()
-          return title.includes(q) || docNum.includes(q) || fromDept.includes(q) || sender.includes(q) || note.includes(q)
-        })
+        return incomingTransfers
       } else {
         return incomingHistoryList.filter((item) => {
           if (incomingHistoryFilter !== 'all' && item.status !== incomingHistoryFilter) return false
@@ -331,6 +323,26 @@ export default function IncomingDocumentsPage() {
 
             <button
               type="button"
+              onClick={() => { setIncomingSubTab('pending'); setCurrentPage(1); setQuery('') }}
+              className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
+                incomingSubTab === 'pending'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Clock className="h-4 w-4" />
+              <span>ເອກະສານລໍຖ້າຮັບ</span>
+              {incomingTransfers.length > 0 && (
+                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                  incomingSubTab === 'pending' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {incomingTransfers.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={() => { setIncomingSubTab('history'); setCurrentPage(1) }}
               className={`flex items-center gap-2 pb-3 px-4 text-sm font-semibold border-b-2 transition-all ${
                 incomingSubTab === 'history'
@@ -351,70 +363,72 @@ export default function IncomingDocumentsPage() {
           </div>
         )}
 
-        {/* Filter bar */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                ຄົ້ນຫາ
-              </label>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => { setQuery(e.target.value); setCurrentPage(1) }}
-                placeholder={
-                  section === 'incoming'
-                    ? 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ຜູ້ສົ່ງ...'
-                    : section === 'outgoing'
-                    ? 'ຊື່ເອກະສານ, ເລກທີ, ປາຍທາງ...'
-                    : 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ປາຍທາງ...'
-                }
-                className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-400 focus:bg-white"
-              />
+        {/* Filter bar (Hidden on pending incoming documents) */}
+        {!(section === 'incoming' && incomingSubTab === 'pending') && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  ຄົ້ນຫາ
+                </label>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => { setQuery(e.target.value); setCurrentPage(1) }}
+                  placeholder={
+                    section === 'incoming'
+                      ? 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ຜູ້ສົ່ງ...'
+                      : section === 'outgoing'
+                      ? 'ຊື່ເອກະສານ, ເລກທີ, ປາຍທາງ...'
+                      : 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ປາຍທາງ...'
+                  }
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-400 focus:bg-white"
+                />
+              </div>
+
+              {section === 'incoming' && incomingSubTab === 'history' && (
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    ສະຖານະ
+                  </label>
+                  <select
+                    value={incomingHistoryFilter}
+                    onChange={(e) => { setIncomingHistoryFilter(e.target.value as 'all' | TransferStatus); setCurrentPage(1) }}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-indigo-400 focus:bg-white"
+                  >
+                    <option value="all">ທັງໝົດ</option>
+                    <option value="approved">ອະນຸມັດແລ້ວ</option>
+                    <option value="rejected">ປະຕິເສດ</option>
+                    <option value="pending">ລໍຖ້າອະນຸມັດ</option>
+                    <option value="cancelled">ຍົກເລີກແລ້ວ</option>
+                  </select>
+                </div>
+              )}
+
+              {section === 'outgoing' && (
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    ສະຖານະ
+                  </label>
+                  <select
+                    value={outgoingStatusFilter}
+                    onChange={(e) => { setOutgoingStatusFilter(e.target.value as 'all' | TransferStatus); setCurrentPage(1) }}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-indigo-400 focus:bg-white"
+                  >
+                    <option value="all">ທັງໝົດ</option>
+                    <option value="pending">ລໍຖ້າອະນຸມັດ</option>
+                    <option value="approved">ອະນຸມັດແລ້ວ</option>
+                    <option value="rejected">ປະຕິເສດ</option>
+                    <option value="cancelled">ຍົກເລີກແລ້ວ</option>
+                  </select>
+                </div>
+              )}
             </div>
-
-            {section === 'incoming' && incomingSubTab === 'history' && (
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  ສະຖານະ
-                </label>
-                <select
-                  value={incomingHistoryFilter}
-                  onChange={(e) => { setIncomingHistoryFilter(e.target.value as 'all' | TransferStatus); setCurrentPage(1) }}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-indigo-400 focus:bg-white"
-                >
-                  <option value="all">ທັງໝົດ</option>
-                  <option value="approved">ອະນຸມັດແລ້ວ</option>
-                  <option value="rejected">ປະຕິເສດ</option>
-                  <option value="pending">ລໍຖ້າອະນຸມັດ</option>
-                  <option value="cancelled">ຍົກເລີກແລ້ວ</option>
-                </select>
-              </div>
-            )}
-
-            {section === 'outgoing' && (
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  ສະຖານະ
-                </label>
-                <select
-                  value={outgoingStatusFilter}
-                  onChange={(e) => { setOutgoingStatusFilter(e.target.value as 'all' | TransferStatus); setCurrentPage(1) }}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-indigo-400 focus:bg-white"
-                >
-                  <option value="all">ທັງໝົດ</option>
-                  <option value="pending">ລໍຖ້າອະນຸມັດ</option>
-                  <option value="approved">ອະນຸມັດແລ້ວ</option>
-                  <option value="rejected">ປະຕິເສດ</option>
-                  <option value="cancelled">ຍົກເລີກແລ້ວ</option>
-                </select>
-              </div>
-            )}
+            <p className="mt-2 text-xs text-gray-500">
+              ພົບ {currentList.length} ລາຍການ
+            </p>
           </div>
-          <p className="mt-2 text-xs text-gray-500">
-            ພົບ {currentList.length} ລາຍການ
-          </p>
-        </div>
+        )}
 
         {/* Classic Table */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
