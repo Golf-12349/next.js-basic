@@ -18,7 +18,8 @@ import {
 } from '@/lib/dms/documentService'
 import { toFrontendDocument } from '@/lib/dms/types'
 import { useDebounce } from '@/hooks/useDebounce'
-import { CheckCircle2, Clock } from 'lucide-react'
+import { CheckCircle2, Clock, Route } from 'lucide-react'
+import DocumentJourneyModal from '@/app/components/documents/DocumentJourneyModal'
 
 const PAGE_SIZE = 15
 
@@ -82,6 +83,7 @@ export default function IncomingDocumentsPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [journeyTarget, setJourneyTarget] = useState<{ id: string; doc?: Document | null } | null>(null)
 
   const debouncedQuery = useDebounce(query, 250)
 
@@ -622,6 +624,19 @@ export default function IncomingDocumentsPage() {
                             ລາຍລະອຽດ
                           </button>
 
+                          <button
+                            type="button"
+                            onClick={() => setJourneyTarget({
+                              id: t.documentId,
+                              doc: docItem ? toFrontendDocument(docItem) : null,
+                            })}
+                            title="ເບິ່ງເສັ້ນທາງເອກະສານ"
+                            className="rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition shadow-sm inline-flex items-center gap-1"
+                          >
+                            <Route className="h-3.5 w-3.5" />
+                            <span>ເສັ້ນທາງ</span>
+                          </button>
+
                           {docItem && (
                             <button
                               type="button"
@@ -808,7 +823,20 @@ export default function IncomingDocumentsPage() {
                 </div>
               )}
 
-              <div className="flex justify-end pt-2">
+              <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJourneyTarget({
+                      id: detailTransfer.documentId,
+                      doc: detailTransfer.document ? toFrontendDocument(detailTransfer.document) : null,
+                    })
+                  }}
+                  className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition inline-flex items-center gap-1.5"
+                >
+                  <Route className="h-3.5 w-3.5" />
+                  <span>ເບິ່ງເສັ້ນທາງເອກະສານ</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setDetailTransfer(null)}
@@ -872,6 +900,16 @@ export default function IncomingDocumentsPage() {
             </div>
           )}
         </Modal>
+
+        {/* Modal: Document Journey Tracking */}
+        {journeyTarget && (
+          <DocumentJourneyModal
+            open={Boolean(journeyTarget)}
+            onClose={() => setJourneyTarget(null)}
+            documentId={journeyTarget.id}
+            document={journeyTarget.doc}
+          />
+        )}
       </div>
     </DashboardLayout>
   )

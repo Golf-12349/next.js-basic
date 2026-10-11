@@ -14,7 +14,8 @@ import SelectStorageLocationModal from '@/app/components/documents/SelectStorage
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
 import { fetchDocumentById } from '@/lib/dms/documentService'
-import { Pencil } from 'lucide-react'
+import { Pencil, Route } from 'lucide-react'
+import DocumentJourneyModal from '@/app/components/documents/DocumentJourneyModal'
 
 function getSessionRole(): UserRole | null {
   if (typeof window === 'undefined') return null
@@ -76,6 +77,7 @@ export default function DocumentDetailPage() {
   const [storageOpen, setStorageOpen] = useState<boolean>(false)
   const [renewOpen, setRenewOpen] = useState<boolean>(false)
   const [editOpen, setEditOpen] = useState<boolean>(false)
+  const [journeyOpen, setJourneyOpen] = useState<boolean>(false)
 
   useEffect(() => {
     function syncRole() {
@@ -143,6 +145,14 @@ export default function DocumentDetailPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setJourneyOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-semibold text-purple-700 shadow-sm hover:bg-purple-100 transition"
+            >
+              <Route className="h-3.5 w-3.5" />
+              <span>ເສັ້ນທາງເອກະສານ</span>
+            </button>
             <button
               type="button"
               onClick={() => setEditOpen(true)}
@@ -513,6 +523,14 @@ export default function DocumentDetailPage() {
           }}
         />
 
+        {doc && (
+          <DocumentJourneyModal
+            open={journeyOpen}
+            onClose={() => setJourneyOpen(false)}
+            documentId={doc.id}
+            document={doc}
+          />
+        )}
       </div>
     </DashboardLayout>
   )

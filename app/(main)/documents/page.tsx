@@ -22,7 +22,9 @@ import {
   Archive,
   Trash2,
   ChevronDown,
+  Route,
 } from 'lucide-react'
+import DocumentJourneyModal from '@/app/components/documents/DocumentJourneyModal'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
@@ -71,6 +73,7 @@ export default function DocumentsPage() {
   const [storageDoc, setStorageDoc] = useState<Document | null>(null)
   const [renewDoc, setRenewDoc] = useState<Document | null>(null)
   const [editDoc, setEditDoc] = useState<Document | null>(null)
+  const [journeyDoc, setJourneyDoc] = useState<Document | null>(null)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const visibleCabinets = useMemo(() => {
@@ -569,6 +572,18 @@ export default function DocumentsPage() {
                                 <span>ບ່ອນຈັດເກັບໃນຄັງ</span>
                               </button>
 
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveDropdownId(null)
+                                  setJourneyDoc(doc)
+                                }}
+                                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition"
+                              >
+                                <Route className="h-4 w-4 text-emerald-500" />
+                                <span>ເສັ້ນທາງເອກະສານ</span>
+                              </button>
+
                               <div className="my-1 border-t border-gray-100" />
 
                               <button
@@ -869,6 +884,14 @@ export default function DocumentsPage() {
           onSuccess={() => void reload()}
         />
 
+        {journeyDoc && (
+          <DocumentJourneyModal
+            open={Boolean(journeyDoc)}
+            onClose={() => setJourneyDoc(null)}
+            documentId={journeyDoc.id}
+            document={journeyDoc}
+          />
+        )}
       </div>
     </DashboardLayout>
   )
