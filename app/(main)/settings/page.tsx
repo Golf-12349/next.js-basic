@@ -94,8 +94,8 @@ export default function SystemSettingsPage() {
               <Settings className="h-4 w-4" />
               <span>ການຕັ້ງຄ່າສ່ວນກາງ</span>
             </div>
-            <h1 className="mt-1 text-xl font-bold text-gray-900">ຕັ້ງຄ່າລະບົບ</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">ຕັ້ງຄ່າລະບົບ</h1>
+            <p className="mt-1.5 text-sm sm:text-base text-gray-500">
               ກຳນົດຄ່າທົ່ວໄປ, ສະຖານະເຊີບເວີ, ແລະ ການເຊື່ອມຕໍ່ລະບົບ DMS (ສະເພາະ Admin)
             </p>
           </div>

@@ -147,8 +147,8 @@ export default function TrashPage() {
         {/* ── Header & Actions ───────────────────────────────────── */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">ຖັງຂີ້ເຫຍື້ອ</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">ຖັງຂີ້ເຫຍື້ອ</h1>
+            <p className="mt-1.5 text-sm sm:text-base text-gray-500">
               ລາຍການເອກະສານທີ່ຖືກລຶບຊົ່ວຄາວ ສາມາດກູ້ຄືນ ຫຼື ລຶບຖາວອນໄດ້
             </p>
           </div>

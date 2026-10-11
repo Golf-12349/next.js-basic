@@ -76,10 +76,10 @@ export default function MasterDataPage() {
     <DashboardLayout title="ຈັດການຂໍ້ມູນພື້ນຖານ">
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             ຈັດການຂໍ້ມູນພື້ນຖານ (Master Data)
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1.5 text-sm sm:text-base text-slate-500">
             ເລືອກຂໍ້ມູນພື້ນຖານທີ່ຕ້ອງການຕັ້ງຄ່າ ແລະ ຈັດການພາຍໃນລະບົບ
           </p>
         </div>

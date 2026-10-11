@@ -264,10 +264,10 @@ export default function TransferHistoryPage() {
               <ArrowRightLeft className="h-6 w-6" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 ປະຫວັດການສົ່ງຂ້າມເອກະສານ
               </h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1.5 text-sm sm:text-base text-slate-500">
                 ຕິດຕາມ ແລະ ກວດສອບປະຫວັດການສົ່ງຕໍ່ເອກະສານຂ້າມຝ່າຍ ແລະ ພະແນກທັງໝົດ
               </p>
             </div>

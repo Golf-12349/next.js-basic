@@ -105,7 +105,7 @@ export default function PendingDocumentsPage() {
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
               🔄 ເອກະສານສົ່ງຂ້າມມາຫາທ່ານ
               {incomingTransfers.length > 0 && (
                 <span className="ml-2.5 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
@@ -113,7 +113,7 @@ export default function PendingDocumentsPage() {
                 </span>
               )}
             </h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1.5 text-sm sm:text-base text-gray-500">
               ກວດສອບ ແລະ ຮັບເອກະສານທີ່ຖືກສົ່ງຂ້າມມາຫາພະແນກ / ຝ່າຍຂອງທ່ານ ພ້ອມກຳນົດບ່ອນຈັດເກັບໃນຄັງ
             </p>
           </div>

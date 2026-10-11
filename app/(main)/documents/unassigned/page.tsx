@@ -285,14 +285,14 @@ export default function UnassignedDocumentsPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2.5">
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                       ເອກະສານຍັງບໍ່ມີບ່ອນເກັບ
                     </h1>
                     <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700 border border-amber-200 tabular-nums">
                       {unassignedDocs.length} ສະບັບ
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                  <p className="text-sm sm:text-base text-slate-500 mt-1">
                     ລາຍການເອກະສານທີ່ຍັງບໍ່ທັນໄດ້ກຳນົດສາງ, ຕູ້, ຊັ້ນວາງ ຫຼື ແຟ້ມເກັບມ້ຽນຕົວຈິງໃນຄັງ DMS
                   </p>
                 </div>

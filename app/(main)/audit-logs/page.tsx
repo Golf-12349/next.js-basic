@@ -119,13 +119,13 @@ export default function AuditLogsPage() {
         {/* Header Title */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
               <span className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
                 <ShieldCheck className="h-6 w-6" />
               </span>
               ບັນທຶກຄວາມປອດໄພລະບົບ (Security Audit Logs)
             </h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1.5 text-sm sm:text-base text-slate-500">
               ຕິດຕາມ ແລະ ກວດສອບປະຫວັດການດຳເນີນງານດ້ານຄວາມປອດໄພທັງໝົດໃນລະບົບ (OWASP A09 Compliant)
             </p>
           </div>

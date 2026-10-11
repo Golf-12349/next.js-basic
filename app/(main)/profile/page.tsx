@@ -200,8 +200,8 @@ export default function PersonalProfilePage() {
             <Sparkles className="h-4 w-4" />
             <span>ບັນຊີຜູ້ໃຊ້ງານ</span>
           </div>
-          <h1 className="mt-1 text-xl font-bold text-gray-900">ການຕັ້ງຄ່າສ່ວນຕົວ</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">ການຕັ້ງຄ່າສ່ວນຕົວ</h1>
+          <p className="mt-1.5 text-sm sm:text-base text-gray-500">
             ຈັດການຂໍ້ມູນໂປຣໄຟລ໌, ຮູບພາບຕົວແທນ, ແລະ ຄວາມປອດໄພຂອງບັນຊີຂອງທ່ານ
           </p>
         </div>

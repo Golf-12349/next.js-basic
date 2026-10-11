@@ -261,16 +261,20 @@ export default function DocumentsPage() {
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">ເອກກະສານທັງໝົດ</h1>
-            <p className="text-sm text-gray-500 mt-1">ການຕິດຕາມແລະຈັດການເອກະສານໃນລະບົບ DMS</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+              ເອກະສານທັງໝົດ
+            </h1>
+            <p className="mt-1.5 text-sm sm:text-base text-gray-500">
+              ລະບົບບໍລິຫານ, ຕິດຕາມ ແລະ ຈັດການເອກະສານທັງໝົດໃນລະບົບ DMS
+            </p>
           </div>
 
           <button
             type="button"
             onClick={openUpload}
-            className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 active:scale-95 transition-all"
           >
-            + ອັບໂຫຼດເອກກະສານ
+            + ອັບໂຫຼດເອກະສານ
           </button>
         </div>
 

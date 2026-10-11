@@ -318,10 +318,10 @@ export default function ReportsPage() {
                     REPORT REGISTER
                   </span>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-0.5">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mt-1">
                   ບົດລາຍງານ ແລະ ສະຖິຕິເອກະສານປະຈຳງວດ
                 </h1>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-sm sm:text-base text-slate-500 mt-1">
                   ສະຫຼຸບການເຄື່ອນໄຫວເອກະສານທາງການ, ສັດສ່ວນການອະນຸມັດ, ພາລະງານແຕ່ລະຝ່າຍ ແລະ ຄວາມສ່ຽງດ້ານອາຍຸການຈັດເກັບ
                 </p>
               </div>

@@ -29,7 +29,6 @@ import {
   LogOut,
   Menu,
   PackageOpen,
-  Search,
   Send,
   Settings,
   ShieldCheck,
@@ -218,11 +217,6 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
     return documents.filter((d) => !d.deleted && !d.cabinetId && !d.folderId).length;
   }, [documents]);
 
-  // Routes where the global header search is visible (only /documents and /documents/unassigned)
-  const searchAllowedRoutes = ['/documents', '/documents/unassigned'];
-  const shouldShowSearch = showSearch !== undefined ? showSearch : searchAllowedRoutes.includes(pathname);
-
-  const [searchQuery, setSearchQuery] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -242,13 +236,11 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
 
   // ── Responsive shell: ຈໍນ້ອຍ (ມືຖື/ແທັບເລັດ) ໃຊ້ off-canvas drawer ສຳລັບເມນູ ──
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  // ປິດ drawer / ຊ່ອງຄົ້ນຫາມືຖື ອັດຕະໂນມັດເມື່ອປ່ຽນໜ້າ
+  // ປິດ drawer ອັດຕະໂນມັດເມື່ອປ່ຽນໜ້າ
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- close the mobile overlays after navigation
     setMobileNavOpen(false);
-    setMobileSearchOpen(false);
   }, [pathname]);
 
   // ລັອກການເລື່ອນຂອງ body ຕອນ drawer ເປີດ (ກັນໜ້າຫຼັງເລື່ອນຕາມ)
@@ -419,16 +411,6 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
     void markRead(item.id);
     setNotifOpen(false);
     router.push(item.link);
-  }
-
-  function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const query = searchQuery.trim();
-    if (query) {
-      router.push(`/documents?search=${encodeURIComponent(query)}`);
-    } else {
-      router.push('/documents');
-    }
   }
 
   function getNotificationIcon(type: NotificationType) {
@@ -732,57 +714,11 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-              <BrandLogo size="sm" variant="light" className="hidden shrink-0 min-[420px]:block" />
-              <h1 className="truncate text-sm font-semibold text-gray-800 min-[420px]:text-base sm:text-lg">
-                {title}
-              </h1>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <BrandLogo size="sm" variant="light" className="shrink-0 lg:hidden" />
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-              {/* ປຸ່ມຄົ້ນຫາມືຖື — ເປີດແຖວຄົ້ນຫາແຖວທີສອງ (ສະແດງເຉພາະຈໍ < sm) */}
-              {shouldShowSearch && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileSearchOpen((open) => !open);
-                    setNotifOpen(false);
-                    setProfileOpen(false);
-                  }}
-                  className={`rounded-full p-2.5 transition-all sm:hidden ${
-                    mobileSearchOpen ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                  aria-label="ຄົ້ນຫາເອກະສານ"
-                  aria-expanded={mobileSearchOpen}
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-              )}
-
-              {/* Global Search — ເດສກ໌ທັອບ/ແທັບເລັດ (≥ sm) */}
-              {shouldShowSearch && (
-                <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
-                  <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="ຄົ້ນຫາເອກະສານ, ລະຫັດ, ຜູ້ໃຊ້..."
-                    aria-label="ຄົ້ນຫາເອກະສານ"
-                    className="w-44 rounded-xl border border-slate-200 bg-slate-50/80 py-2 pl-9 pr-8 text-xs text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 md:w-72 md:text-sm lg:w-80"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      aria-label="ລຶບຂໍ້ຄວາມຄົ້ນຫາ"
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </form>
-              )}
 
             {/* Notification Bell Dropdown */}
             <div className="relative" ref={notifRef}>
@@ -791,7 +727,6 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                 onClick={() => {
                   setNotifOpen((prev) => !prev);
                   setProfileOpen(false);
-                  setMobileSearchOpen(false);
                 }}
                 className={`relative rounded-full p-2.5 text-gray-600 transition-all ${
                   notifOpen ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-gray-100'
@@ -997,34 +932,6 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
             </div>
           </div>
 
-          {/* ແຖວຄົ້ນຫາມືຖືແຖວທີສອງ — ຂະຫຍາຍລົງໃຕ້ header ເມື່ອກົດປຸ່ມແວ່ນຂະຫຍາຍ (ຈໍ < sm) */}
-          {shouldShowSearch && mobileSearchOpen && (
-            <div className="border-t border-gray-100 px-3 pb-3 pt-2 sm:hidden">
-              <form onSubmit={handleSearchSubmit} className="relative">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="search"
-                  autoFocus
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ຄົ້ນຫາເອກະສານ, ລະຫັດ, ຜູ້ໃຊ້..."
-                  aria-label="ຄົ້ນຫາເອກະສານ"
-                  enterKeyHint="search"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/80 py-2.5 pl-10 pr-9 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
-                />
-                {searchQuery ? (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    aria-label="ລຶບຂໍ້ຄວາມຄົ້ນຫາ"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                ) : null}
-              </form>
-            </div>
-          )}
         </header>
 
         <main className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overscroll-contain">

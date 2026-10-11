@@ -260,8 +260,10 @@ export default function UploadHistoryPage() {
               <History className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">ປະຫວັດການອັບໂຫຼດເອກະສານ</h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                ປະຫວັດການອັບໂຫຼດເອກະສານ
+              </h1>
+              <p className="mt-1.5 text-sm sm:text-base text-slate-500">
                 ຕິດຕາມ ແລະ ກວດສອບລາຍການເອກະສານທີ່ມີການອັບໂຫຼດເຂົ້າສູ່ລະບົບ
               </p>
             </div>

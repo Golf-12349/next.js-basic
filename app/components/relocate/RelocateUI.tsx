@@ -40,7 +40,7 @@ export function RelocateHeader({
 }) {
   return (
     <div className="mb-4">
-      <h1 className="text-xl font-bold text-gray-900">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
         {icon} {title}
         {countLabel && (
           <span className="ml-2.5 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
@@ -48,7 +48,7 @@ export function RelocateHeader({
           </span>
         )}
       </h1>
-      <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+      <p className="mt-1.5 text-sm sm:text-base text-gray-500">{subtitle}</p>
     </div>
   )
 }

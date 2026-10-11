@@ -27,7 +27,7 @@ export function GreetingHeader() {
         <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">
           ກະດານຄວບຄຸມລະບົບຈັດການເອກະສານ
         </p>
-        <h1 className="mt-1 text-xl font-bold text-slate-900">
+        <h1 className="mt-1.5 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           ສະບາຍດີ, {displayName}
         </h1>
         <div className="mt-2.5 flex flex-wrap items-center gap-2">

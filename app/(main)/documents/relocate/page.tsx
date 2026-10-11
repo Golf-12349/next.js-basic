@@ -33,8 +33,8 @@ export default function RelocatePage() {
     <DashboardLayout title="ຍ້າຍສະຖານທີ່ຈັດເກັບ">
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">📦 ຍ້າຍສະຖານທີ່ຈັດເກັບ</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">📦 ຍ້າຍສະຖານທີ່ຈັດເກັບ</h1>
+          <p className="mt-1.5 text-sm sm:text-base text-gray-500">
             ເລືອກປະເພດທີ່ຕ້ອງການຍ້າຍ: ຕູ້ເອກະສານ ➡️ ຊັ້ນວາງເອກະສານ ➡️ ແຟ້ມເກັບເອກະສານ
           </p>
         </div>

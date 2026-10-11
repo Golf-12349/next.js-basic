@@ -58,8 +58,8 @@ export function PageHeader({
   return (
     <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">ຄັງເກັບເອກກະສານ</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">ຄັງເກັບເອກະສານ</h1>
+        <p className="mt-1.5 text-sm sm:text-base text-gray-500">
           ຈັດລະບຽບເອກະສານ: ຄັງເອກະສານ ➡️ ຕູ້ເອກະສານ ➡️ ຊັ້ນວາງເອກະສານ ➡️ ແຟ້ມເກັບເອກະສານ
         </p>
       </div>

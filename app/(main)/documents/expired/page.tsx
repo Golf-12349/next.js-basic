@@ -206,10 +206,10 @@ export default function ExpiredDocumentsPage() {
               <CalendarX className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
                 ເອກະສານໝົດອາຍຸ & ໃກ້ໝົດອາຍຸ
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="mt-1.5 text-sm sm:text-base text-gray-500">
                 ສູນກາງຕິດຕາມ, ຕໍ່ອາຍຸ, ແລະ ຈັດການເອກະສານທີ່ໝົດກຳນົດອາຍຸການນຳໃຊ້
               </p>
             </div>

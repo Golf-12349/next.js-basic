@@ -140,8 +140,8 @@ export default function DocumentDetailPage() {
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">ລາຍລະອຽດເອກະສານ</h1>
-            <p className="mt-1 text-sm text-gray-500">ຂໍ້ມູນເອກະສານທີ່ລະບົບໄດ້ບັນທຶກໄວ້</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">ລາຍລະອຽດເອກະສານ</h1>
+            <p className="mt-1.5 text-sm sm:text-base text-gray-500">ຂໍ້ມູນເອກະສານທີ່ລະບົບໄດ້ບັນທຶກໄວ້</p>
           </div>
 
           <div className="flex items-center gap-3">

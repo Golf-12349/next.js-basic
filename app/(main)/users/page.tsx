@@ -218,8 +218,8 @@ export default function UsersPage() {
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">ຈັດການຜູ້ໃຊ້ງານ</h1>
-            <p className="mt-1 text-sm text-gray-500">ສ້າງ ແກ້ໄຂ ແລະ ຈັດສິດການເຂົ້າໃຊ້ລະບົບ DMS</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">ຈັດການຜູ້ໃຊ້ງານ</h1>
+            <p className="mt-1.5 text-sm sm:text-base text-gray-500">ສ້າງ ແກ້ໄຂ ແລະ ຈັດສິດການເຂົ້າໃຊ້ລະບົບ DMS</p>
           </div>
           <button
             onClick={openAddForm}

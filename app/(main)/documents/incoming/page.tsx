@@ -277,14 +277,14 @@ export default function IncomingDocumentsPage() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
               {section === 'incoming'
                 ? 'ເອກະສານຂາເຂົ້າ'
                 : section === 'outgoing'
                 ? 'ປະຫວັດເອກະສານຂາອອກ'
                 : 'ເອກະສານຕີກັບ (ປະຕິເສດ)'}
             </h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1.5 text-sm sm:text-base text-gray-500">
               {section === 'incoming'
                 ? 'ຈັດການເອກະສານຂາເຂົ້າທັງໝົດ — ທັງເອກະສານລໍຖ້າຮັບ ແລະ ປະຫວັດເອກະສານຂາເຂົ້າ'
                 : section === 'outgoing'

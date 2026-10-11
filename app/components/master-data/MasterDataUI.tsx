@@ -23,8 +23,8 @@ export function MasterDataHeader({
           {icon}
         </span>
         <div>
-          <h1 className="text-xl font-bold text-slate-900">{title}</h1>
-          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{title}</h1>
+          <p className="mt-1.5 text-sm sm:text-base text-slate-500">{subtitle}</p>
         </div>
       </div>
       {action}
