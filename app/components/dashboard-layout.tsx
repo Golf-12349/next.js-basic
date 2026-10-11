@@ -110,6 +110,16 @@ const menuSections: MenuSection[] = [
     items: [
       { name: 'ເອກະສານທັງໝົດ', href: '/documents', icon: FileText },
       {
+        name: 'ເອກະສານຂາເຂົ້າ-ອອກ',
+        href: '/documents/incoming',
+        icon: ArrowRightLeft,
+        children: [
+          { name: 'ເອກະສານຂາເຂົ້າ', href: '/documents/incoming?tab=incoming', icon: Download },
+          { name: 'ເອກະສານຂາອອກ', href: '/documents/incoming?tab=outgoing', icon: Send },
+          { name: 'ເອກະສານຕີກັບ', href: '/documents/incoming?tab=rejected', icon: XCircle },
+        ],
+      },
+      {
         name: 'ຄັງເກັບເອກະສານ',
         href: '/documents/archive',
         icon: Archive,
@@ -139,16 +149,6 @@ const menuSections: MenuSection[] = [
       },
       { name: 'ຍັງບໍ່ມີບ່ອນເກັບ', href: '/documents/unassigned', icon: PackageOpen },
       { name: 'ປະຫວັດການອັບໂຫຼດ', href: '/documents/upload-history', icon: History },
-      {
-        name: 'ເອກະສານຂາເຂົ້າ-ອອກ',
-        href: '/documents/incoming',
-        icon: ArrowRightLeft,
-        children: [
-          { name: 'ເອກະສານຂາເຂົ້າ', href: '/documents/incoming?tab=incoming', icon: Download },
-          { name: 'ເອກະສານຂາອອກ', href: '/documents/incoming?tab=outgoing', icon: Send },
-          { name: 'ເອກະສານຕີກັບ', href: '/documents/incoming?tab=rejected', icon: XCircle },
-        ],
-      },
     ],
   },
   {
@@ -229,10 +229,13 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-    '/documents/archive': true,
-    '/documents/incoming': true,
-  });
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => ({
+    '/documents/archive': pathname.startsWith('/documents/archive'),
+    '/documents/incoming':
+      pathname.startsWith('/documents/incoming') ||
+      pathname.startsWith('/documents/outgoing') ||
+      pathname.startsWith('/documents/rejected'),
+  }));
   const [, setCurrentQuery] = useState('');
   const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
   const [activeTransferTab, setActiveTransferTab] = useState<string>('incoming');
