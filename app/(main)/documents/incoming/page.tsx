@@ -171,9 +171,10 @@ export default function IncomingDocumentsPage() {
         if (q) {
           const title = item.document?.title?.toLowerCase() || ''
           const docNum = item.document?.docNumber?.toLowerCase() || ''
+          const fromDept = getField(item.fromDepartment).toLowerCase()
           const toDept = getField(item.toDepartment).toLowerCase()
           const note = (item.note || '').toLowerCase()
-          if (!title.includes(q) && !docNum.includes(q) && !toDept.includes(q) && !note.includes(q)) return false
+          if (!title.includes(q) && !docNum.includes(q) && !fromDept.includes(q) && !toDept.includes(q) && !note.includes(q)) return false
         }
         return true
       })
@@ -361,7 +362,7 @@ export default function IncomingDocumentsPage() {
                     section === 'incoming'
                       ? 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ຜູ້ສົ່ງ...'
                       : section === 'outgoing'
-                      ? 'ຊື່ເອກະສານ, ເລກທີ, ປາຍທາງ...'
+                      ? 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ປາຍທາງ...'
                       : 'ຊື່ເອກະສານ, ເລກທີ, ຕົ້ນທາງ, ປາຍທາງ...'
                   }
                   className="w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-400 focus:bg-white"
@@ -433,6 +434,7 @@ export default function IncomingDocumentsPage() {
 
                   {section === 'outgoing' && (
                     <>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ຕົ້ນທາງ (From)</th>
                       <th className="px-3.5 py-3 whitespace-nowrap">ປາຍທາງ (To)</th>
                       <th className="px-3.5 py-3 whitespace-nowrap">ວັນທີສົ່ງ</th>
                       <th className="px-3.5 py-3 whitespace-nowrap">ຮູບແບບ</th>
@@ -553,6 +555,10 @@ export default function IncomingDocumentsPage() {
                       {/* Section: Outgoing Columns */}
                       {section === 'outgoing' && (
                         <>
+                          <td className="px-3.5 py-3 text-xs whitespace-nowrap">
+                            <p className="font-semibold text-gray-800">🏬 {fromDept}</p>
+                            {fromDiv && <p className="text-gray-400">🏢 {fromDiv}</p>}
+                          </td>
                           <td className="px-3.5 py-3 text-xs whitespace-nowrap">
                             <p className="font-semibold text-indigo-700">🏬 {toDept}</p>
                             {toDiv && <p className="text-indigo-400">🏢 {toDiv}</p>}
