@@ -51,6 +51,73 @@ function getField(val: unknown): string {
   return String(val)
 }
 
+const SAMPLE_MULTI_TRANSFERS: DocumentTransfer[] = [
+  {
+    id: 'demo-tf-1',
+    documentId: 'demo-doc-1',
+    fromDivision: 'ຝ່າຍເຕັກໂນໂລຊີ ການສື່ສານ ຂໍ້ມູນຂ່າວສານ',
+    fromDepartment: 'ພະແນກຄຸ້ມຄອງລະບົບເຄືອຂ່າຍ',
+    toDivision: 'ຝ່າຍເຕັກໂນໂລຊີ ການສື່ສານ ຂໍ້ມູນຂ່າວສານ',
+    toDepartment: 'ພະແນກພັດທະນາ-ຄຸ້ມຄອງຊອບແວ',
+    senderId: 'u1',
+    sender: { id: 'u1', name: 'test02', department: 'ພະແນກຄຸ້ມຄອງລະບົບເຄືອຂ່າຍ' },
+    reviewer: { id: 'u2', name: 'Souk', department: 'ພະແນກພັດທະນາ-ຄຸ້ມຄອງຊອບແວ' },
+    status: 'approved',
+    keepCopy: false,
+    note: 'ສົ່ງບົດສະເໜີໂຄງການພັດທະນາລະບົບໃໝ່ ເພື່ອກວດສອບ ແລະ ປະເມີນເຕັກໂນໂລຊີ',
+    createdAt: '2026-09-20T08:30:00Z',
+    updatedAt: '2026-09-21T10:15:00Z',
+  },
+  {
+    id: 'demo-tf-2',
+    documentId: 'demo-doc-1',
+    fromDivision: 'ຝ່າຍເຕັກໂນໂລຊີ ການສື່ສານ ຂໍ້ມູນຂ່າວສານ',
+    fromDepartment: 'ພະແນກພັດທະນາ-ຄຸ້ມຄອງຊອບແວ',
+    toDivision: 'ຝ່າຍການເງິນ ແລະ ບັນຊີ',
+    toDepartment: 'ພະແນກຄຸ້ມຄອງງົບປະມານ',
+    senderId: 'u2',
+    sender: { id: 'u2', name: 'Souk', department: 'ພະແນກພັດທະນາ-ຄຸ້ມຄອງຊອບແວ' },
+    reviewer: { id: 'u3', name: 'ຄຳຫຼ້າ', department: 'ພະແນກຄຸ້ມຄອງງົບປະມານ' },
+    status: 'rejected',
+    keepCopy: true,
+    note: 'ສົ່ງຂໍອະນຸມັດງົບປະມານຈັດຊື້ອຸປະກອນ Server ແລະ Cloud hosting',
+    rejectionReason: 'ເອກະສານຂາດໃບສະເໜີລາຄາປຽບທຽບ 3 ບໍລິສັດ, ກະລຸນາຕິດຄັດເພີ່ມເຕີມແລ້ວສົ່ງໃໝ່',
+    createdAt: '2026-09-26T13:45:00Z',
+    updatedAt: '2026-09-27T09:00:00Z',
+  },
+  {
+    id: 'demo-tf-3',
+    documentId: 'demo-doc-1',
+    fromDivision: 'ຝ່າຍເຕັກໂນໂລຊີ ການສື່ສານ ຂໍ້ມູນຂ່າວສານ',
+    fromDepartment: 'ພະແນກພັດທະນາ-ຄຸ້ມຄອງຊອບແວ',
+    toDivision: 'ຝ່າຍການເງິນ ແລະ ບັນຊີ',
+    toDepartment: 'ພະແນກຄຸ້ມຄອງງົບປະມານ',
+    senderId: 'u2',
+    sender: { id: 'u2', name: 'Souk', department: 'ພະແນກພັດທະນາ-ຄຸ້ມຄອງຊອບແວ' },
+    reviewer: { id: 'u3', name: 'ຄຳຫຼ້າ', department: 'ພະແນກຄຸ້ມຄອງງົບປະມານ' },
+    status: 'approved',
+    keepCopy: true,
+    note: 'ສົ່ງເອກະສານຄືນໃໝ່ ພ້ອມຕິດຄັດໃບສະເໜີລາຄາຄົບ 3 ບໍລິສັດຕາມທີ່ຮ້ອງຂໍ',
+    createdAt: '2026-10-02T10:20:00Z',
+    updatedAt: '2026-10-03T14:30:00Z',
+  },
+  {
+    id: 'demo-tf-4',
+    documentId: 'demo-doc-1',
+    fromDivision: 'ຝ່າຍການເງິນ ແລະ ບັນຊີ',
+    fromDepartment: 'ພະແນກຄຸ້ມຄອງງົບປະມານ',
+    toDivision: 'ຝ່າຍຈັດຕັ້ງ ແລະ ບໍລິຫານ',
+    toDepartment: 'ພະແນກບໍລິຫານ-ສັງລວມ',
+    senderId: 'u3',
+    sender: { id: 'u3', name: 'ຄຳຫຼ້າ', department: 'ພະແນກຄຸ້ມຄອງງົບປະມານ' },
+    status: 'pending',
+    keepCopy: false,
+    note: 'ສົ່ງໃຫ້ພະແນກບໍລິຫານ-ສັງລວມ ອະນຸມັດຂັ້ນສຸດທ້າຍ ແລະ ເກັບເຂົ້າຄັງເອກະສານກາງ',
+    createdAt: '2026-10-10T16:00:00Z',
+    updatedAt: '2026-10-10T16:00:00Z',
+  },
+]
+
 export default function DocumentJourneyModal({
   open,
   onClose,
@@ -58,6 +125,7 @@ export default function DocumentJourneyModal({
   document: initialDoc,
 }: Props) {
   const [transfers, setTransfers] = useState<DocumentTransfer[]>([])
+  const [isDemoMode, setIsDemoMode] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -97,13 +165,20 @@ export default function DocumentJourneyModal({
 
   if (!open) return null
 
+  const displayedTransfers = isDemoMode ? SAMPLE_MULTI_TRANSFERS : transfers
   const doc = initialDoc || (transfers.length > 0 ? transfers[0].document : null)
-  const docTitle = doc?.title || `ເອກະສານ #${documentId.slice(0, 8)}`
-  const docNumber = doc?.docNumber || ''
+  const docTitle = isDemoMode
+    ? 'ບົດສະເໜີໂຄງການພັດທະນາລະບົບ ແລະ ຈັດຊື້ອຸປະກອນ Cloud'
+    : (doc?.title || `ເອກະສານ #${documentId.slice(0, 8)}`)
+  const docNumber = isDemoMode ? 'DOC-2026-DEMO-001' : (doc?.docNumber || '')
 
   // Current location
-  const currentDept = doc?.department || (transfers.length > 0 ? getField(transfers[transfers.length - 1].toDepartment) : '')
-  const currentDiv = doc?.division || (transfers.length > 0 ? getField(transfers[transfers.length - 1].toDivision) : '')
+  const currentDept = isDemoMode
+    ? getField(SAMPLE_MULTI_TRANSFERS[SAMPLE_MULTI_TRANSFERS.length - 1].toDepartment)
+    : (doc?.department || (transfers.length > 0 ? getField(transfers[transfers.length - 1].toDepartment) : ''))
+  const currentDiv = isDemoMode
+    ? getField(SAMPLE_MULTI_TRANSFERS[SAMPLE_MULTI_TRANSFERS.length - 1].toDivision)
+    : (doc?.division || (transfers.length > 0 ? getField(transfers[transfers.length - 1].toDivision) : ''))
 
   return (
     <Modal
@@ -112,20 +187,37 @@ export default function DocumentJourneyModal({
       title="ເສັ້ນທາງການເຄື່ອນໄຫວເອກະສານ"
       footer={
         <div className="flex justify-between items-center w-full">
-          <div className="text-xs text-gray-400">
-            ມີການສົ່ງຕໍ່ທັງໝົດ {transfers.length} ຄັ້ງ
+          <div className="text-xs text-gray-500">
+            ມີການສົ່ງຕໍ່ທັງໝົດ <span className="font-bold text-gray-800">{displayedTransfers.length}</span> ຄັ້ງ {isDemoMode && <span className="text-purple-600 font-semibold">(ຕົວຢ່າງຈຳລອງ)</span>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition"
+            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
           >
             ປິດໜ້າຕ່າງ
           </button>
         </div>
       }
     >
-      <div className="space-y-5 py-1">
+      <div className="space-y-4 py-1">
+        {/* Demo Simulation Toggle Bar */}
+        <div className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50/80 px-3.5 py-2 text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${isDemoMode ? 'bg-purple-600 animate-pulse' : 'bg-gray-400'}`} />
+            <span className="font-semibold text-purple-950 truncate">
+              {isDemoMode ? '✨ ກຳລັງສະແດງ: ຕົວຢ່າງຈຳລອງສົ່ງຕໍ່ 4 ຂັ້ນຕອນ' : 'ໂໝດທົດສອບ (Demo):'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsDemoMode((prev) => !prev)}
+            className="shrink-0 rounded-lg bg-purple-600 px-3 py-1 text-xs font-semibold text-white hover:bg-purple-700 transition shadow-xs cursor-pointer"
+          >
+            {isDemoMode ? '← ກັບໄປຂໍ້ມູນຈິງ' : '✨ ຈຳລອງສົ່ງຕໍ່ 4 ຂັ້ນຕອນ'}
+          </button>
+        </div>
+
         {/* Document Header Card */}
         <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-indigo-50/20 p-4">
           <div className="flex items-start justify-between gap-3">
@@ -231,17 +323,17 @@ export default function DocumentJourneyModal({
 
                 <div className="mt-2 text-xs">
                   <p className="font-semibold text-gray-800">
-                    🏬 {transfers.length > 0 ? getField(transfers[0].fromDepartment) : (doc?.department || 'ພະແນກຕົ້ນທາງ')}
+                    🏬 {displayedTransfers.length > 0 ? getField(displayedTransfers[0].fromDepartment) : (doc?.department || 'ພະແນກຕົ້ນທາງ')}
                   </p>
-                  {(transfers.length > 0 ? getField(transfers[0].fromDivision) : doc?.division) && (
+                  {(displayedTransfers.length > 0 ? getField(displayedTransfers[0].fromDivision) : doc?.division) && (
                     <p className="text-gray-500">
-                      🏢 {transfers.length > 0 ? getField(transfers[0].fromDivision) : doc?.division}
+                      🏢 {displayedTransfers.length > 0 ? getField(displayedTransfers[0].fromDivision) : doc?.division}
                     </p>
                   )}
                   {doc?.uploadedBy && (
                     <p className="mt-1 inline-flex items-center gap-1 text-gray-600">
                       <User className="h-3 w-3 text-gray-400" />
-                      ຜູ້ສ້າງ / ອັບໂຫຼດ: <span className="font-medium text-gray-800">{doc.uploadedBy}</span>
+                      ຜູ້ສ້າງ / ອັບໂຫຼດ: <span className="font-medium text-gray-800">{isDemoMode ? 'test02' : doc.uploadedBy}</span>
                     </p>
                   )}
                 </div>
@@ -249,7 +341,7 @@ export default function DocumentJourneyModal({
             </div>
 
             {/* 2. Transfer Steps */}
-            {transfers.length === 0 ? (
+            {displayedTransfers.length === 0 ? (
               <div className="relative">
                 <div className="absolute -left-6 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 ring-4 ring-white text-white shadow-sm">
                   <MapPin className="h-3 w-3" />
@@ -260,7 +352,7 @@ export default function DocumentJourneyModal({
                 </div>
               </div>
             ) : (
-              transfers.map((t, idx) => {
+              displayedTransfers.map((t, idx) => {
                 const stepNum = idx + 1
                 const fromDept = getField(t.fromDepartment) || '—'
                 const fromDiv = getField(t.fromDivision)
@@ -388,7 +480,7 @@ export default function DocumentJourneyModal({
             )}
 
             {/* 3. Current Location Pin (End of path) */}
-            {transfers.length > 0 && (
+            {displayedTransfers.length > 0 && (
               <div className="relative">
                 <div className="absolute -left-6 top-0 flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 ring-4 ring-white text-white shadow-sm">
                   <MapPin className="h-3 w-3" />
