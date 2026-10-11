@@ -21,11 +21,47 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
     let eventSource: EventSource | null = null
     let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
-    let retryDelay = 2000
+    let retryDelay = 3000
     let isDisposed = false
+
+    function hasAuthToken(): boolean {
+      try {
+        return !!(sessionStorage.getItem('token') || localStorage.getItem('token'))
+      } catch {
+        return false
+      }
+    }
+
+    function cleanupCurrentConnection() {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout)
+        reconnectTimeout = null
+      }
+      if (eventSource) {
+        eventSource.close()
+        eventSource = null
+      }
+    }
+
+    function scheduleReconnect() {
+      if (isDisposed || reconnectTimeout) return
+      // If the tab is hidden (user on another tab), do not spam reconnect attempts
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return
+      }
+
+      reconnectTimeout = setTimeout(() => {
+        reconnectTimeout = null
+        retryDelay = Math.min(retryDelay * 1.5, 30000)
+        connect()
+      }, retryDelay)
+    }
 
     function connect() {
       if (isDisposed) return
+      if (!hasAuthToken()) return // Do not connect if not authenticated
+
+      cleanupCurrentConnection()
 
       try {
         const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api').replace(/\/+$/, '')
@@ -35,7 +71,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
         eventSource.onopen = () => {
           setIsConnected(true)
-          retryDelay = 2000 // Reset backoff on successful connection
+          retryDelay = 3000 // Reset backoff on successful connection
         }
 
         eventSource.onmessage = (event) => {
@@ -82,35 +118,41 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
         eventSource.onerror = () => {
           setIsConnected(false)
-          if (eventSource) {
-            eventSource.close()
-            eventSource = null
-          }
-          if (!isDisposed) {
-            // Exponential backoff reconnect: 2s, 4s, 8s, up to 30s
-            reconnectTimeout = setTimeout(() => {
-              retryDelay = Math.min(retryDelay * 1.5, 30000)
-              connect()
-            }, retryDelay)
-          }
+          cleanupCurrentConnection()
+          scheduleReconnect()
         }
       } catch (err) {
         console.warn('Error creating EventSource:', err)
-        if (!isDisposed) {
-          reconnectTimeout = setTimeout(connect, 5000)
-        }
+        cleanupCurrentConnection()
+        scheduleReconnect()
       }
     }
 
     connect()
 
+    // Handle user switching tabs: reconnect cleanly when returning if disconnected
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+          retryDelay = 3000
+          connect()
+        }
+      }
+    }
+
+    const handleOnline = () => {
+      retryDelay = 3000
+      connect()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleOnline)
+
     return () => {
       isDisposed = true
-      if (reconnectTimeout) clearTimeout(reconnectTimeout)
-      if (eventSource) {
-        eventSource.close()
-        eventSource = null
-      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleOnline)
+      cleanupCurrentConnection()
     }
   }, [])
 

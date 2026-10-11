@@ -86,20 +86,7 @@ export default function Guard({ children }: Props) {
     return () => window.removeEventListener('pageshow', handlePageShow)
   }, [])
 
-  useEffect(() => {
-    if (!authorized) {
-      return
-    }
 
-    const handlePopState = () => {
-      window.history.pushState(null, '', window.location.href)
-    }
-
-    window.history.pushState(null, '', window.location.href)
-    window.addEventListener('popstate', handlePopState)
-
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [authorized])
 
   if (!authorized) {
     return (

@@ -4,6 +4,7 @@ import axios from 'axios';
 const axiosClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api',
   withCredentials: true,
+  timeout: 15000, // 15s timeout to prevent hanging when backend sleeps or network drops
 });
 
 // Request Interceptor
@@ -16,7 +17,10 @@ axiosClient.interceptors.request.use(
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...config.headers,
     };
-    if (isFormData) delete config.headers['Content-Type'];
+    if (isFormData) {
+      delete config.headers['Content-Type'];
+      config.timeout = 120000; // 2 minutes timeout for file uploads
+    }
 
     // Add Bearer Token if it exists
     const token =
