@@ -23,6 +23,9 @@ import {
   Trash2,
   ChevronDown,
   Route,
+  FileText,
+  FileImage,
+  File,
 } from 'lucide-react'
 import DocumentJourneyModal from '@/app/components/documents/DocumentJourneyModal'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
@@ -34,11 +37,11 @@ import { edlStructure } from '@/types/user'
 import Pagination from '@/app/components/ui/Pagination'
 
 const statusStyles: Record<DocumentStatus, string> = {
-  draft: 'bg-slate-100 text-slate-700',
-  pending: 'bg-amber-100 text-amber-700',
-  approved: 'bg-emerald-100 text-emerald-700',
-  archived: 'bg-gray-200 text-gray-700',
-  expired: 'bg-rose-100 text-rose-700 font-semibold',
+  draft: 'bg-slate-50 text-slate-700 ring-1 ring-slate-200/80',
+  pending: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200/80',
+  approved: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80',
+  archived: 'bg-gray-100 text-gray-700 ring-1 ring-gray-200',
+  expired: 'bg-rose-50 text-rose-800 ring-1 ring-rose-200/80 font-semibold',
 }
 
 const statusLabels: Record<DocumentStatus, string> = {
@@ -388,93 +391,151 @@ export default function DocumentsPage() {
 
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="overflow-x-auto min-h-[360px]">
-            <table className="min-w-full text-left">
-              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+            <table className="min-w-full text-left border-collapse">
+              <thead className="bg-gray-50/90 text-xs font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-200">
                 <tr>
-                  <th className="px-3.5 py-3 w-12 text-center text-gray-500 whitespace-nowrap">ລ/ດ</th>
-                  <th className="px-3.5 py-3">ເອກະສານ</th>
-                  <th className="px-3.5 py-3">ໝວດໝູ່</th>
-                  <th className="px-3.5 py-3">ເລກທີ</th>
-                  <th className="px-3.5 py-3">ຮູບແບບ</th>
-                  <th className="px-3.5 py-3">ຂະໜາດ</th>
-                  <th className="px-3.5 py-3">ວັນທີ</th>
-                  <th className="px-3.5 py-3">ສະຖານະ</th>
-                  <th className="px-3.5 py-3 text-center">ການກະທຳ</th>
+                  <th className="px-3.5 py-3.5 w-12 text-center text-gray-400 whitespace-nowrap">ລ/ດ</th>
+                  <th className="px-3.5 py-3.5 min-w-[220px]">ເອກະສານ</th>
+                  <th className="px-3.5 py-3.5 whitespace-nowrap">ໝວດໝູ່</th>
+                  <th className="px-3.5 py-3.5 whitespace-nowrap">ເລກທີ</th>
+                  <th className="px-3.5 py-3.5 whitespace-nowrap text-center">ຮູບແບບ</th>
+                  <th className="px-3.5 py-3.5 whitespace-nowrap">ຂະໜາດ</th>
+                  <th className="px-3.5 py-3.5 whitespace-nowrap">ວັນທີ</th>
+                  <th className="px-3.5 py-3.5 whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-3.5 py-3.5 text-center whitespace-nowrap">ການກະທຳ</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100">
                 {paginatedDocs.map((doc, idx) => (
-                  <tr key={doc.id} className="border-t border-gray-200 align-top hover:bg-gray-50/60 transition-colors">
-                    <td className="px-3.5 py-3 text-center font-medium text-gray-400 tabular-nums whitespace-nowrap">
+                  <tr key={doc.id} className="hover:bg-indigo-50/20 transition-colors group">
+                    <td className="px-3.5 py-3 text-center text-xs font-semibold text-gray-400 tabular-nums whitespace-nowrap align-middle">
                       {(currentPage - 1) * PAGE_SIZE + idx + 1}
                     </td>
-                    <td className="px-3.5 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900">{doc.title}</span>
-                        {!(doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName) && (
-                          <button
-                            type="button"
-                            onClick={() => setStorageDoc(doc)}
-                            title="ກົດເພື່ອເລືອກບ່ອນຈັດເກັບໃນຄັງ"
-                            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 transition hover:bg-amber-100"
-                          >
-                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            <span>ບໍ່ມີບ່ອນເກັບ</span>
-                          </button>
-                        )}
-                      </div>
-                      {doc.tags && doc.tags.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {doc.tags.map((tagName, i) => {
-                            const tagObj = masterTags.find((t) => t.name === tagName)
-                            return (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200/60"
-                              >
-                                <span
-                                  className="h-1.5 w-1.5 rounded-full shrink-0"
-                                  style={{ backgroundColor: tagObj?.color || '#6366f1' }}
-                                />
-                                <span>{tagName}</span>
-                              </span>
-                            )
-                          })}
+                    <td className="px-3.5 py-3 align-middle">
+                      <div className="flex items-start gap-2.5">
+                        <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                          doc.fileType === 'pdf'
+                            ? 'bg-rose-50 text-rose-600 border border-rose-100'
+                            : doc.fileType === 'image'
+                            ? 'bg-purple-50 text-purple-600 border border-purple-100'
+                            : 'bg-blue-50 text-blue-600 border border-blue-100'
+                        }`}>
+                          {doc.fileType === 'pdf' ? (
+                            <FileText className="h-4 w-4" />
+                          ) : doc.fileType === 'image' ? (
+                            <FileImage className="h-4 w-4" />
+                          ) : (
+                            <File className="h-4 w-4" />
+                          )}
                         </div>
-                      )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-semibold text-sm text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                              {doc.title}
+                            </span>
+                            {!(doc.warehouseName || doc.cabinetName || doc.shelfName || doc.folderName) && (
+                              <button
+                                type="button"
+                                onClick={() => setStorageDoc(doc)}
+                                title="ກົດເພື່ອເລືອກບ່ອນຈັດເກັບໃນຄັງ"
+                                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.2 text-[10px] font-semibold text-amber-800 transition hover:bg-amber-100"
+                              >
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                <span>ບໍ່ມີບ່ອນເກັບ</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+                            {(doc.department || doc.division) && (
+                              <span className="text-[11px] text-gray-400">
+                                🏬 {doc.department || doc.division}
+                              </span>
+                            )}
+                            {doc.tags && doc.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {doc.tags.map((tagName, i) => {
+                                  const tagObj = masterTags.find((t) => t.name === tagName)
+                                  return (
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.2 text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200/60"
+                                    >
+                                      <span
+                                        className="h-1.5 w-1.5 rounded-full shrink-0"
+                                        style={{ backgroundColor: tagObj?.color || '#6366f1' }}
+                                      />
+                                      <span>{tagName}</span>
+                                    </span>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-3 py-2.5"><CategoryBadge category={doc.category} /></td>
-                    <td className="px-3 py-2.5 text-sm text-gray-700">{doc.docNumber}</td>
-                    <td className="px-3 py-2.5 text-sm text-gray-700 uppercase">{doc.fileType}</td>
-                    <td className="px-3 py-2.5 text-sm text-gray-700">{doc.fileSize}</td>
-                    <td className="px-3 py-2.5 text-sm text-gray-700">
-                      <div>{doc.uploadDate}</div>
+                    <td className="px-3.5 py-3 whitespace-nowrap align-middle">
+                      <CategoryBadge category={doc.category} />
+                    </td>
+                    <td className="px-3.5 py-3 whitespace-nowrap align-middle">
+                      <span className="font-mono text-xs rounded-md bg-gray-50 px-2 py-1 border border-gray-200/70 text-gray-700 font-medium">
+                        {doc.docNumber || '—'}
+                      </span>
+                    </td>
+                    <td className="px-3.5 py-3 text-center whitespace-nowrap align-middle">
+                      <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
+                        doc.fileType === 'pdf'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : doc.fileType === 'image'
+                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                          : 'bg-blue-50 text-blue-700 border border-blue-200'
+                      }`}>
+                        {doc.fileType}
+                      </span>
+                    </td>
+                    <td className="px-3.5 py-3 text-xs text-gray-500 whitespace-nowrap align-middle">
+                      {doc.fileSize || '—'}
+                    </td>
+                    <td className="px-3.5 py-3 text-xs text-gray-600 whitespace-nowrap align-middle">
+                      <div className="font-medium text-gray-700">{doc.uploadDate || '—'}</div>
                       {doc.expiresAt && (
-                        <div className="mt-1">
+                        <div className="mt-0.5">
                           {doc.status === 'expired' || doc.expiresAt <= new Date().toISOString().slice(0, 10) ? (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 border border-rose-200 px-1.5 py-0.2 text-[10px] font-semibold text-rose-700 whitespace-nowrap">
                               ໝົດ: {doc.expiresAt}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600 whitespace-nowrap">
                               ໝົດ: {doc.expiresAt}
                             </span>
                           )}
                         </div>
                       )}
                     </td>
-                    <td className="px-3 py-2.5">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}>
+                    <td className="px-3.5 py-3 whitespace-nowrap align-middle">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${statusStyles[doc.status]}`}>
                         {statusLabels[doc.status]}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-center">
+                    <td className="px-3.5 py-3 text-center whitespace-nowrap align-middle">
                       <div className="relative inline-flex items-center justify-center gap-1.5">
+                        {/* Quick Route Journey Button */}
+                        <button
+                          type="button"
+                          onClick={() => setJourneyDoc(doc)}
+                          title="ເບິ່ງເສັ້ນທາງເອກະສານ"
+                          className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-1.5 text-xs font-semibold text-purple-700 shadow-xs hover:bg-purple-100 hover:border-purple-300 transition cursor-pointer"
+                        >
+                          <Route className="h-3.5 w-3.5 text-purple-600" />
+                          <span>ເສັ້ນທາງ</span>
+                        </button>
+
                         {/* Quick View Button */}
                         <button
                           type="button"
                           onClick={() => setPreviewDoc(doc)}
-                          className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition"
+                          className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-xs hover:bg-gray-50 hover:text-gray-900 transition cursor-pointer"
                         >
                           ເບິ່ງ
                         </button>
@@ -483,7 +544,7 @@ export default function DocumentsPage() {
                         <button
                           type="button"
                           onClick={() => setActiveDropdownId(activeDropdownId === doc.id ? null : doc.id)}
-                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-sm transition ${
+                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer ${
                             activeDropdownId === doc.id
                               ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
                               : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'

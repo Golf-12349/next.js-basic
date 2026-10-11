@@ -5,20 +5,20 @@ import { UNCATEGORIZED_LABEL } from '@/lib/dms/constants'
 /** ສີ badge ຕາມໝວດໝູ່ — ໝວດໝູ່ໃດທີ່ບໍ່ຢູ່ໃນ map ຈະໃຊ້ສີ fallback */
 const categoryBadgeStyles: Record<string, string> = {
   // ປະເພດເອກະສານ (ໃໝ່ — ລວມ documentType ເຂົ້າໝວດໝູ່)
-  'ເອກະສານການເງິນ': 'bg-emerald-100 text-emerald-800',
-  'ແຈ້ງການ / ປະກາດ': 'bg-sky-100 text-sky-800',
-  'ສັນຍາ & ຂໍ້ຕົກລົງ': 'bg-violet-100 text-violet-800',
-  'ບົດລາຍງານ': 'bg-rose-100 text-rose-800',
-  'ຄຳສັ່ງ / ມະຕິ': 'bg-amber-100 text-amber-800',
-  'ອື່ນໆ': 'bg-gray-100 text-gray-700',
+  'ເອກະສານການເງິນ': 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80',
+  'ແຈ້ງການ / ປະກາດ': 'bg-sky-50 text-sky-800 ring-1 ring-sky-200/80',
+  'ສັນຍາ & ຂໍ້ຕົກລົງ': 'bg-violet-50 text-violet-800 ring-1 ring-violet-200/80',
+  'ບົດລາຍງານ': 'bg-rose-50 text-rose-800 ring-1 ring-rose-200/80',
+  'ຄຳສັ່ງ / ມະຕິ': 'bg-amber-50 text-amber-800 ring-1 ring-amber-200/80',
+  'ອື່ນໆ': 'bg-gray-50 text-gray-700 ring-1 ring-gray-200',
   // ເກົ່າ (legacy — ເອກະສານເກົ່າຍັງມີຊື່ກ່ອນຢູ່)
-  'ຂາເຂົ້າ': 'bg-blue-100 text-blue-800',
-  'ຂາອອກ': 'bg-violet-100 text-violet-800',
-  'ຄຳສັ່ງ': 'bg-amber-100 text-amber-800',
-  'ແຈ້ງການ': 'bg-sky-100 text-sky-800',
-  'ສັນຍາ': 'bg-emerald-100 text-emerald-800',
-  'ລາຍງານ': 'bg-rose-100 text-rose-800',
-  'ທົ່ວໄປ': 'bg-gray-100 text-gray-700',
+  'ຂາເຂົ້າ': 'bg-blue-50 text-blue-800 ring-1 ring-blue-200/80',
+  'ຂາອອກ': 'bg-violet-50 text-violet-800 ring-1 ring-violet-200/80',
+  'ຄຳສັ່ງ': 'bg-amber-50 text-amber-800 ring-1 ring-amber-200/80',
+  'ແຈ້ງການ': 'bg-sky-50 text-sky-800 ring-1 ring-sky-200/80',
+  'ສັນຍາ': 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200/80',
+  'ລາຍງານ': 'bg-rose-50 text-rose-800 ring-1 ring-rose-200/80',
+  'ທົ່ວໄປ': 'bg-gray-50 text-gray-700 ring-1 ring-gray-200',
 }
 
 const categoryBadgeIcons: Record<string, typeof ArrowDownLeft> = {
