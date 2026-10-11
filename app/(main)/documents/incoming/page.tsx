@@ -155,9 +155,10 @@ export default function IncomingDocumentsPage() {
             const title = item.document?.title?.toLowerCase() || ''
             const docNum = item.document?.docNumber?.toLowerCase() || ''
             const fromDept = getField(item.fromDepartment).toLowerCase()
+            const toDept = getField(item.toDepartment).toLowerCase()
             const sender = (item.sender?.name || '').toLowerCase()
             const note = (item.note || '').toLowerCase()
-            if (!title.includes(q) && !docNum.includes(q) && !fromDept.includes(q) && !sender.includes(q) && !note.includes(q)) {
+            if (!title.includes(q) && !docNum.includes(q) && !fromDept.includes(q) && !toDept.includes(q) && !sender.includes(q) && !note.includes(q)) {
               return false
             }
           }
@@ -423,6 +424,7 @@ export default function IncomingDocumentsPage() {
                   {section === 'incoming' && (
                     <>
                       <th className="px-3.5 py-3 whitespace-nowrap">ຕົ້ນທາງ (From)</th>
+                      <th className="px-3.5 py-3 whitespace-nowrap">ປາຍທາງ (To)</th>
                       <th className="px-3.5 py-3 whitespace-nowrap">ຜູ້ສົ່ງ</th>
                       <th className="px-3.5 py-3 whitespace-nowrap">ວັນທີ</th>
                       <th className="px-3.5 py-3 whitespace-nowrap">ສະຖານະ</th>
@@ -453,14 +455,14 @@ export default function IncomingDocumentsPage() {
               <tbody className="divide-y divide-gray-100">
                 {loadingTransfers && currentList.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-gray-500">
+                    <td colSpan={8} className="px-4 py-12 text-center text-sm text-gray-500">
                       ກຳລັງໂຫຼດຂໍ້ມູນ...
                     </td>
                   </tr>
                 )}
                 {(!loadingTransfers || currentList.length > 0) && pageItems.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-14 text-center">
+                    <td colSpan={8} className="px-4 py-14 text-center">
                       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-2xl">
                         {section === 'incoming' ? (incomingSubTab === 'pending' ? '📥' : '📋') : section === 'outgoing' ? '📤' : '🔴'}
                       </div>
@@ -529,6 +531,10 @@ export default function IncomingDocumentsPage() {
                           <td className="px-3.5 py-3 text-xs whitespace-nowrap">
                             <p className="font-semibold text-gray-800">🏬 {fromDept}</p>
                             {fromDiv && <p className="text-gray-400">🏢 {fromDiv}</p>}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs whitespace-nowrap">
+                            <p className="font-semibold text-indigo-700">🏬 {toDept}</p>
+                            {toDiv && <p className="text-indigo-400">🏢 {toDiv}</p>}
                           </td>
                           <td className="px-3.5 py-3 text-xs text-gray-600 whitespace-nowrap">
                             👤 {t.sender?.name || '—'}
