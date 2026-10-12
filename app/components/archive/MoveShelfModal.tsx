@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import type { Cabinet, Shelf } from '@/types/document'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -13,23 +13,19 @@ interface MoveShelfModalProps {
   onConfirm: (shelfId: string, targetCabinetId: string) => Promise<void>
 }
 
-export function MoveShelfModal({
-  open,
+function MoveShelfContent({
   shelf,
   cabinets,
   onClose,
   onConfirm,
-}: MoveShelfModalProps) {
-  const [targetCabinetId, setTargetCabinetId] = useState<string>('')
+}: {
+  shelf: Shelf
+  cabinets: Cabinet[]
+  onClose: () => void
+  onConfirm: (shelfId: string, targetCabinetId: string) => Promise<void>
+}) {
+  const [targetCabinetId, setTargetCabinetId] = useState<string>(shelf.cabinetId || cabinets[0]?.id || '')
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    if (shelf) {
-      setTargetCabinetId(shelf.cabinetId || cabinets[0]?.id || '')
-    }
-  }, [shelf, cabinets])
-
-  if (!open || !shelf) return null
 
   const currentCabinet = cabinets.find((c) => c.id === shelf.cabinetId)
 
@@ -51,7 +47,7 @@ export function MoveShelfModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="ຍ້າຍຊັ້ນວາງ">
+    <Modal open={true} onClose={onClose} title="ຍ້າຍຊັ້ນວາງ">
       <div className="space-y-4">
         <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200">
           <p className="text-xs text-gray-500">ຊັ້ນວາງ:</p>
@@ -98,5 +94,25 @@ export function MoveShelfModal({
         </div>
       </div>
     </Modal>
+  )
+}
+
+export function MoveShelfModal({
+  open,
+  shelf,
+  cabinets,
+  onClose,
+  onConfirm,
+}: MoveShelfModalProps) {
+  if (!open || !shelf) return null
+
+  return (
+    <MoveShelfContent
+      key={shelf.id}
+      shelf={shelf}
+      cabinets={cabinets}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    />
   )
 }

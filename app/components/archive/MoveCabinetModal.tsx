@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import type { Cabinet, Warehouse } from '@/types/document'
 import { useMasterData } from '@/app/(main)/context/MasterDataContext'
@@ -14,31 +14,24 @@ interface MoveCabinetModalProps {
   onConfirm: (cabinetId: string, targetWarehouseId: string, division?: string, department?: string) => Promise<void>
 }
 
-export function MoveCabinetModal({
-  open,
+function MoveCabinetContent({
   cabinet,
   warehouses,
   onClose,
   onConfirm,
-}: MoveCabinetModalProps) {
+}: {
+  cabinet: Cabinet
+  warehouses: Warehouse[]
+  onClose: () => void
+  onConfirm: (cabinetId: string, targetWarehouseId: string, division?: string, department?: string) => Promise<void>
+}) {
   const { divisions, getDepartments } = useMasterData()
-  const [targetWarehouseId, setTargetWarehouseId] = useState<string>('')
-  const [targetDivision, setTargetDivision] = useState<string>('')
-  const [targetDepartment, setTargetDepartment] = useState<string>('')
+  const [targetWarehouseId, setTargetWarehouseId] = useState<string>(cabinet.warehouseId || warehouses[0]?.id || '')
+  const [targetDivision, setTargetDivision] = useState<string>(cabinet.division || '')
+  const [targetDepartment, setTargetDepartment] = useState<string>(cabinet.department || '')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (cabinet) {
-      setTargetWarehouseId(cabinet.warehouseId || warehouses[0]?.id || '')
-      setTargetDivision(cabinet.division || '')
-      setTargetDepartment(cabinet.department || '')
-    }
-  }, [cabinet, warehouses])
-
   const availableDepts = targetDivision ? getDepartments(targetDivision) : []
-
-  if (!open || !cabinet) return null
-
   const currentWarehouse = warehouses.find((w) => w.id === cabinet.warehouseId)
 
   async function handleSave() {
@@ -59,7 +52,7 @@ export function MoveCabinetModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="ຍ້າຍຕູ້ເອກະສານ">
+    <Modal open={true} onClose={onClose} title="ຍ້າຍຕູ້ເອກະສານ">
       <div className="space-y-4">
         <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200">
           <p className="text-xs text-gray-500">ຕູ້ເອກະສານ:</p>
@@ -146,5 +139,25 @@ export function MoveCabinetModal({
         </div>
       </div>
     </Modal>
+  )
+}
+
+export function MoveCabinetModal({
+  open,
+  cabinet,
+  warehouses,
+  onClose,
+  onConfirm,
+}: MoveCabinetModalProps) {
+  if (!open || !cabinet) return null
+
+  return (
+    <MoveCabinetContent
+      key={cabinet.id}
+      cabinet={cabinet}
+      warehouses={warehouses}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    />
   )
 }

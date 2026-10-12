@@ -128,13 +128,28 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   useEffect(() => {
-    void reloadFromBackend()
+    let cancelled = false
+
+    orgService
+      .fetchOrgStructure()
+      .then((data) => {
+        if (!cancelled && data && data.departmentsByDivision && Object.keys(data.departmentsByDivision).length > 0) {
+          setDepartmentsByDivision(data.departmentsByDivision)
+          setDivisionObjects(data.divisionObjects || [])
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.warn('Failed to fetch org structure from server, using local fallback:', err)
+        }
+      })
 
     const onDivisionsChanged = () => {
       void reloadFromBackend()
     }
     window.addEventListener('dms:divisions-changed', onDivisionsChanged)
     return () => {
+      cancelled = true
       window.removeEventListener('dms:divisions-changed', onDivisionsChanged)
     }
   }, [reloadFromBackend])

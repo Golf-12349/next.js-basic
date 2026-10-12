@@ -2,19 +2,14 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import {
-  Calendar,
-  Check,
-  CheckCircle2,
   ChevronRight,
   Download,
   Eye,
   FileText,
   Filter,
   Layers,
-  Printer,
   RefreshCw,
   SlidersHorizontal,
-  Sparkles,
   X,
 } from 'lucide-react';
 import { pushToast } from '@/app/components/ui/Toast';
@@ -396,7 +391,7 @@ export default function ExportPdfModal({
                       </label>
                       <select
                         value={presetRange}
-                        onChange={(e) => setPresetRange(e.target.value as any)}
+                        onChange={(e) => setPresetRange(e.target.value as typeof presetRange)}
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none transition"
                       >
                         <option value="all">ທັງໝົດ (All Time)</option>
@@ -515,7 +510,7 @@ export default function ExportPdfModal({
                       </label>
                       <select
                         value={selectedDirection}
-                        onChange={(e) => setSelectedDirection(e.target.value as any)}
+                        onChange={(e) => setSelectedDirection(e.target.value as typeof selectedDirection)}
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none transition"
                       >
                         <option value="all">ທັງໝົດ (All Flows)</option>
@@ -530,7 +525,7 @@ export default function ExportPdfModal({
                       </label>
                       <select
                         value={storageFilter}
-                        onChange={(e) => setStorageFilter(e.target.value as any)}
+                        onChange={(e) => setStorageFilter(e.target.value as typeof storageFilter)}
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-xs text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none transition"
                       >
                         <option value="all">ທັງໝົດ (All)</option>

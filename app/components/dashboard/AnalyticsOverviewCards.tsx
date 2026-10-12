@@ -53,11 +53,10 @@ function ElegantDonut({
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  let accumulated = 0;
-  const slices = data.map((d) => {
+  const slices = data.map((d, i) => {
+    const priorPctSum = data.slice(0, i).reduce((sum, prev) => sum + prev.pct, 0);
     const strokeDasharray = `${(d.pct / 100) * circumference} ${circumference}`;
-    const strokeDashoffset = -accumulated;
-    accumulated += (d.pct / 100) * circumference;
+    const strokeDashoffset = -((priorPctSum / 100) * circumference);
     return {
       ...d,
       strokeDasharray,

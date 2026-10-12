@@ -5,7 +5,6 @@ import Modal from '@/app/components/ui/Modal'
 import type { Document, DocumentTransfer } from '@/types/document'
 import { fetchDocumentTransfers } from '@/lib/dms/documentService'
 import {
-  Route,
   CheckCircle2,
   Clock,
   XCircle,
@@ -51,22 +50,21 @@ function getField(val: unknown): string {
   return String(val)
 }
 
-export default function DocumentJourneyModal({
-  open,
+function DocumentJourneyContent({
   onClose,
   documentId,
   document: initialDoc,
-}: Props) {
+}: {
+  onClose: () => void
+  documentId: string
+  document?: Document | null
+}) {
   const [transfers, setTransfers] = useState<DocumentTransfer[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!open || !documentId) return
-
     let cancelled = false
-    setLoading(true)
-    setError(null)
 
     fetchDocumentTransfers(documentId)
       .then((data) => {
@@ -93,9 +91,7 @@ export default function DocumentJourneyModal({
     return () => {
       cancelled = true
     }
-  }, [open, documentId])
-
-  if (!open) return null
+  }, [documentId])
 
   const doc = initialDoc || (transfers.length > 0 ? transfers[0].document : null)
   const docTitle = doc?.title || `ເອກະສານ #${documentId.slice(0, 8)}`
@@ -107,7 +103,7 @@ export default function DocumentJourneyModal({
 
   return (
     <Modal
-      open={open}
+      open={true}
       onClose={onClose}
       title="ເສັ້ນທາງການເຄື່ອນໄຫວເອກະສານ"
       footer={
@@ -269,7 +265,6 @@ export default function DocumentJourneyModal({
                 const isApproved = t.status === 'approved'
                 const isPending = t.status === 'pending'
                 const isRejected = t.status === 'rejected'
-                const isCancelled = t.status === 'cancelled'
 
                 const StepIcon = isApproved
                   ? CheckCircle2
@@ -411,5 +406,23 @@ export default function DocumentJourneyModal({
         )}
       </div>
     </Modal>
+  )
+}
+
+export default function DocumentJourneyModal({
+  open,
+  onClose,
+  documentId,
+  document: initialDoc,
+}: Props) {
+  if (!open || !documentId) return null
+
+  return (
+    <DocumentJourneyContent
+      key={documentId}
+      onClose={onClose}
+      documentId={documentId}
+      document={initialDoc}
+    />
   )
 }

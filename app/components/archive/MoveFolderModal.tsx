@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import type { Cabinet, Folder, Shelf } from '@/types/document'
 import { pushToast } from '@/app/components/ui/Toast'
@@ -14,31 +14,27 @@ interface MoveFolderModalProps {
   onConfirm: (folderId: string, targetCabinetId: string, targetShelfId?: string | null) => Promise<void>
 }
 
-export function MoveFolderModal({
-  open,
+function MoveFolderContent({
   folder,
   cabinets,
   shelves,
   onClose,
   onConfirm,
-}: MoveFolderModalProps) {
-  const [targetCabinetId, setTargetCabinetId] = useState<string>('')
-  const [targetShelfId, setTargetShelfId] = useState<string>('')
+}: {
+  folder: Folder
+  cabinets: Cabinet[]
+  shelves: Shelf[]
+  onClose: () => void
+  onConfirm: (folderId: string, targetCabinetId: string, targetShelfId?: string | null) => Promise<void>
+}) {
+  const [targetCabinetId, setTargetCabinetId] = useState<string>(folder.cabinetId || cabinets[0]?.id || '')
+  const [targetShelfId, setTargetShelfId] = useState<string>(folder.shelfId || '')
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    if (folder) {
-      setTargetCabinetId(folder.cabinetId || cabinets[0]?.id || '')
-      setTargetShelfId(folder.shelfId || '')
-    }
-  }, [folder, cabinets])
 
   const availableShelves = useMemo(() => {
     if (!targetCabinetId) return []
     return shelves.filter((s) => s.cabinetId === targetCabinetId)
   }, [shelves, targetCabinetId])
-
-  if (!open || !folder) return null
 
   const currentCabinet = cabinets.find((c) => c.id === folder.cabinetId)
   const currentShelf = shelves.find((s) => s.id === folder.shelfId)
@@ -61,7 +57,7 @@ export function MoveFolderModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="ຍ້າຍແຟ້ມເອກະສານ">
+    <Modal open={true} onClose={onClose} title="ຍ້າຍແຟ້ມເອກະສານ">
       <div className="space-y-4">
         <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200">
           <p className="text-xs text-gray-500">ແຟ້ມເກັບເອກະສານ:</p>
@@ -130,5 +126,27 @@ export function MoveFolderModal({
         </div>
       </div>
     </Modal>
+  )
+}
+
+export function MoveFolderModal({
+  open,
+  folder,
+  cabinets,
+  shelves,
+  onClose,
+  onConfirm,
+}: MoveFolderModalProps) {
+  if (!open || !folder) return null
+
+  return (
+    <MoveFolderContent
+      key={folder.id}
+      folder={folder}
+      cabinets={cabinets}
+      shelves={shelves}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    />
   )
 }

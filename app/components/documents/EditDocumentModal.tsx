@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useDocuments } from '@/app/(main)/context/DocumentsContext'
 import { useArchive } from '@/app/(main)/context/ArchiveContext'
 import { useMasterData } from '@/app/(main)/context/MasterDataContext'
@@ -54,32 +54,44 @@ function addYearsFromNow(years: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-export default function EditDocumentModal({
-  open,
+function EditDocumentContent({
   doc,
   onClose,
   onSuccess,
-}: EditDocumentModalProps) {
+}: {
+  doc: Document
+  onClose: () => void
+  onSuccess?: (updated: Document) => void
+}) {
   const { updateDocument, uploadFile, categories } = useDocuments()
   const { warehouses, cabinets, shelves, folders } = useArchive()
   const { tags: masterTags } = useMasterData()
 
   // Form states
-  const [title, setTitle] = useState('')
-  const [docNumber, setDocNumber] = useState('')
-  const [category, setCategory] = useState(DEFAULT_CATEGORIES[0])
-  const [direction, setDirection] = useState<DocumentDirection | ''>('')
-  const [division, setDivision] = useState('')
-  const [department, setDepartment] = useState('')
-  const [status, setStatus] = useState<DocumentStatus>('draft')
-  const [expiresAt, setExpiresAt] = useState('')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [title, setTitle] = useState(doc.title || '')
+  const [docNumber, setDocNumber] = useState(doc.docNumber || '')
+  const [category, setCategory] = useState(doc.category || DEFAULT_CATEGORIES[0])
+  const [direction, setDirection] = useState<DocumentDirection | ''>(
+    (doc.direction as DocumentDirection) ||
+      (doc.category === 'ຂາເຂົ້າ' ? 'inbound' : doc.category === 'ຂາອອກ' ? 'outbound' : ''),
+  )
+  const [division, setDivision] = useState(doc.division || '')
+  const [department, setDepartment] = useState(
+    typeof doc.department === 'string'
+      ? doc.department
+      : typeof doc.department === 'object' && doc.department !== null
+        ? (doc.department as { name?: string }).name || ''
+        : '',
+  )
+  const [status, setStatus] = useState<DocumentStatus>(doc.status || 'draft')
+  const [expiresAt, setExpiresAt] = useState(doc.expiresAt ? doc.expiresAt.slice(0, 10) : '')
+  const [selectedTags, setSelectedTags] = useState<string[]>(Array.isArray(doc.tags) ? doc.tags : [])
 
   // Storage states
-  const [warehouseId, setWarehouseId] = useState('')
-  const [cabinetId, setCabinetId] = useState('')
-  const [shelfId, setShelfId] = useState('')
-  const [folderId, setFolderId] = useState('')
+  const [warehouseId, setWarehouseId] = useState(doc.warehouseId || '')
+  const [cabinetId, setCabinetId] = useState(doc.cabinetId || '')
+  const [shelfId, setShelfId] = useState(doc.shelfId || '')
+  const [folderId, setFolderId] = useState(doc.folderId || '')
 
   // File replacement state
   const [replaceFile, setReplaceFile] = useState(false)
@@ -87,40 +99,6 @@ export default function EditDocumentModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
-
-  // Populate form on document change
-  useEffect(() => {
-    if (!doc || !open) return
-
-    setTitle(doc.title || '')
-    setDocNumber(doc.docNumber || '')
-    setCategory(doc.category || DEFAULT_CATEGORIES[0])
-    setDirection(
-      (doc.direction as DocumentDirection) ||
-        (doc.category === 'ຂາເຂົ້າ' ? 'inbound' : doc.category === 'ຂາອອກ' ? 'outbound' : ''),
-    )
-    setDivision(doc.division || '')
-    setDepartment(
-      typeof doc.department === 'string'
-        ? doc.department
-        : typeof doc.department === 'object' && doc.department !== null
-          ? (doc.department as { name?: string }).name || ''
-          : '',
-    )
-    setStatus(doc.status || 'draft')
-    setExpiresAt(doc.expiresAt ? doc.expiresAt.slice(0, 10) : '')
-    setSelectedTags(Array.isArray(doc.tags) ? doc.tags : [])
-
-    setWarehouseId(doc.warehouseId || '')
-    setCabinetId(doc.cabinetId || '')
-    setShelfId(doc.shelfId || '')
-    setFolderId(doc.folderId || '')
-
-    setReplaceFile(false)
-    setSelectedFile(null)
-    setUploadProgress(0)
-    setError(null)
-  }, [doc, open])
 
   // Category choices
   const categoryOptions = useMemo(
@@ -288,8 +266,6 @@ export default function EditDocumentModal({
       setIsSubmitting(false)
     }
   }
-
-  if (!open || !doc) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150">
@@ -833,5 +809,23 @@ export default function EditDocumentModal({
         </form>
       </div>
     </div>
+  )
+}
+
+export default function EditDocumentModal({
+  open,
+  doc,
+  onClose,
+  onSuccess,
+}: EditDocumentModalProps) {
+  if (!open || !doc) return null
+
+  return (
+    <EditDocumentContent
+      key={doc.id}
+      doc={doc}
+      onClose={onClose}
+      onSuccess={onSuccess}
+    />
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import Pagination from '@/app/components/ui/Pagination'
 import Modal from '@/app/components/ui/Modal'
@@ -15,8 +15,6 @@ import {
   UserX,
   RefreshCw,
   Info,
-  Calendar,
-  Filter,
   Globe,
   Monitor,
   CheckCircle2,
@@ -54,35 +52,55 @@ export default function AuditLogsPage() {
   // Detail Modal
   const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null)
 
-  const loadLogs = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetchAuditLogs({
-        page,
-        limit: 20,
-        search: debouncedQuery.trim() || undefined,
-        action: actionFilter !== 'ALL' ? actionFilter : undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      })
-      setLogs(res.data)
-      setTotalCount(res.meta.total)
-      setTotalPages(res.meta.totalPages)
-    } catch (err) {
-      console.error('Failed to load audit logs:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, debouncedQuery, actionFilter, startDate, endDate])
+  const [refreshTick, setRefreshTick] = useState(0)
 
-  useEffect(() => {
-    void loadLogs()
-  }, [loadLogs])
-
-  // Reset page when filter changes
-  useEffect(() => {
+  // Reset page when filter changes (during render without effect)
+  const currentFiltersKey = `${debouncedQuery}_${actionFilter}_${startDate}_${endDate}`
+  const [prevFiltersKey, setPrevFiltersKey] = useState(currentFiltersKey)
+  if (currentFiltersKey !== prevFiltersKey) {
+    setPrevFiltersKey(currentFiltersKey)
     setPage(1)
-  }, [debouncedQuery, actionFilter, startDate, endDate])
+    setLoading(true)
+  }
+
+  const handleReload = () => {
+    setLoading(true)
+    setRefreshTick((t) => t + 1)
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    fetchAuditLogs({
+      page,
+      limit: 20,
+      search: debouncedQuery.trim() || undefined,
+      action: actionFilter !== 'ALL' ? actionFilter : undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    })
+      .then((res) => {
+        if (!cancelled) {
+          setLogs(res.data)
+          setTotalCount(res.meta.total)
+          setTotalPages(res.meta.totalPages)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('Failed to load audit logs:', err)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [page, debouncedQuery, actionFilter, startDate, endDate, refreshTick])
 
   // Summary Metrics from current list
   const metrics = useMemo(() => {
@@ -130,7 +148,7 @@ export default function AuditLogsPage() {
             </p>
           </div>
           <button
-            onClick={() => void loadLogs()}
+            onClick={handleReload}
             disabled={loading}
             className="inline-flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-xs hover:bg-slate-50 active:scale-95 transition-all"
           >

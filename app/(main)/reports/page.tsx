@@ -10,12 +10,10 @@ import {
   Calendar,
   CalendarDays,
   Clock,
-  Download,
   Eye,
   FileText,
   Filter,
   FolderArchive,
-  Printer,
   RefreshCw,
   Search,
 } from 'lucide-react';
@@ -24,8 +22,10 @@ import { useDocuments } from '@/app/(main)/context/DocumentsContext';
 import { useMasterData } from '@/app/(main)/context/MasterDataContext';
 import { useArchive } from '@/app/(main)/context/ArchiveContext';
 import { LAO_MONTHS } from '@/app/components/dashboard/dashboard-utils';
-import { pushToast } from '@/app/components/ui/Toast';
 import ExportPdfModal from '@/app/components/documents/ExportPdfModal';
+import type { Document } from '@/types/document';
+
+type EnrichedDocument = Document & { daysRemaining?: number };
 
 type TabKey = 'monthly' | 'division' | 'expiry' | 'archive' | 'details';
 
@@ -214,10 +214,10 @@ export default function ReportsPage() {
   const expiryRiskData = useMemo(() => {
     const now = new Date();
 
-    const expiredList: any[] = [];
-    const soon7DaysList: any[] = [];
-    const soon30DaysList: any[] = [];
-    const safeList: any[] = [];
+    const expiredList: EnrichedDocument[] = [];
+    const soon7DaysList: EnrichedDocument[] = [];
+    const soon30DaysList: EnrichedDocument[] = [];
+    const safeList: EnrichedDocument[] = [];
 
     filteredDocs.forEach((d) => {
       if (!d.expiresAt) {
@@ -1006,7 +1006,7 @@ export default function ReportsPage() {
                             {doc.expiresAt}
                           </td>
                           <td className="py-2.5 px-3 text-center">
-                            {doc.daysRemaining <= 0 ? (
+                            {(doc.daysRemaining ?? 0) <= 0 ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-800 border border-slate-200 font-mono">
                                 ໝົດອາຍຸແລ້ວ
                               </span>

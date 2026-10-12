@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../../context/DocumentsContext'
@@ -59,12 +59,18 @@ export default function IncomingDocumentsPage() {
   } = useDocuments()
   const { user: currentUser } = useCurrentUser()
 
-  // Main Section: 'incoming' | 'outgoing' | 'rejected'
-  const [section, setSection] = useState<SectionTab>(() => {
-    const tabParam = searchParams.get('tab')
-    if (tabParam === 'outgoing' || tabParam === 'rejected') return tabParam
-    return 'incoming'
-  })
+  // Main Section: 'incoming' | 'outgoing' | 'rejected' derived from URL parameter with event support
+  const tabParam = searchParams.get('tab')
+  const [eventSection, setEventSection] = useState<SectionTab | null>(null)
+  const [prevTabParam, setPrevTabParam] = useState(tabParam)
+
+  if (tabParam !== prevTabParam) {
+    setPrevTabParam(tabParam)
+    setEventSection(null)
+  }
+
+  const section: SectionTab =
+    eventSection ?? (tabParam === 'outgoing' || tabParam === 'rejected' ? tabParam : 'incoming')
 
   // Subtab for incoming section: 'pending' | 'history'
   const [incomingSubTab, setIncomingSubTab] = useState<IncomingSubTab>('pending')
@@ -97,21 +103,13 @@ export default function IncomingDocumentsPage() {
     const handleSetTab = (e: Event) => {
       const custom = e as CustomEvent<{ tab: string }>
       if (custom.detail?.tab && ['incoming', 'outgoing', 'rejected'].includes(custom.detail.tab)) {
-        setSection(custom.detail.tab as SectionTab)
+        setEventSection(custom.detail.tab as SectionTab)
         setCurrentPage(1)
       }
     }
     window.addEventListener('dms:set-transfer-tab', handleSetTab)
     return () => window.removeEventListener('dms:set-transfer-tab', handleSetTab)
   }, [])
-
-  // Sync tab with URL search parameter
-  useEffect(() => {
-    const tabParam = searchParams.get('tab')
-    if (tabParam && ['incoming', 'outgoing', 'rejected'].includes(tabParam)) {
-      setSection(tabParam as SectionTab)
-    }
-  }, [searchParams])
 
   const userDept = currentUser?.department?.trim().toLowerCase()
   const userDiv = currentUser?.division?.trim().toLowerCase()

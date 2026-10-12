@@ -104,6 +104,7 @@ export default function UploadDocumentModal({
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator !== 'undefined' ? navigator.onLine : true,
   )
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     function handleOnline() {
@@ -130,7 +131,6 @@ export default function UploadDocumentModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [filePreviewUrl, setFilePreviewUrl] = useState<string>('')
   const [pdfLoading, setPdfLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [warehouseId, setWarehouseId] = useState(resolvedWarehouseId)
   const [cabinetId, setCabinetId] = useState(resolvedCabinetId)
   const [shelfId, setShelfId] = useState(resolvedShelfId)
