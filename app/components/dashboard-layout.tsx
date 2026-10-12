@@ -572,9 +572,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                             return pathname === childBase || pathname.startsWith(childBase + '/');
                           })
                         ));
-                      const isExpanded = expandedMenus[item.href] !== undefined
-                        ? expandedMenus[item.href]
-                        : isParentActive;
+                      const isExpanded = isParentActive || Boolean(expandedMenus[item.href]);
                       let itemBadge: string | undefined = item.badge;
                       let badgeClass = 'bg-amber-400 text-slate-900';
 
@@ -602,32 +600,54 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                       if (hasChildren) {
                         return (
                           <div key={item.name} className="space-y-1">
-                            <button
-                              type="button"
-                              onClick={() => toggleExpand(item.href)}
+                            <div
                               className={`group flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors select-none ${
                                 isParentActive
                                   ? 'bg-indigo-600 text-white font-semibold shadow-sm'
                                   : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                               }`}
                             >
-                              <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                              <Link
+                                href={item.href}
+                                onClick={() => {
+                                  setExpandedMenus((prev) => {
+                                    const next = { ...prev, [item.href]: true };
+                                    try {
+                                      sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next));
+                                    } catch {}
+                                    return next;
+                                  });
+                                  setMobileNavOpen(false);
+                                }}
+                                className="flex min-w-0 flex-1 items-center gap-2.5"
+                              >
                                 <Icon className={`h-4 w-4 shrink-0 ${isParentActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
                                 <span className="truncate whitespace-nowrap">{item.name}</span>
-                              </div>
+                              </Link>
                               <div className="flex items-center gap-2">
                                 {itemBadge ? (
                                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeClass}`}>
                                     {itemBadge}
                                   </span>
                                 ) : null}
-                                <ChevronDown
-                                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white ${
-                                    isExpanded ? 'rotate-0' : '-rotate-90'
-                                  }`}
-                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    toggleExpand(item.href);
+                                  }}
+                                  className="p-1 rounded-md hover:bg-white/10 transition-colors"
+                                  aria-label="ຫຍໍ້/ຂະຫຍາຍເມນູ"
+                                >
+                                  <ChevronDown
+                                    className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white ${
+                                      isExpanded ? 'rotate-0' : '-rotate-90'
+                                    }`}
+                                  />
+                                </button>
                               </div>
-                            </button>
+                            </div>
 
                             {/* Collapsible Children Submenu with vertical guide line like in example picture */}
                             {isExpanded && allowedChildren.length > 0 && (
