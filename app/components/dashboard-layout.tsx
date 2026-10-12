@@ -194,14 +194,38 @@ const menuSections: MenuSection[] = [
 
 const SIDEBAR_STORAGE_KEY = 'dms_sidebar_expanded_menus';
 
+function findParentMenuHref(pathname: string): string | null {
+  for (const section of menuSections) {
+    for (const item of section.items) {
+      if (item.children && item.children.length > 0) {
+        if (pathname === item.href || pathname.startsWith(item.href + '/')) {
+          return item.href;
+        }
+        for (const child of item.children) {
+          const childBase = child.href.split('?')[0];
+          if (pathname === childBase || pathname.startsWith(childBase + '/')) {
+            return item.href;
+          }
+        }
+      }
+    }
+  }
+  if (
+    pathname.startsWith('/documents/incoming') ||
+    pathname.startsWith('/documents/outgoing') ||
+    pathname.startsWith('/documents/rejected')
+  ) {
+    return '/documents/incoming';
+  }
+  return null;
+}
+
 function getInitialExpandedMenus(pathname: string): Record<string, boolean> {
+  const activeParent = findParentMenuHref(pathname);
   const currentDefaults: Record<string, boolean> = {
-    '/documents/archive': pathname.startsWith('/documents/archive'),
-    '/documents/incoming':
-      pathname.startsWith('/documents/incoming') ||
-      pathname.startsWith('/documents/outgoing') ||
-      pathname.startsWith('/documents/rejected'),
-    '/master-data': pathname.startsWith('/master-data'),
+    '/documents/archive': activeParent === '/documents/archive',
+    '/documents/incoming': activeParent === '/documents/incoming',
+    '/master-data': activeParent === '/master-data',
   };
 
   if (typeof window === 'undefined') {
@@ -268,18 +292,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const [prevRoutePath, setPrevRoutePath] = useState(pathname);
   if (pathname !== prevRoutePath) {
     setPrevRoutePath(pathname);
-    let targetParent: string | null = null;
-    if (pathname.startsWith('/documents/archive')) {
-      targetParent = '/documents/archive';
-    } else if (
-      pathname.startsWith('/documents/incoming') ||
-      pathname.startsWith('/documents/outgoing') ||
-      pathname.startsWith('/documents/rejected')
-    ) {
-      targetParent = '/documents/incoming';
-    } else if (pathname.startsWith('/master-data')) {
-      targetParent = '/master-data';
-    }
+    const targetParent = findParentMenuHref(pathname);
 
     if (targetParent && !expandedMenus[targetParent]) {
       const updated = { ...expandedMenus, [targetParent]: true };
@@ -657,14 +670,24 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                     ? (pathname === '/documents/incoming' && (childTab ? activeTransferTab === childTab : activeTransferTab === 'incoming')) ||
                                       (childTab === 'outgoing' && pathname === '/documents/outgoing') ||
                                       (childTab === 'rejected' && pathname === '/documents/rejected')
-                                    : pathname === child.href || pathname.startsWith(child.href + '?');
+                                    : pathname === child.href ||
+                                      pathname.startsWith(child.href + '?') ||
+                                      pathname.startsWith(child.href + '/');
 
                                   return (
                                     <Link
                                       key={child.name}
                                       href={child.href}
                                       onClick={(e) => {
-                                        setExpandedMenus((prev) => ({ ...prev, [item.href]: true }));
+                                        setExpandedMenus((prev) => {
+                                          const updated = { ...prev, [item.href]: true };
+                                          try {
+                                            localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(updated));
+                                          } catch {
+                                            // ignore
+                                          }
+                                          return updated;
+                                        });
                                         if (isArchiveChild) {
                                           setActiveArchiveLevel(childLevel);
                                           window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
