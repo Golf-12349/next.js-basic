@@ -230,26 +230,14 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
-    let saved: Record<string, boolean> = {};
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = sessionStorage.getItem('dms_sidebar_expanded');
-        if (stored) saved = JSON.parse(stored);
-      } catch {}
-    }
-    return {
-      ...saved,
-      '/documents/archive': saved['/documents/archive'] ?? pathname.startsWith('/documents/archive'),
-      '/documents/incoming':
-        saved['/documents/incoming'] ?? (
-          pathname.startsWith('/documents/incoming') ||
-          pathname.startsWith('/documents/outgoing') ||
-          pathname.startsWith('/documents/rejected')
-        ),
-      '/master-data': saved['/master-data'] ?? pathname.startsWith('/master-data'),
-    };
-  });
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => ({
+    '/documents/archive': pathname.startsWith('/documents/archive'),
+    '/documents/incoming':
+      pathname.startsWith('/documents/incoming') ||
+      pathname.startsWith('/documents/outgoing') ||
+      pathname.startsWith('/documents/rejected'),
+    '/master-data': pathname.startsWith('/master-data'),
+  }));
   const [, setCurrentQuery] = useState('');
   const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
   const [activeTransferTab, setActiveTransferTab] = useState<string>('incoming');
@@ -356,40 +344,20 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   useEffect(() => {
     if (pathname.startsWith('/documents/archive')) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the archive submenu when on an archive route
-      setExpandedMenus((prev) => {
-        const next = { ...prev, '/documents/archive': true };
-        try { sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next)); } catch {}
-        return next;
-      });
+      setExpandedMenus((prev) => ({ ...prev, '/documents/archive': true }));
     }
     if (pathname.startsWith('/documents/incoming') || pathname.startsWith('/documents/outgoing') || pathname.startsWith('/documents/rejected')) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the incoming/outgoing/rejected submenu when on those routes
-      setExpandedMenus((prev) => {
-        const next = { ...prev, '/documents/incoming': true };
-        try { sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next)); } catch {}
-        return next;
-      });
+      setExpandedMenus((prev) => ({ ...prev, '/documents/incoming': true }));
     }
     if (pathname.startsWith('/master-data')) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand master-data submenu when on master-data routes
-      setExpandedMenus((prev) => {
-        const next = { ...prev, '/master-data': true };
-        try { sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next)); } catch {}
-        return next;
-      });
+      setExpandedMenus((prev) => ({ ...prev, '/master-data': true }));
     }
   }, [pathname]);
 
   const toggleExpand = (href: string) => {
-    setExpandedMenus((prev) => {
-      const next = { ...prev, [href]: !prev[href] };
-      try {
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next));
-        }
-      } catch {}
-      return next;
-    });
+    setExpandedMenus((prev) => ({ ...prev, [href]: !prev[href] }));
   };
 
   // ດຶງການແຈ້ງເຕືອນຈິງຈາກ backend (persist ໃນຖານຂໍ້ມູນ ບໍ່ຜູກກັບ sessionStorage/ເຄື່ອງໃດເຄື່ອງໜຶ່ງອີກຕໍ່ໄປ)
@@ -572,7 +540,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                             return pathname === childBase || pathname.startsWith(childBase + '/');
                           })
                         ));
-                      const isExpanded = isParentActive || Boolean(expandedMenus[item.href]);
+                      const isExpanded = !!expandedMenus[item.href];
                       let itemBadge: string | undefined = item.badge;
                       let badgeClass = 'bg-amber-400 text-slate-900';
 
@@ -600,54 +568,32 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                       if (hasChildren) {
                         return (
                           <div key={item.name} className="space-y-1">
-                            <div
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(item.href)}
                               className={`group flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors select-none ${
                                 isParentActive
                                   ? 'bg-indigo-600 text-white font-semibold shadow-sm'
                                   : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                               }`}
                             >
-                              <Link
-                                href={item.href}
-                                onClick={() => {
-                                  setExpandedMenus((prev) => {
-                                    const next = { ...prev, [item.href]: true };
-                                    try {
-                                      sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next));
-                                    } catch {}
-                                    return next;
-                                  });
-                                  setMobileNavOpen(false);
-                                }}
-                                className="flex min-w-0 flex-1 items-center gap-2.5"
-                              >
+                              <div className="flex min-w-0 flex-1 items-center gap-2.5">
                                 <Icon className={`h-4 w-4 shrink-0 ${isParentActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
                                 <span className="truncate whitespace-nowrap">{item.name}</span>
-                              </Link>
+                              </div>
                               <div className="flex items-center gap-2">
                                 {itemBadge ? (
                                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeClass}`}>
                                     {itemBadge}
                                   </span>
                                 ) : null}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    toggleExpand(item.href);
-                                  }}
-                                  className="p-1 rounded-md hover:bg-white/10 transition-colors"
-                                  aria-label="ຫຍໍ້/ຂະຫຍາຍເມນູ"
-                                >
-                                  <ChevronDown
-                                    className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white ${
-                                      isExpanded ? 'rotate-0' : '-rotate-90'
-                                    }`}
-                                  />
-                                </button>
+                                <ChevronDown
+                                  className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-white ${
+                                    isExpanded ? 'rotate-0' : '-rotate-90'
+                                  }`}
+                                />
                               </div>
-                            </div>
+                            </button>
 
                             {/* Collapsible Children Submenu with vertical guide line like in example picture */}
                             {isExpanded && allowedChildren.length > 0 && (
@@ -671,11 +617,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                       key={child.name}
                                       href={child.href}
                                       onClick={(e) => {
-                                        setExpandedMenus((prev) => {
-                                          const next = { ...prev, [item.href]: true };
-                                          try { sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next)); } catch {}
-                                          return next;
-                                        });
+                                        setExpandedMenus((prev) => ({ ...prev, [item.href]: true }));
                                         if (isArchiveChild) {
                                           setActiveArchiveLevel(childLevel);
                                           window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
