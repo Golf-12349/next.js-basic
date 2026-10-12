@@ -192,6 +192,38 @@ const menuSections: MenuSection[] = [
   },
 ];
 
+const SIDEBAR_STORAGE_KEY = 'dms_sidebar_expanded_menus';
+
+function getInitialExpandedMenus(pathname: string): Record<string, boolean> {
+  const currentDefaults: Record<string, boolean> = {
+    '/documents/archive': pathname.startsWith('/documents/archive'),
+    '/documents/incoming':
+      pathname.startsWith('/documents/incoming') ||
+      pathname.startsWith('/documents/outgoing') ||
+      pathname.startsWith('/documents/rejected'),
+    '/master-data': pathname.startsWith('/master-data'),
+  };
+
+  if (typeof window === 'undefined') {
+    return currentDefaults;
+  }
+
+  try {
+    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as Record<string, boolean>;
+      return {
+        ...currentDefaults,
+        ...parsed,
+      };
+    }
+  } catch {
+    // ignore
+  }
+
+  return currentDefaults;
+}
+
 export function DashboardLayout({ children, title = 'Dashboard', showSearch }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -230,14 +262,35 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => ({
-    '/documents/archive': pathname.startsWith('/documents/archive'),
-    '/documents/incoming':
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() =>
+    getInitialExpandedMenus(pathname),
+  );
+  const [prevRoutePath, setPrevRoutePath] = useState(pathname);
+  if (pathname !== prevRoutePath) {
+    setPrevRoutePath(pathname);
+    let targetParent: string | null = null;
+    if (pathname.startsWith('/documents/archive')) {
+      targetParent = '/documents/archive';
+    } else if (
       pathname.startsWith('/documents/incoming') ||
       pathname.startsWith('/documents/outgoing') ||
-      pathname.startsWith('/documents/rejected'),
-    '/master-data': pathname.startsWith('/master-data'),
-  }));
+      pathname.startsWith('/documents/rejected')
+    ) {
+      targetParent = '/documents/incoming';
+    } else if (pathname.startsWith('/master-data')) {
+      targetParent = '/master-data';
+    }
+
+    if (targetParent && !expandedMenus[targetParent]) {
+      const updated = { ...expandedMenus, [targetParent]: true };
+      setExpandedMenus(updated);
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+    }
+  }
   const [, setCurrentQuery] = useState('');
   const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
   const [activeTransferTab, setActiveTransferTab] = useState<string>('incoming');
@@ -341,23 +394,17 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
     return () => window.removeEventListener('popstate', updateQuery);
   }, [pathname]);
 
-  useEffect(() => {
-    if (pathname.startsWith('/documents/archive')) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the archive submenu when on an archive route
-      setExpandedMenus((prev) => ({ ...prev, '/documents/archive': true }));
-    }
-    if (pathname.startsWith('/documents/incoming') || pathname.startsWith('/documents/outgoing') || pathname.startsWith('/documents/rejected')) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the incoming/outgoing/rejected submenu when on those routes
-      setExpandedMenus((prev) => ({ ...prev, '/documents/incoming': true }));
-    }
-    if (pathname.startsWith('/master-data')) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand master-data submenu when on master-data routes
-      setExpandedMenus((prev) => ({ ...prev, '/master-data': true }));
-    }
-  }, [pathname]);
-
   const toggleExpand = (href: string) => {
-    setExpandedMenus((prev) => ({ ...prev, [href]: !prev[href] }));
+    setExpandedMenus((prev) => {
+      const nextState = !prev[href];
+      const updated = { ...prev, [href]: nextState };
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
   };
 
   // ດຶງການແຈ້ງເຕືອນຈິງຈາກ backend (persist ໃນຖານຂໍ້ມູນ ບໍ່ຜູກກັບ sessionStorage/ເຄື່ອງໃດເຄື່ອງໜຶ່ງອີກຕໍ່ໄປ)

@@ -546,7 +546,7 @@ export default function DocumentsPage() {
                         <button
                           type="button"
                           onClick={() => setActiveDropdownId(activeDropdownId === doc.id ? null : doc.id)}
-                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer ${
+                          className={`relative z-40 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer ${
                             activeDropdownId === doc.id
                               ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
                               : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
