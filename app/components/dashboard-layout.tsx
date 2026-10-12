@@ -236,13 +236,33 @@ function getInitialExpandedMenus(pathname: string): Record<string, boolean> {
     const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved) as Record<string, boolean>;
-      return {
+      const merged: Record<string, boolean> = {
         ...currentDefaults,
         ...parsed,
       };
+      // If currently on an active route belonging to a parent menu,
+      // that parent menu must ALWAYS be expanded and preserved in storage
+      if (activeParent) {
+        merged[activeParent] = true;
+        try {
+          localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(merged));
+        } catch {
+          // ignore
+        }
+      }
+      return merged;
     }
   } catch {
     // ignore
+  }
+
+  if (activeParent) {
+    currentDefaults[activeParent] = true;
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(currentDefaults));
+    } catch {
+      // ignore
+    }
   }
 
   return currentDefaults;
