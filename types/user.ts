@@ -227,4 +227,20 @@ export const edlStructure: Record<string, string[]> = {
     'ພະແນກບໍາລຸງຮັກສາ ສາຍສົ່ງ, ສະຖານີ ແລະ ແຫຼ່ງຜະລິດ',
     'ເຂື່ອນໄຟຟ້ານໍ້າງຶມ4',
   ],
+  'ຝ່າຍການເງິນ ແລະ ບັນຊີ': [
+    'ພະແນກບໍລິຫານ-ສັງລວມ',
+    'ພະແນກບັນຊີຊັບສິນ',
+    'ພະແນກບັນຊີໜີ້ສິນ',
+    'ພະແນກບັນຊີລວມ',
+  ],
 };
+
+export function getDepartmentsForDivision(division?: string | null): string[] {
+  if (!division) return [];
+  const trimmed = division.trim();
+  if (edlStructure[trimmed]) return edlStructure[trimmed];
+  if (trimmed === 'ຝ່າຍການເງິນ' || trimmed === 'ຝ່າຍບັນຊີ' || trimmed === 'ຝ່າຍການເງິນ ແລະ ບັນຊີ') {
+    return edlStructure['ຝ່າຍບັນຊີ'] || [];
+  }
+  return [];
+}

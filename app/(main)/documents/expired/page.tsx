@@ -111,7 +111,7 @@ export default function ExpiredDocumentsPage() {
       if (activeTab === 'expired' && !isExpired) return false
       if (activeTab === '7days' && !isExpiring7) return false
       if (activeTab === '30days' && !isExpiring30) return false
-      if (activeTab === 'all' && !(isExpired || isExpiring30)) return false
+      // 'all' tab displays all tracked documents (stats.totalTracked)
 
       // Category filter
       if (filterCategory !== 'ທັງໝົດ' && doc.category !== filterCategory) return false

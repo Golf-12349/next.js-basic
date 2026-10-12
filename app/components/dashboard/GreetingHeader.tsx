@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { CalendarDays, Moon, Sun, Sunrise } from 'lucide-react';
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext';
 import { formatFullDateLao, shiftOfHour } from './dashboard-utils';
@@ -42,14 +41,6 @@ export function GreetingHeader() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        <Link
-          href="/dashboard-new"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition shadow-xs"
-        >
-          ✨ ລອງດີໄຊໃໝ່ (ບໍ່ມີ Pie Chart) →
-        </Link>
-      </div>
     </div>
   );
 }

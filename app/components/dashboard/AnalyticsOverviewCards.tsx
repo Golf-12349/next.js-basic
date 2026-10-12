@@ -173,12 +173,12 @@ export function AnalyticsOverviewCards({ className = '' }: { className?: string 
     const approvalRate = reviewed > 0 ? Math.round((approved / reviewed) * 100) : 100;
 
     return {
-      total: total || 142,
-      pending: pending || 18,
-      approved: approved || 104,
-      expired: expired || 5,
-      expiringSoon: expiringSoon || 2,
-      monthlyInflow: monthlyInflow || 3,
+      total,
+      pending,
+      approved,
+      expired,
+      expiringSoon,
+      monthlyInflow,
       approvalRate,
     };
   }, [activeDocs]);

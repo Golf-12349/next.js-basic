@@ -21,7 +21,7 @@ type BrandLogoProps = {
 export function BrandLogo({
   size = 'md',
   variant = 'light',
-  subtitle = 'ລະບົບເອກກະສານ',
+  subtitle = 'ລະບົບເອກະສານ',
   className = '',
 }: BrandLogoProps) {
   const isDark = variant === 'dark';

@@ -354,7 +354,7 @@ export default function CabinetView({
       },
       {
         key: 'division',
-        header: 'ຝ່າຢ',
+        header: 'ຝ່າຍ',
         sortValue: (c) => c.division ?? '',
         render: (c) => (
           <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-600">

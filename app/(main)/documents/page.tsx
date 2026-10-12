@@ -141,7 +141,7 @@ export default function DocumentsPage() {
   }, [debouncedQuery, filterWarehouse, filterCategory, filterCabinet, filterStatus, filterTag, filterDivision, filterDepartment])
 
   const visible = useMemo(() => {
-    return documents.filter((d) => !d.deleted && d.status !== 'pending').filter((d) => {
+    return documents.filter((d) => !d.deleted).filter((d) => {
       const q = debouncedQuery.trim().toLowerCase()
       if (q) {
         const matchesTitleOrNum = d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q)
@@ -172,6 +172,7 @@ export default function DocumentsPage() {
       }
       if (filterStatus !== 'ທັງໝົດ') {
         if (filterStatus === 'ຮ່າງ' && d.status !== 'draft') return false
+        if (filterStatus === 'ລໍຖ້າອະນຸມັດ' && d.status !== 'pending') return false
         if (filterStatus === 'ອະນຸມັດ' && d.status !== 'approved') return false
         if (filterStatus === 'ເກັບເຂົ້າຄັງ' && d.status !== 'archived') return false
         if (filterStatus === 'ໝົດອາຍຸ') {
@@ -211,7 +212,14 @@ export default function DocumentsPage() {
   function handleDownload(doc: Document) {
     const url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
     if (url && url !== '#') {
-      window.open(url, '_blank', 'noopener,noreferrer')
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.title ? `${doc.title}.${doc.fileType || 'pdf'}` : 'document'
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
     } else {
       pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })
     }
@@ -339,6 +347,7 @@ export default function DocumentsPage() {
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400">
                 <option>ທັງໝົດ</option>
                 <option>ຮ່າງ</option>
+                <option>ລໍຖ້າອະນຸມັດ</option>
                 <option>ອະນຸມັດ</option>
                 <option>ເກັບເຂົ້າຄັງ</option>
                 <option>ໝົດອາຍຸ</option>

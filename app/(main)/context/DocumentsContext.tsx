@@ -352,6 +352,7 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
         expiresAt: doc.expiresAt ? new Date(doc.expiresAt).toISOString() : undefined,
         warehouseId: doc.warehouseId,
         cabinetId: doc.cabinetId,
+        shelfId: doc.shelfId,
         folderId: doc.folderId,
       })
       newDoc = {

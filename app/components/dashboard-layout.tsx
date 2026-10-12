@@ -29,6 +29,7 @@ import {
   LogOut,
   Menu,
   PackageOpen,
+  Repeat,
   Send,
   Settings,
   ShieldCheck,
@@ -143,6 +144,12 @@ const menuSections: MenuSection[] = [
             name: 'ແຟ້ມເກັບເອກະສານ',
             href: '/documents/archive?level=folders',
             icon: FolderArchive,
+          },
+          {
+            name: 'ຍ້າຍສະຖານທີ່ຈັດເກັບ',
+            href: '/documents/relocate',
+            icon: Repeat,
+            roles: ['SuperAdmin', 'DivisionAdmin'],
           },
         ],
       },
@@ -480,7 +487,7 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
       >
         <div>
           <div className="mb-4 flex items-center justify-between gap-2 border-b border-slate-800 px-2 pb-4">
-            <BrandLogo variant="dark" subtitle="ລະບົບເອກກະສານ" />
+            <BrandLogo variant="dark" subtitle="ລະບົບເອກະສານ" />
             <button
               type="button"
               onClick={() => setMobileNavOpen(false)}
@@ -823,11 +830,11 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                       type="button"
                       onClick={() => {
                         setNotifOpen(false);
-                        router.push('/documents/pending');
+                        router.push('/documents/incoming');
                       }}
                       className="text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-800"
                     >
-                      ເບິ່ງເອກະສານລໍຖ້າອະນຸມັດທັງໝົດ →
+                      ເບິ່ງເອກະສານຂາເຂົ້າ / ລໍຖ້າອະນຸມັດທັງໝົດ →
                     </button>
                   </div>
                 )}

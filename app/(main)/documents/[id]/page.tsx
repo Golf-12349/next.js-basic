@@ -123,6 +123,12 @@ export default function DocumentDetailPage() {
     pushToast({ title: 'ເອກະສານຖືກອະນຸມັດ' })
   }
 
+  function handleReject() {
+    if (!doc) return
+    void updateDocument(doc.id, { status: 'draft' })
+    pushToast({ title: 'ເອກະສານຖືກປະຕິເສດ ແລະ ສົ່ງກັບໄປເປັນຮ່າງ' })
+  }
+
   const pendingTransfer = doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending'
     ? doc.transfers[0]
     : null
@@ -400,12 +406,22 @@ export default function DocumentDetailPage() {
                 </button>
 
                 {canModerate && doc.status === 'pending' && (
-                  <button
-                    onClick={handleApprove}
-                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
-                  >
-                    ອະນຸມັດ
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={handleApprove}
+                      type="button"
+                      className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <span>✓ ອະນຸມັດ</span>
+                    </button>
+                    <button
+                      onClick={handleReject}
+                      type="button"
+                      className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition-colors flex items-center justify-center gap-1"
+                    >
+                      <span>✕ ປະຕິເສດ</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
