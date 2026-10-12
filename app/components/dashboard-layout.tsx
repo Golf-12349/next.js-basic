@@ -230,13 +230,26 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => ({
-    '/documents/archive': pathname.startsWith('/documents/archive'),
-    '/documents/incoming':
-      pathname.startsWith('/documents/incoming') ||
-      pathname.startsWith('/documents/outgoing') ||
-      pathname.startsWith('/documents/rejected'),
-  }));
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
+    let saved: Record<string, boolean> = {};
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('dms_sidebar_expanded');
+        if (stored) saved = JSON.parse(stored);
+      } catch {}
+    }
+    return {
+      ...saved,
+      '/documents/archive': saved['/documents/archive'] ?? pathname.startsWith('/documents/archive'),
+      '/documents/incoming':
+        saved['/documents/incoming'] ?? (
+          pathname.startsWith('/documents/incoming') ||
+          pathname.startsWith('/documents/outgoing') ||
+          pathname.startsWith('/documents/rejected')
+        ),
+      '/master-data': saved['/master-data'] ?? pathname.startsWith('/master-data'),
+    };
+  });
   const [, setCurrentQuery] = useState('');
   const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
   const [activeTransferTab, setActiveTransferTab] = useState<string>('incoming');
@@ -343,16 +356,40 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   useEffect(() => {
     if (pathname.startsWith('/documents/archive')) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the archive submenu when on an archive route
-      setExpandedMenus((prev) => ({ ...prev, '/documents/archive': true }));
+      setExpandedMenus((prev) => {
+        const next = { ...prev, '/documents/archive': true };
+        try { sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next)); } catch {}
+        return next;
+      });
     }
     if (pathname.startsWith('/documents/incoming') || pathname.startsWith('/documents/outgoing') || pathname.startsWith('/documents/rejected')) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand the incoming/outgoing/rejected submenu when on those routes
-      setExpandedMenus((prev) => ({ ...prev, '/documents/incoming': true }));
+      setExpandedMenus((prev) => {
+        const next = { ...prev, '/documents/incoming': true };
+        try { sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next)); } catch {}
+        return next;
+      });
+    }
+    if (pathname.startsWith('/master-data')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-expand master-data submenu when on master-data routes
+      setExpandedMenus((prev) => {
+        const next = { ...prev, '/master-data': true };
+        try { sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next)); } catch {}
+        return next;
+      });
     }
   }, [pathname]);
 
   const toggleExpand = (href: string) => {
-    setExpandedMenus((prev) => ({ ...prev, [href]: !prev[href] }));
+    setExpandedMenus((prev) => {
+      const next = { ...prev, [href]: !prev[href] };
+      try {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next));
+        }
+      } catch {}
+      return next;
+    });
   };
 
   // ດຶງການແຈ້ງເຕືອນຈິງຈາກ backend (persist ໃນຖານຂໍ້ມູນ ບໍ່ຜູກກັບ sessionStorage/ເຄື່ອງໃດເຄື່ອງໜຶ່ງອີກຕໍ່ໄປ)
@@ -525,7 +562,6 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                     {section.items.map((item) => {
                       const Icon = item.icon;
                       const hasChildren = !!(item.children && item.children.length > 0);
-                      const isExpanded = !!expandedMenus[item.href];
                       const isParentActive =
                         pathname === item.href ||
                         (item.href === '/dashboard' && pathname === '/') ||
@@ -536,6 +572,9 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                             return pathname === childBase || pathname.startsWith(childBase + '/');
                           })
                         ));
+                      const isExpanded = expandedMenus[item.href] !== undefined
+                        ? expandedMenus[item.href]
+                        : isParentActive;
                       let itemBadge: string | undefined = item.badge;
                       let badgeClass = 'bg-amber-400 text-slate-900';
 
@@ -612,6 +651,11 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                       key={child.name}
                                       href={child.href}
                                       onClick={(e) => {
+                                        setExpandedMenus((prev) => {
+                                          const next = { ...prev, [item.href]: true };
+                                          try { sessionStorage.setItem('dms_sidebar_expanded', JSON.stringify(next)); } catch {}
+                                          return next;
+                                        });
                                         if (isArchiveChild) {
                                           setActiveArchiveLevel(childLevel);
                                           window.dispatchEvent(new CustomEvent('dms:set-archive-level', { detail: { level: childLevel } }));
