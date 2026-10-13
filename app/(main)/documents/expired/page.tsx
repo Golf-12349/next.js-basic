@@ -567,7 +567,9 @@ export default function ExpiredDocumentsPage() {
 
                         {/* Action Buttons */}
                         <td className="px-3 py-2.5 text-center">
-                          <div className="relative inline-flex items-center justify-center gap-1.5">
+                          <div className={`inline-flex items-center justify-center gap-1.5 ${
+                            activeDropdownId === doc.id ? 'relative z-50' : ''
+                          }`}>
                             {/* Prominent Quick Renew Button */}
                             <button
                               type="button"

@@ -537,7 +537,9 @@ export default function DocumentsPage() {
                       </span>
                     </td>
                     <td className="px-3.5 py-3 text-center whitespace-nowrap align-middle">
-                      <div className="relative inline-flex items-center justify-center gap-1.5">
+                      <div className={`inline-flex items-center justify-center gap-1.5 ${
+                        activeDropdownId === doc.id ? 'relative z-50' : ''
+                      }`}>
                         {/* Quick View Button */}
                         <button
                           type="button"
