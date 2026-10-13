@@ -482,6 +482,8 @@ export default function ExpiredDocumentsPage() {
                       <tr
                         key={doc.id}
                         className={`align-top transition-colors hover:bg-gray-50/80 ${
+                          activeDropdownId === doc.id ? 'relative z-50' : 'relative z-0'
+                        } ${
                           isExpired ? 'bg-rose-50/20' : isUrgent ? 'bg-amber-50/20' : ''
                         }`}
                       >
@@ -585,7 +587,7 @@ export default function ExpiredDocumentsPage() {
                               }
                               className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-semibold shadow-sm transition ${
                                 activeDropdownId === doc.id
-                                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
+                                  ? 'relative z-50 border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
                                   : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
                               }`}
                               title="ຕົວເລືອກເພີ່ມເຕີມ"
@@ -604,7 +606,7 @@ export default function ExpiredDocumentsPage() {
                             {activeDropdownId === doc.id && (
                               <>
                                 <div
-                                  className="fixed inset-0 z-30"
+                                  className="fixed inset-0 z-40"
                                   onClick={() => setActiveDropdownId(null)}
                                 />
                                 <div
@@ -612,7 +614,7 @@ export default function ExpiredDocumentsPage() {
                                     idx >= paginatedDocs.length - 2 && paginatedDocs.length > 3
                                       ? 'bottom-full mb-1.5'
                                       : 'top-full mt-1.5'
-                                  } z-40 w-52 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150 text-left`}
+                                  } z-50 w-52 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150 text-left`}
                                 >
                                   <button
                                     type="button"

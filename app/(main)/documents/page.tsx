@@ -420,7 +420,12 @@ export default function DocumentsPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {paginatedDocs.map((doc, idx) => (
-                  <tr key={doc.id} className="hover:bg-indigo-50/20 transition-colors group">
+                  <tr
+                    key={doc.id}
+                    className={`hover:bg-indigo-50/20 transition-colors group ${
+                      activeDropdownId === doc.id ? 'relative z-50' : 'relative z-0'
+                    }`}
+                  >
                     <td className="px-3.5 py-3 text-center text-xs font-semibold text-gray-400 tabular-nums whitespace-nowrap align-middle">
                       {(currentPage - 1) * PAGE_SIZE + idx + 1}
                     </td>
@@ -546,9 +551,9 @@ export default function DocumentsPage() {
                         <button
                           type="button"
                           onClick={() => setActiveDropdownId(activeDropdownId === doc.id ? null : doc.id)}
-                          className={`relative z-40 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer ${
+                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer ${
                             activeDropdownId === doc.id
-                              ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
+                              ? 'relative z-50 border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500/20'
                               : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
                           }`}
                           title="ຈັດການເອກະສານ"
@@ -565,7 +570,7 @@ export default function DocumentsPage() {
                         {activeDropdownId === doc.id && (
                           <>
                             <div
-                              className="fixed inset-0 z-30"
+                              className="fixed inset-0 z-40"
                               onClick={() => setActiveDropdownId(null)}
                             />
                             <div
@@ -573,7 +578,7 @@ export default function DocumentsPage() {
                                 idx >= paginatedDocs.length - 2 && paginatedDocs.length > 3
                                   ? 'bottom-full mb-1.5'
                                   : 'top-full mt-1.5'
-                              } z-40 w-52 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150 text-left`}
+                              } z-50 w-52 rounded-2xl border border-gray-100 bg-white p-1.5 shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150 text-left`}
                             >
                               <button
                                 type="button"
