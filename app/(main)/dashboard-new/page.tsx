@@ -1,18 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import DashboardPage from '../dashboard/page';
 
-export default function DashboardNewRedirect() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/dashboard');
-  }, [router]);
-
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center text-sm text-gray-500">
-      ກຳລັງນຳທາງໄປ Dashboard ຫຼັກ...
-    </div>
-  );
+export default function DashboardNewPage() {
+  return <DashboardPage />;
 }
