@@ -170,7 +170,7 @@ export default function DashboardPage() {
     }).sort((a, b) => b.count - a.count);
 
     const maxCount = Math.max(1, ...counts.map((c) => c.count));
-    return counts.slice(0, 8).map((dept, index) => ({
+    return counts.map((dept, index) => ({
       rank: index + 1,
       name: dept.name,
       count: dept.count,
@@ -453,8 +453,13 @@ export default function DashboardPage() {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col h-full">
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">ຈັດອັນດັບຝ່າຍທີ່ມີປະລິມານເອກະສານສູງສຸດໃນລະບົບ</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900">ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)</h3>
+                    <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
+                      {topDivisions.length} ຝ່າຍ
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">ຈັດອັນດັບທຸກຝ່າຍທີ່ມີປະລິມານເອກະສານໃນລະບົບ (ເລື່ອນເບິ່ງໄດ້)</p>
                 </div>
                 <Link
                   href="/master-data/divisions"
@@ -464,7 +469,7 @@ export default function DashboardPage() {
                 </Link>
               </div>
 
-              <div className="space-y-2.5 flex-1">
+              <div className="space-y-2.5 flex-1 max-h-[580px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
                 {topDivisions.map((dept) => (
                   <div
                     key={dept.rank}
