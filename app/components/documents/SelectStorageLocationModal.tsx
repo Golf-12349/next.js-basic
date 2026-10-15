@@ -38,6 +38,7 @@ export default function SelectStorageLocationModal({
 }: SelectStorageLocationModalProps) {
   const { warehouses, cabinets, shelves, folders } = useArchive()
 
+  const [warehouseId, setWarehouseId] = useState<string>('')
   const [cabinetId, setCabinetId] = useState<string>('')
   const [shelfId, setShelfId] = useState<string>('')
   const [folderId, setFolderId] = useState<string>('')
@@ -47,32 +48,37 @@ export default function SelectStorageLocationModal({
   // Reset and prefill selections when modal opens
   useEffect(() => {
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- cascade the warehouse/cabinet/shelf/folder pickers
+      const initialWh =
+        initialWarehouseId ||
+        (initialCabinetId ? cabinets.find((c: Cabinet) => c.id === initialCabinetId)?.warehouseId : undefined) ||
+        ''
+      setWarehouseId(initialWh)
       setCabinetId(initialCabinetId || '')
       setShelfId(initialShelfId || '')
       setFolderId(initialFolderId || '')
       setNote('')
     }
-  }, [open, initialCabinetId, initialShelfId, initialFolderId])
+  }, [open, initialWarehouseId, initialCabinetId, initialShelfId, initialFolderId, cabinets])
 
-  // Filter cabinets based on department (if given)
+  // Filter cabinets based on selected warehouse and department
   const availableCabinets = useMemo(() => {
+    let list = cabinets
+    if (warehouseId) {
+      list = list.filter((c: Cabinet) => c.warehouseId === warehouseId)
+    }
     if (department) {
       const deptNormalized = department.trim().toLowerCase()
-      const deptMatched = cabinets.filter(
+      const deptMatched = list.filter(
         (c: Cabinet) => c.department && c.department.trim().toLowerCase() === deptNormalized,
       )
       if (deptMatched.length > 0) return deptMatched
     }
-    return cabinets
-  }, [cabinets, department])
+    return list
+  }, [cabinets, warehouseId, department])
 
-  // Automatically select first cabinet if available and current selection is empty or not in list
+  // Automatically adjust cabinet if not in available list
   useEffect(() => {
-    if (availableCabinets.length > 0 && (!cabinetId || !availableCabinets.some((c: Cabinet) => c.id === cabinetId))) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- cascade the warehouse/cabinet/shelf/folder pickers
-      setCabinetId(availableCabinets[0].id)
-    } else if (availableCabinets.length === 0) {
+    if (cabinetId && !availableCabinets.some((c: Cabinet) => c.id === cabinetId)) {
       setCabinetId('')
     }
   }, [availableCabinets, cabinetId])
@@ -83,10 +89,12 @@ export default function SelectStorageLocationModal({
   )
   const selectedWarehouse = useMemo(
     () =>
-      selectedCabinet?.warehouseId
+      warehouseId
+        ? warehouses.find((w) => w.id === warehouseId)
+        : selectedCabinet?.warehouseId
         ? warehouses.find((w) => w.id === selectedCabinet.warehouseId)
         : warehouses.find((w) => w.id === initialWarehouseId),
-    [selectedCabinet, warehouses, initialWarehouseId],
+    [warehouseId, selectedCabinet, warehouses, initialWarehouseId],
   )
 
   // Filter shelves based on selected cabinet
@@ -98,7 +106,6 @@ export default function SelectStorageLocationModal({
   // Reset shelf selection if cabinet changes
   useEffect(() => {
     if (availableShelves.length > 0 && shelfId && !availableShelves.some((s: Shelf) => s.id === shelfId)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- cascade the warehouse/cabinet/shelf/folder pickers
       setShelfId('')
     }
   }, [availableShelves, shelfId])
@@ -114,10 +121,7 @@ export default function SelectStorageLocationModal({
 
   // Reset folder selection if cabinet or shelf changes
   useEffect(() => {
-    if (availableFolders.length > 0 && (!folderId || !availableFolders.some((f: Folder) => f.id === folderId))) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- cascade the warehouse/cabinet/shelf/folder pickers
-      setFolderId(availableFolders[0].id)
-    } else if (availableFolders.length === 0) {
+    if (availableFolders.length > 0 && folderId && !availableFolders.some((f: Folder) => f.id === folderId)) {
       setFolderId('')
     }
   }, [availableFolders, folderId])
@@ -129,7 +133,7 @@ export default function SelectStorageLocationModal({
     setSubmitting(true)
     try {
       await onConfirm({
-        warehouseId: selectedWarehouse?.id || initialWarehouseId || undefined,
+        warehouseId: warehouseId || selectedCabinet?.warehouseId || selectedWarehouse?.id || initialWarehouseId || undefined,
         cabinetId: cabinetId || undefined,
         shelfId: shelfId || undefined,
         folderId: folderId || undefined,
@@ -181,11 +185,35 @@ export default function SelectStorageLocationModal({
           </div>
         )}
 
-        {/* 1. Cabinet */}
+        {/* 1. Warehouse */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            🏛️ 1. ຄັງເອກະສານ (Warehouse)
+          </label>
+          <select
+            value={warehouseId}
+            onChange={(e) => {
+              setWarehouseId(e.target.value)
+              setCabinetId('')
+              setShelfId('')
+              setFolderId('')
+            }}
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+          >
+            <option value="">— ເລືອກຄັງເອກະສານ (ຫຼື ເລືອກຕູ້ໂດຍກົງ) —</option>
+            {warehouses.map((wh) => (
+              <option key={wh.id} value={wh.id}>
+                🏛️ {wh.name} {wh.division ? `[${wh.division}]` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 2. Cabinet */}
         <div>
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-              🗄️ 1. ຕູ້ເອກະສານ
+              🗄️ 2. ຕູ້ເອກະສານ (Cabinet)
             </label>
             {selectedWarehouse && (
               <span className="text-[11px] text-gray-500">
@@ -196,30 +224,35 @@ export default function SelectStorageLocationModal({
           <select
             value={cabinetId}
             onChange={(e) => {
-              setCabinetId(e.target.value)
+              const newCabId = e.target.value
+              setCabinetId(newCabId)
               setShelfId('')
               setFolderId('')
+              const cab = cabinets.find((c) => c.id === newCabId)
+              if (cab?.warehouseId) {
+                setWarehouseId(cab.warehouseId)
+              }
             }}
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
           >
             <option value="">— ບໍ່ລະບຸຕູ້ເອກະສານ —</option>
             {availableCabinets.map((cab) => (
               <option key={cab.id} value={cab.id}>
-                {cab.name} {cab.department ? `[${cab.department}]` : ''}
+                🗄️ {cab.name} {cab.department ? `[${cab.department}]` : ''}
               </option>
             ))}
           </select>
           {availableCabinets.length === 0 && (
             <p className="mt-1 text-xs text-amber-600">
-              ຍັງບໍ່ພົບຕູ້ເອກະສານ{department ? `ຂອງພະແນກ ${department}` : ''} (ສາມາດສ້າງຕູ້ໃໝ່ໄດ້ທີ່ເມນູຄັງເອກະສານ)
+              ຍັງບໍ່ພົບຕູ້ເອກະສານ{warehouseId ? `ໃນຄັງນີ້` : ''}{department ? ` (ພະແນກ ${department})` : ''} (ສາມາດສ້າງຕູ້ໃໝ່ໄດ້ທີ່ເມນູຄັງເອກະສານ)
             </p>
           )}
         </div>
 
-        {/* 2. Shelf (ຊັ້ນວາງເອກະສານ) */}
+        {/* 3. Shelf (ຊັ້ນວາງເອກະສານ) */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-            🪜 2. ຊັ້ນວາງເອກະສານ (Shelf - ທາງເລືອກ)
+            🪜 3. ຊັ້ນວາງເອກະສານ (Shelf - ທາງເລືອກ)
           </label>
           <select
             value={shelfId}
@@ -228,7 +261,7 @@ export default function SelectStorageLocationModal({
               setFolderId('')
             }}
             disabled={!cabinetId || availableShelves.length === 0}
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer"
           >
             <option value="">— ທຸກຊັ້ນວາງ / ບໍ່ລະບຸ —</option>
             {availableShelves.map((s) => (
@@ -242,16 +275,16 @@ export default function SelectStorageLocationModal({
           )}
         </div>
 
-        {/* 3. Folder (ແຟ້ມເກັບເອກະສານ) */}
+        {/* 4. Folder (ແຟ້ມເກັບເອກະສານ) */}
         <div>
           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-            📁 3. ແຟ້ມເກັບເອກະສານ (Folder)
+            📁 4. ແຟ້ມເກັບເອກະສານ (Folder)
           </label>
           <select
             value={folderId}
             onChange={(e) => setFolderId(e.target.value)}
             disabled={!cabinetId || availableFolders.length === 0}
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer"
           >
             <option value="">— ບໍ່ລະບຸແຟ້ມເອກະສານ —</option>
             {availableFolders.map((f) => (
