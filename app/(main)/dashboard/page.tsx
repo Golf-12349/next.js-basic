@@ -357,9 +357,9 @@ export default function DashboardPage() {
         {/* =========================================================================
             TWO CLEAN BALANCED COLUMNS (FORMAT BREAKDOWN + DIRECTION & LEADERBOARD)
            ========================================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
           {/* COLUMN 1: File Formats (GitHub-Style Segmented Bar) & Document Direction */}
-          <div className="space-y-5">
+          <div className="space-y-5 flex flex-col justify-between">
             {/* Box 1: File Format Breakdown */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
@@ -449,8 +449,8 @@ export default function DashboardPage() {
           </div>
 
           {/* COLUMN 2: Department Distribution Leaderboard */}
-          <div className="h-full">
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col h-full">
+          <div className="flex flex-col h-full min-h-0">
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col h-full max-h-[520px]">
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 shrink-0">
                 <div>
                   <div className="flex items-center gap-2">
