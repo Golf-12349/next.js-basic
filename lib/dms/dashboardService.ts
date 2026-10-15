@@ -13,6 +13,37 @@ export interface DonutGroup {
   topLabel: string
 }
 
+export interface PipelineStep {
+  count: number
+  pct: number
+}
+
+export interface FileBreakdownItem {
+  label: string
+  ext: string
+  count: number
+  color: string
+  bg: string
+  pct: number
+}
+
+export interface FlowBreakdownItem {
+  label: string
+  direction: string
+  count: number
+  pct: number
+  color: string
+  barBg: string
+  desc: string
+}
+
+export interface TopDivisionItem {
+  rank: number
+  name: string
+  count: number
+  ratio: number
+}
+
 export interface DashboardAnalyticsResponse {
   overview: {
     totalDocuments: number
@@ -31,13 +62,27 @@ export interface DashboardAnalyticsResponse {
     warehouseUtilizationPct: string
     securityEncryptionRate: string
     topDepartment: string
+    totalDivisions?: number
   }
-  donuts: {
+  pipeline?: {
+    total: number
+    draft: PipelineStep
+    pending: PipelineStep
+    approved: PipelineStep
+    archived: PipelineStep
+  }
+  fileBreakdown?: {
+    total: number
+    items: FileBreakdownItem[]
+  }
+  flowBreakdown?: FlowBreakdownItem[]
+  topDivisions?: TopDivisionItem[]
+  donuts?: {
     allocation: DonutGroup
     department: DonutGroup
     warehouse: DonutGroup
   }
-  recentDocuments: Array<{
+  recentDocuments?: Array<{
     id: string
     title: string
     docNumber: string
