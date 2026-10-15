@@ -97,21 +97,6 @@ export default function DashboardPage() {
     };
   }, [serverData, activeDocs, divisions]);
 
-  // Document Lifecycle Pipeline
-  const pipeline = useMemo(() => {
-    if (serverData?.pipeline) {
-      return serverData.pipeline;
-    }
-    const totalSafe = stats.total || 1;
-    return {
-      total: stats.total,
-      draft: { count: stats.draft, pct: Math.round((stats.draft / totalSafe) * 100) },
-      pending: { count: stats.pending, pct: Math.round((stats.pending / totalSafe) * 100) },
-      approved: { count: stats.approved, pct: Math.round((stats.approved / totalSafe) * 100) },
-      archived: { count: stats.archived, pct: Math.round((stats.archived / totalSafe) * 100) },
-    };
-  }, [serverData, stats]);
-
   // File Format Distribution
   const formatBreakdown = useMemo(() => {
     if (serverData?.fileBreakdown?.items?.length) {
@@ -358,71 +343,6 @@ export default function DashboardPage() {
                 <span className="text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md font-mono border border-purple-100 font-medium">
                   256-bit SSL · {stats.totalDivisions} ຝ່າຍ
                 </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* =========================================================================
-            DOCUMENT LIFECYCLE PIPELINE (HORIZONTAL WORKFLOW FUNNEL)
-           ========================================================================= */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">ຂະບວນການໄຫຼວຽນເອກະສານ (Document Lifecycle Pipeline)</h2>
-              <p className="text-xs text-slate-400 mt-0.5">ສະແດງການເຄື່ອນໄຫວແຕ່ລະຂັ້ນຕອນຕັ້ງແຕ່ສ້າງຮ່າງຈົນຮອດການຈັດເກັບເຂົ້າຄັງ</p>
-            </div>
-            <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg font-mono">
-              ທັງໝົດ {pipeline.total} ສະບັບ
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Step 1: Draft */}
-            <div className="p-3.5 rounded-xl border border-slate-200/90 bg-slate-50/50 hover:bg-slate-50 transition">
-              <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                <span>1. ສະບັບຮ່າງ (Draft)</span>
-                <span className="font-mono font-semibold">{pipeline.draft.pct}%</span>
-              </div>
-              <div className="text-xl font-bold text-slate-800 font-mono">{pipeline.draft.count}</div>
-              <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                <div className="bg-slate-500 h-full rounded-full" style={{ width: `${pipeline.draft.pct}%` }} />
-              </div>
-            </div>
-
-            {/* Step 2: Pending */}
-            <div className="p-3.5 rounded-xl border border-amber-200/80 bg-amber-50/40 hover:bg-amber-50/70 transition">
-              <div className="flex items-center justify-between text-xs text-amber-800 mb-1">
-                <span>2. ລໍຖ້າກວດກາ (Review)</span>
-                <span className="font-mono font-semibold">{pipeline.pending.pct}%</span>
-              </div>
-              <div className="text-xl font-bold text-amber-900 font-mono">{pipeline.pending.count}</div>
-              <div className="w-full bg-amber-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                <div className="bg-amber-500 h-full rounded-full" style={{ width: `${pipeline.pending.pct}%` }} />
-              </div>
-            </div>
-
-            {/* Step 3: Approved */}
-            <div className="p-3.5 rounded-xl border border-emerald-200/80 bg-emerald-50/40 hover:bg-emerald-50/70 transition">
-              <div className="flex items-center justify-between text-xs text-emerald-800 mb-1">
-                <span>3. ອະນຸມັດແລ້ວ (Approved)</span>
-                <span className="font-mono font-semibold">{pipeline.approved.pct}%</span>
-              </div>
-              <div className="text-xl font-bold text-emerald-900 font-mono">{pipeline.approved.count}</div>
-              <div className="w-full bg-emerald-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${pipeline.approved.pct}%` }} />
-              </div>
-            </div>
-
-            {/* Step 4: Archived */}
-            <div className="p-3.5 rounded-xl border border-purple-200/80 bg-purple-50/40 hover:bg-purple-50/70 transition">
-              <div className="flex items-center justify-between text-xs text-purple-800 mb-1">
-                <span>4. ຈັດເກັບໃນຄັງ (Archived)</span>
-                <span className="font-mono font-semibold">{pipeline.archived.pct}%</span>
-              </div>
-              <div className="text-xl font-bold text-purple-900 font-mono">{pipeline.archived.count}</div>
-              <div className="w-full bg-purple-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                <div className="bg-purple-600 h-full rounded-full" style={{ width: `${pipeline.archived.pct}%` }} />
               </div>
             </div>
           </div>
