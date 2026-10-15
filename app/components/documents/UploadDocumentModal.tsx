@@ -931,7 +931,7 @@ export default function UploadDocumentModal({
                 </p>
               )}
             </div>
-            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
+            <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
               <button
                 type="button"
                 onClick={onClose}
@@ -942,21 +942,9 @@ export default function UploadDocumentModal({
               </button>
               <button
                 type="button"
-                onClick={() => handleSubmit('draft')}
-                disabled={isSubmitting || loading || !isOnline}
-                className="rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-center text-sm font-medium whitespace-nowrap text-slate-200 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSubmitting
-                  ? uploadStep === 'uploading'
-                    ? 'ກຳລັງອັບໂຫຼດໄຟລ໌...'
-                    : 'ກຳລັງບັນທຶກ...'
-                  : 'ບັນທຶກເປັນຮ່າງ'}
-              </button>
-              <button
-                type="button"
                 onClick={() => handleSubmit('approved')}
                 disabled={isSubmitting || loading || !isOnline}
-                className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium whitespace-nowrap text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-900/60 sm:col-span-1"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium whitespace-nowrap text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-900/60"
               >
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isSubmitting
