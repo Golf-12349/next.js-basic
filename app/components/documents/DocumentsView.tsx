@@ -292,12 +292,23 @@ export function DocumentsView({
     const monthPrefix = toDateKey(now).slice(0, 7)
     const total = scopedDocuments.length
     const monthly = scopedDocuments.filter((d) => (d.uploadDate || '').slice(0, 7) === monthPrefix).length
-    const approved = scopedDocuments.filter((d) => d.status === 'approved').length
+    const stored = scopedDocuments.filter((d) =>
+      Boolean(
+        d.warehouseId ||
+        d.cabinetId ||
+        d.shelfId ||
+        d.folderId ||
+        d.warehouseName ||
+        d.cabinetName ||
+        d.shelfName ||
+        d.folderName
+      )
+    ).length
     return {
       total,
       monthly,
-      approved,
-      approvedPct: percentage(approved, total),
+      stored,
+      storedPct: percentage(stored, total),
       monthlyPct: percentage(monthly, total),
       monthLabel: LAO_MONTHS[now.getMonth()],
     }
@@ -586,27 +597,27 @@ export function DocumentsView({
             </div>
           </div>
 
-          {/* Card 3 — ອະນຸມັດແລ້ວ */}
+          {/* Card 3 — ມີບ່ອນຈັດເກັບແລ້ວ */}
           <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">ອະນຸມັດແລ້ວ</p>
+                <p className="text-sm font-medium text-slate-500">ມີບ່ອນຈັດເກັບແລ້ວ</p>
                 <div className="mt-3 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-bold text-slate-900">{stats.approved}</span>
-                  <span className="text-sm font-medium text-emerald-600">{stats.approvedPct}%</span>
+                  <span className="text-2xl font-bold text-slate-900">{stats.stored}</span>
+                  <span className="text-sm font-medium text-emerald-600">{stats.storedPct}%</span>
                 </div>
               </div>
               <span className="rounded-2xl bg-emerald-50 p-3 text-emerald-600 ring-1 ring-emerald-100">
-                <CheckCircle2 className="h-5 w-5" />
+                <Archive className="h-5 w-5" />
               </span>
             </div>
             <div className="mt-3 text-xs font-medium text-slate-500">
-              {stats.approved} ຈາກ {stats.total} ເອກະສານ ຖືກອະນຸມັດແລ້ວ
+              {stats.stored} ຈາກ {stats.total} ເອກະສານ ຖືກບັນຈຸເຂົ້າຕູ້/ຄັງແລ້ວ
             </div>
             <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
               <div
                 className="h-full rounded-full bg-emerald-500 transition-all duration-700"
-                style={{ width: `${stats.approvedPct}%` }}
+                style={{ width: `${stats.storedPct}%` }}
               />
             </div>
           </div>
@@ -822,8 +833,7 @@ export function DocumentsView({
                   <th className="px-3.5 py-3 w-[150px] min-w-[140px] whitespace-nowrap">ວັນທີ & ເວລາອັບໂຫຼດ</th>
                   <th className="px-3.5 py-3 min-w-[260px] max-w-[340px]">ເອກະສານ</th>
                   <th className="px-3.5 py-3 w-[140px] min-w-[130px] whitespace-nowrap">ໝວດໝູ່ & ທິດທາງ</th>
-                  <th className="px-3.5 py-3 w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">ຝ່າຍ</th>
-                  <th className="px-3.5 py-3 w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">ພະແນກ</th>
+                  <th className="px-3.5 py-3 w-[200px] min-w-[180px] max-w-[220px] whitespace-nowrap">ສັງກັດ (ຝ່າຍ / ພະແນກ)</th>
                   <th className="px-3.5 py-3 w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
                   <th className="px-3.5 py-3 w-[140px] min-w-[130px] whitespace-nowrap text-right">ການກະທຳ</th>
                 </tr>
@@ -965,31 +975,29 @@ export function DocumentsView({
                         </div>
                       </td>
 
-                      {/* 4 — ຝ່າຍ */}
-                      <td className="px-3.5 py-3 align-middle w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">
-                        {doc.division ? (
-                          <span
-                            className="inline-flex max-w-[160px] items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
-                            title={doc.division}
-                          >
-                            <span className="shrink-0">🏢</span>
-                            <span className="truncate">{doc.division}</span>
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400">—</span>
-                        )}
-                      </td>
-
-                      {/* 5 — ພະແນກ */}
-                      <td className="px-3.5 py-3 align-middle w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">
-                        {doc.department ? (
-                          <span
-                            className="inline-flex max-w-[160px] items-center gap-1.5 rounded-lg bg-indigo-50/80 px-2.5 py-1 text-xs font-medium text-indigo-700"
-                            title={doc.department}
-                          >
-                            <span className="shrink-0">🏬</span>
-                            <span className="truncate">{doc.department}</span>
-                          </span>
+                      {/* 4 — ສັງກັດ (ຝ່າຍ / ພະແນກ) */}
+                      <td className="px-3.5 py-3 align-middle w-[200px] min-w-[180px] max-w-[220px]">
+                        {doc.division || doc.department ? (
+                          <div className="flex flex-col gap-1">
+                            {doc.division ? (
+                              <span
+                                className="inline-flex max-w-[190px] items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
+                                title={doc.division}
+                              >
+                                <span className="shrink-0 text-[11px]">🏢</span>
+                                <span className="truncate">{doc.division}</span>
+                              </span>
+                            ) : null}
+                            {doc.department ? (
+                              <span
+                                className="inline-flex max-w-[190px] items-center gap-1.5 rounded-lg bg-indigo-50/80 px-2 py-0.5 text-xs font-medium text-indigo-700"
+                                title={doc.department}
+                              >
+                                <span className="shrink-0 text-[11px]">🏬</span>
+                                <span className="truncate">{doc.department}</span>
+                              </span>
+                            ) : null}
+                          </div>
                         ) : (
                           <span className="text-xs text-slate-400">—</span>
                         )}

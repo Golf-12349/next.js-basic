@@ -202,11 +202,7 @@ function findParentMenuHref(pathname: string): string | null {
       }
     }
   }
-  if (
-    pathname.startsWith('/documents/incoming') ||
-    pathname.startsWith('/documents/outgoing') ||
-    pathname.startsWith('/documents/rejected')
-  ) {
+  if (pathname.startsWith('/documents/incoming')) {
     return '/documents/incoming';
   }
   return null;
@@ -443,10 +439,6 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
         setActiveTransferTab(tTab);
       } else if (pathname === '/documents/incoming') {
         setActiveTransferTab('incoming');
-      } else if (pathname === '/documents/outgoing') {
-        setActiveTransferTab('outgoing');
-      } else if (pathname === '/documents/rejected') {
-        setActiveTransferTab('rejected');
       }
     }
   }, [pathname, currentUser]);
