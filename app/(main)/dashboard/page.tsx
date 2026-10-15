@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { GreetingHeader } from '@/app/components/dashboard/GreetingHeader';
 import { MetricCards } from '@/app/components/dashboard/MetricCards';
+import { CompactTrafficCurve } from '@/app/components/dashboard/CompactTrafficCurve';
 import { ActionCenterCard } from '@/app/components/dashboard/ActionCenterCard';
 import { CabinetDirectoryCard } from '@/app/components/dashboard/CabinetDirectoryCard';
 import { QuickActionsHub } from '@/app/components/dashboard/QuickActionsHub';
@@ -16,10 +17,13 @@ export default function DashboardPage() {
         {/* 1. Greeting & Quick Action Header */}
         <GreetingHeader />
 
-        {/* 2. Top Essential KPIs (Zero charts) */}
+        {/* 2. Top Essential KPIs */}
         <MetricCards />
 
-        {/* 3. Main Operational Hub: Action Center, Cabinet Directory & Structure Overview */}
+        {/* 3. Sleek Compact Document Flow Curve (ໂຄ້ງເອກະສານແບບຍ່ອຍ ກະທັດຮັດ ແລະ ສວຍງາມ) */}
+        <CompactTrafficCurve />
+
+        {/* 4. Main Operational Hub: Action Center, Cabinet Directory & Structure Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Urgent Action Center & Storage Cabinet Directory */}
           <div className="lg:col-span-7 xl:col-span-8 space-y-6">
