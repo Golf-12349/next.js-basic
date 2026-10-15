@@ -214,50 +214,37 @@ function findParentMenuHref(pathname: string): string | null {
 
 function getInitialExpandedMenus(pathname: string): Record<string, boolean> {
   const activeParent = findParentMenuHref(pathname);
-  const currentDefaults: Record<string, boolean> = {
-    '/documents/archive': activeParent === '/documents/archive',
-    '/documents/incoming': activeParent === '/documents/incoming',
-    '/master-data': activeParent === '/master-data',
-  };
 
-  if (typeof window === 'undefined') {
-    return currentDefaults;
+  // Invariant: active parent is ALWAYS open, and all other parents are closed
+  if (activeParent) {
+    const activeState: Record<string, boolean> = { [activeParent]: true };
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(activeState));
+      } catch {
+        // ignore
+      }
+    }
+    return activeState;
   }
 
-  try {
-    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved) as Record<string, boolean>;
-      const merged: Record<string, boolean> = {
-        ...currentDefaults,
-        ...parsed,
-      };
-      // If currently on an active route belonging to a parent menu,
-      // that parent menu must ALWAYS be expanded and preserved in storage
-      if (activeParent) {
-        merged[activeParent] = true;
-        try {
-          localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(merged));
-        } catch {
-          // ignore
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Record<string, boolean>;
+        // Accordion: keep only one open dropdown
+        const openHref = Object.keys(parsed).find((k) => parsed[k]);
+        if (openHref) {
+          return { [openHref]: true };
         }
       }
-      return merged;
-    }
-  } catch {
-    // ignore
-  }
-
-  if (activeParent) {
-    currentDefaults[activeParent] = true;
-    try {
-      localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(currentDefaults));
     } catch {
       // ignore
     }
   }
 
-  return currentDefaults;
+  return {};
 }
 
 export function DashboardLayout({ children, title = 'Dashboard', showSearch }: DashboardLayoutProps) {
@@ -306,13 +293,18 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
     setPrevRoutePath(pathname);
     const targetParent = findParentMenuHref(pathname);
 
-    if (targetParent && !expandedMenus[targetParent]) {
-      const updated = { ...expandedMenus, [targetParent]: true };
-      setExpandedMenus(updated);
-      try {
-        localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(updated));
-      } catch {
-        // ignore
+    if (targetParent) {
+      const isAlreadyOnlyTarget =
+        expandedMenus[targetParent] &&
+        Object.keys(expandedMenus).filter((k) => expandedMenus[k]).length === 1;
+      if (!isAlreadyOnlyTarget) {
+        const updated: Record<string, boolean> = { [targetParent]: true };
+        setExpandedMenus(updated);
+        try {
+          localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(updated));
+        } catch {
+          // ignore
+        }
       }
     }
   }
@@ -472,8 +464,12 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
 
   const toggleExpand = (href: string) => {
     setExpandedMenus((prev) => {
-      const nextState = !prev[href];
-      const updated = { ...prev, [href]: nextState };
+      const isCurrentlyOpen = !!prev[href];
+      // Accordion rule: opening one closes all other dropdowns
+      const updated: Record<string, boolean> = {};
+      if (!isCurrentlyOpen) {
+        updated[href] = true;
+      }
       try {
         localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(updated));
       } catch {
@@ -750,8 +746,8 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                       data-active={isChildActive ? 'true' : undefined}
                                       onClick={(e) => {
                                         saveSidebarScroll();
-                                        setExpandedMenus((prev) => {
-                                          const updated = { ...prev, [item.href]: true };
+                                        setExpandedMenus(() => {
+                                          const updated: Record<string, boolean> = { [item.href]: true };
                                           try {
                                             localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(updated));
                                           } catch {
