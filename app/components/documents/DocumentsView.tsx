@@ -184,7 +184,6 @@ export function DocumentsView({
   const [filterDirection, setFilterDirection] = useState<DirectionFilter>('ALL')
   const [filterCategory, setFilterCategory] = useState('ທັງໝົດ')
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
-  const [filterStatus, setFilterStatus] = useState('ທັງໝົດ')
   const [filterDivision, setFilterDivision] = useState('ທັງໝົດ')
   const [filterDepartment, setFilterDepartment] = useState('ທັງໝົດ')
   const [filterTag, setFilterTag] = useState('ທັງໝົດ')
@@ -341,21 +340,6 @@ export function DocumentsView({
         if (filterTag !== 'ທັງໝົດ') {
           if (!Array.isArray(d.tags) || !d.tags.includes(filterTag)) return false
         }
-        if (filterStatus !== 'ທັງໝົດ') {
-          if (filterStatus === 'ຮ່າງ' && d.status !== 'draft') return false
-          if (filterStatus === 'ລໍຖ້າອະນຸມັດ' && d.status !== 'pending') return false
-          if (filterStatus === 'ອະນຸມັດ' && d.status !== 'approved') return false
-          if (filterStatus === 'ເກັບເຂົ້າຄັງ' && d.status !== 'archived') return false
-          if (filterStatus === 'ໝົດອາຍຸ') {
-            const isExp = d.status === 'expired' || (Boolean(d.expiresAt) && (d.expiresAt ?? '') <= today)
-            if (!isExp) return false
-          }
-          if (filterStatus === 'ໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)') {
-            if (!d.expiresAt || d.status === 'expired') return false
-            const diff = Math.ceil((new Date(d.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-            if (diff < 0 || diff > 7) return false
-          }
-        }
         if (filterDivision !== 'ທັງໝົດ' && d.division !== filterDivision) return false
         if (filterDepartment !== 'ທັງໝົດ' && d.department !== filterDepartment) return false
         if (filterDateRange === 'today' && d.uploadDate !== today) return false
@@ -372,7 +356,6 @@ export function DocumentsView({
     filterCategory,
     filterCabinet,
     filterTag,
-    filterStatus,
     filterDivision,
     filterDepartment,
     filterDateRange,
@@ -391,7 +374,6 @@ export function DocumentsView({
     filterCategory !== 'ທັງໝົດ' ||
     filterWarehouse !== 'ທັງໝົດ' ||
     filterCabinet !== 'ທັງໝົດ' ||
-    filterStatus !== 'ທັງໝົດ' ||
     filterDivision !== 'ທັງໝົດ' ||
     filterDepartment !== 'ທັງໝົດ' ||
     filterTag !== 'ທັງໝົດ' ||
@@ -404,7 +386,6 @@ export function DocumentsView({
     setFilterCategory('ທັງໝົດ')
     setFilterWarehouse('ທັງໝົດ')
     setFilterCabinet('ທັງໝົດ')
-    setFilterStatus('ທັງໝົດ')
     setFilterDivision('ທັງໝົດ')
     setFilterDepartment('ທັງໝົດ')
     setFilterTag('ທັງໝົດ')
@@ -736,27 +717,6 @@ export function DocumentsView({
               </select>
             </div>
 
-            {/* Status Filter */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">ສະຖານະ</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => {
-                  setFilterStatus(e.target.value)
-                  setCurrentPage(1)
-                }}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
-              >
-                <option value="ທັງໝົດ">ສະຖານະທັງໝົດ</option>
-                <option value="ຮ່າງ">ຮ່າງ</option>
-                <option value="ລໍຖ້າອະນຸມັດ">ລໍຖ້າອະນຸມັດ</option>
-                <option value="ອະນຸມັດ">ອະນຸມັດແລ້ວ</option>
-                <option value="ເກັບເຂົ້າຄັງ">ເກັບເຂົ້າຄັງ</option>
-                <option value="ໝົດອາຍຸ">ໝົດອາຍຸ</option>
-                <option value="ໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)">ໃກ້ໝົດອາຍຸ (≤ 7 ວັນ)</option>
-              </select>
-            </div>
-
             {/* Division Filter */}
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">ຝ່າຍ</label>
@@ -865,7 +825,6 @@ export function DocumentsView({
                   <th className="px-3.5 py-3 w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">ຝ່າຍ</th>
                   <th className="px-3.5 py-3 w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">ພະແນກ</th>
                   <th className="px-3.5 py-3 w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
-                  <th className="px-3.5 py-3 w-[110px] min-w-[100px] text-center whitespace-nowrap">ສະຖານະ</th>
                   <th className="px-3.5 py-3 w-[140px] min-w-[130px] whitespace-nowrap text-right">ການກະທຳ</th>
                 </tr>
               </thead>
@@ -1063,16 +1022,7 @@ export function DocumentsView({
                         </div>
                       </td>
 
-                      {/* 7 — ສະຖານະ */}
-                      <td className="px-3.5 py-3 align-middle w-[110px] min-w-[100px] text-center whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}
-                        >
-                          {statusLabels[doc.status]}
-                        </span>
-                      </td>
-
-                      {/* 8 — ການກະທຳ */}
+                      {/* 7 — ການກະທຳ */}
                       <td className="px-3.5 py-3 align-middle w-[140px] min-w-[130px] whitespace-nowrap text-right">
                         <div className={`inline-flex items-center justify-end gap-1.5 ${
                           activeDropdownId === doc.id ? 'relative z-50' : 'relative z-0'
