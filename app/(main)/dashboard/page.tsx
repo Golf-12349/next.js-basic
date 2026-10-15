@@ -12,7 +12,6 @@ import {
   Layers,
   Repeat,
   AlertCircle,
-  ArrowRight,
   Plus,
   Archive,
   ShieldCheck,
@@ -461,12 +460,6 @@ export default function DashboardPage() {
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">ຈັດອັນດັບທຸກຝ່າຍທີ່ມີປະລິມານເອກະສານໃນລະບົບ (ເລື່ອນເບິ່ງໄດ້)</p>
                 </div>
-                <Link
-                  href="/master-data/divisions"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center shrink-0"
-                >
-                  ເບິ່ງທຸກຝ່າຍ <ArrowRight className="w-3 h-3 ml-1" />
-                </Link>
               </div>
 
               <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
