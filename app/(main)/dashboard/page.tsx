@@ -3,9 +3,11 @@
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { GreetingHeader } from '@/app/components/dashboard/GreetingHeader';
 import { MetricCards } from '@/app/components/dashboard/MetricCards';
-import { RecentDocumentsCard } from '@/app/components/dashboard/RecentDocumentsCard';
+import { ActionCenterCard } from '@/app/components/dashboard/ActionCenterCard';
+import { CabinetDirectoryCard } from '@/app/components/dashboard/CabinetDirectoryCard';
 import { QuickActionsHub } from '@/app/components/dashboard/QuickActionsHub';
 import { ArchiveOrgSummaryCard } from '@/app/components/dashboard/ArchiveOrgSummaryCard';
+import { CategoryDirectoryCard } from '@/app/components/dashboard/CategoryDirectoryCard';
 
 export default function DashboardPage() {
   return (
@@ -17,17 +19,19 @@ export default function DashboardPage() {
         {/* 2. Top Essential KPIs (Zero charts) */}
         <MetricCards />
 
-        {/* 3. Main Operational Hub: Recent Documents Stream & Quick Operations/Inventory */}
+        {/* 3. Main Operational Hub: Action Center, Cabinet Directory & Structure Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Recent Documents Table with Live Search */}
-          <div className="lg:col-span-7 xl:col-span-8">
-            <RecentDocumentsCard />
+          {/* Left Column: Urgent Action Center & Storage Cabinet Directory */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+            <ActionCenterCard />
+            <CabinetDirectoryCard />
           </div>
 
-          {/* Right Column: Watchlist / Operational Shortcuts & Archive Inventory */}
+          {/* Right Column: Watchlist / Shortcuts, Archive Inventory & Category Explorer */}
           <div className="lg:col-span-5 xl:col-span-4 space-y-6">
             <QuickActionsHub />
             <ArchiveOrgSummaryCard />
+            <CategoryDirectoryCard />
           </div>
         </div>
       </div>
