@@ -12,8 +12,6 @@ import {
   Layers,
   Repeat,
   AlertCircle,
-  Plus,
-  Archive,
   ShieldCheck,
   RefreshCw,
   Clock,
@@ -232,26 +230,12 @@ export default function DashboardPage() {
             <button
               onClick={() => loadData(true)}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm disabled:opacity-50"
               title="ໂຫຼດຂໍ້ມູນໃໝ່ຈາກ Backend"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
-              <span className="hidden sm:inline">ອັບເດດຂໍ້ມູນ</span>
+              <span>ອັບເດດຂໍ້ມູນ</span>
             </button>
-            <Link
-              href="/documents/archive"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition shadow-sm"
-            >
-              <Archive className="w-3.5 h-3.5 text-slate-500" />
-              ຄັງເກັບເອກະສານ
-            </Link>
-            <Link
-              href="/documents/upload"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition shadow-sm shadow-blue-500/20"
-            >
-              <Plus className="w-4 h-4" />
-              ອັບໂຫຼດເອກະສານໃໝ່
-            </Link>
           </div>
         </div>
 
