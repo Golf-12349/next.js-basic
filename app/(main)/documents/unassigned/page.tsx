@@ -50,41 +50,6 @@ function getFileIcon(type?: string) {
   return <FileText className="w-4 h-4 text-slate-400" />;
 }
 
-function getStatusBadge(status?: string) {
-  switch (status) {
-    case 'approved':
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
-          <CheckCircle2 className="w-3 h-3" /> ອະນຸມັດແລ້ວ
-        </span>
-      );
-    case 'pending':
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
-          <FileClock className="w-3 h-3" /> ລໍຖ້າກວດກາ
-        </span>
-      );
-    case 'draft':
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 border border-slate-200">
-          ຮ່າງເອກະສານ
-        </span>
-      );
-    case 'expired':
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 border border-rose-200">
-          ໝົດອາຍຸ
-        </span>
-      );
-    default:
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
-          {status || 'ທົ່ວໄປ'}
-        </span>
-      );
-  }
-}
-
 export default function UnassignedDocumentsPage() {
   const { documents, categories, reload, loading } = useDocuments();
   const { warehouses, cabinets, shelves, folders, assignDocument } = useArchive();
@@ -96,7 +61,6 @@ export default function UnassignedDocumentsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDivision, setSelectedDivision] = useState('all');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
-  const [statusTab, setStatusTab] = useState<'all' | 'approved' | 'pending' | 'draft'>('all');
 
   // Selection mode & selected IDs for batch operations
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -153,14 +117,9 @@ export default function UnassignedDocumentsPage() {
         return false;
       }
 
-      // Status
-      if (statusTab !== 'all' && doc.status !== statusTab) {
-        return false;
-      }
-
       return true;
     });
-  }, [unassignedDocs, searchQuery, selectedCategory, selectedDivision, selectedDepartment, statusTab]);
+  }, [unassignedDocs, searchQuery, selectedCategory, selectedDivision, selectedDepartment]);
 
   // Counts for KPI cards
   const stats = useMemo(() => {
@@ -382,55 +341,7 @@ export default function UnassignedDocumentsPage() {
         {/* =========================================================================
             FILTERS & SEARCH TOOLBAR
            ========================================================================= */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
-          {/* Status Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100">
-            <button
-              type="button"
-              onClick={() => setStatusTab('all')}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition shrink-0 ${
-                statusTab === 'all'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              ທັງໝົດ ({stats.total})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusTab('approved')}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition shrink-0 ${
-                statusTab === 'approved'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-emerald-700 hover:bg-emerald-50'
-              }`}
-            >
-              ອະນຸມັດແລ້ວ ({stats.approved})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusTab('pending')}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition shrink-0 ${
-                statusTab === 'pending'
-                  ? 'bg-amber-600 text-white shadow-sm'
-                  : 'text-amber-700 hover:bg-amber-50'
-              }`}
-            >
-              ລໍຖ້າກວດກາ ({stats.pending})
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatusTab('draft')}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition shrink-0 ${
-                statusTab === 'draft'
-                  ? 'bg-slate-700 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              ສະບັບຮ່າງ ({stats.draft})
-            </button>
-          </div>
-
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
           {/* Search and Filters grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
             {/* Search */}
@@ -558,7 +469,6 @@ export default function UnassignedDocumentsPage() {
                 setSelectedCategory('all');
                 setSelectedDivision('all');
                 setSelectedDepartment('all');
-                setStatusTab('all');
               }}
               className="mt-4 inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition"
             >
@@ -637,7 +547,6 @@ export default function UnassignedDocumentsPage() {
                     <th className="py-3.5 px-3.5 min-w-[260px]">ຊື່ເອກະສານ / ເລກທີ</th>
                     <th className="py-3.5 px-3 min-w-[160px]">ຝ່າຍ & ພະແນກ</th>
                     <th className="py-3.5 px-3 min-w-[120px] whitespace-nowrap">ໝວດໝູ່</th>
-                    <th className="py-3.5 px-3 min-w-[110px] whitespace-nowrap">ສະຖານະ</th>
                     <th className="py-3.5 px-3 min-w-[130px] whitespace-nowrap">ສະຖານະບ່ອນເກັບ</th>
                     <th className="py-3.5 px-3 min-w-[120px] whitespace-nowrap">ວັນທີອັບໂຫຼດ</th>
                     <th className="py-3.5 px-3.5 min-w-[160px] text-right whitespace-nowrap">ຈັດການ</th>
@@ -711,9 +620,6 @@ export default function UnassignedDocumentsPage() {
                             {doc.category || 'ທົ່ວໄປ'}
                           </span>
                         </td>
-
-                        {/* Document Status */}
-                        <td className="py-3.5 px-3 whitespace-nowrap">{getStatusBadge(doc.status)}</td>
 
                         {/* Unassigned Badge */}
                         <td className="py-3.5 px-3 whitespace-nowrap">
