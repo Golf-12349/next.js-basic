@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Moon, Sun, Sunrise } from 'lucide-react';
+import Link from 'next/link';
+import { CalendarDays, Moon, Plus, Sun, Sunrise, Archive } from 'lucide-react';
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext';
 import { formatFullDateLao, shiftOfHour } from './dashboard-utils';
 
@@ -21,7 +22,7 @@ export function GreetingHeader() {
   const ShiftIcon = now.getHours() < 12 ? Sunrise : now.getHours() < 17 ? Sun : Moon;
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-slate-100">
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">
           ກະດານຄວບຄຸມລະບົບຈັດການເອກະສານ
@@ -41,6 +42,23 @@ export function GreetingHeader() {
         </div>
       </div>
 
+      {/* Quick Action Shortcuts */}
+      <div className="flex items-center gap-2.5">
+        <Link
+          href="/archive"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+        >
+          <Archive className="h-4 w-4 text-slate-500" />
+          ຄັງເກັບເອກະສານ
+        </Link>
+        <Link
+          href="/documents"
+          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-indigo-200 transition hover:bg-indigo-700"
+        >
+          <Plus className="h-4 w-4" />
+          ອັບໂຫຼດເອກະສານໃໝ່
+        </Link>
+      </div>
     </div>
   );
 }
