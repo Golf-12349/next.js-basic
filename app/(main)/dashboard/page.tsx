@@ -17,6 +17,7 @@ import {
   Archive,
   ShieldCheck,
   RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
@@ -280,26 +281,31 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card 2: Approval Rate */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition">
+          {/* Card 2: ເອກະສານທີ່ລໍຖ້າອະນຸມັດ */}
+          <Link
+            href="/documents/incoming?tab=incoming"
+            className="group block bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md hover:border-amber-300 transition"
+          >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">ອັດຕາການອະນຸມັດ</span>
-              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-                <CheckCircle2 className="w-4 h-4" />
+              <span className="text-xs font-semibold text-slate-500 group-hover:text-amber-700 transition">
+                ເອກະສານທີ່ລໍຖ້າອະນຸມັດ
+              </span>
+              <div className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 group-hover:bg-amber-100 transition">
+                <Clock className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-3">
-              <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
-                {stats.approvalRate}.00%
+              <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight group-hover:text-amber-600 transition">
+                {stats.pending}
               </div>
               <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
-                <span>ເວລາສະເລ່ຍ:</span>
-                <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-mono border border-emerald-100">
-                  {stats.averageApprovalDays}
+                <span>ລໍຖ້າກວດກາ & ຮັບຮອງ:</span>
+                <span className="font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-mono border border-amber-100">
+                  {stats.pending} ສະບັບ
                 </span>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Card 3: Expiring & Governance Risk (Non-duplicate) */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md transition">
