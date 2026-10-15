@@ -860,8 +860,8 @@ export function DocumentsView({
                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <th className="px-3.5 py-3 w-12 min-w-[48px] text-center text-slate-500 whitespace-nowrap">ລ/ດ</th>
                   <th className="px-3.5 py-3 w-[150px] min-w-[140px] whitespace-nowrap">ວັນທີ & ເວລາອັບໂຫຼດ</th>
-                  <th className="px-3.5 py-3 min-w-[280px] max-w-[340px]">ເອກະສານ</th>
-                  <th className="px-3.5 py-3 w-[170px] min-w-[160px] whitespace-nowrap">ທິດທາງ & ໝວດໝູ່</th>
+                  <th className="px-3.5 py-3 min-w-[260px] max-w-[340px]">ເອກະສານ</th>
+                  <th className="px-3.5 py-3 w-[140px] min-w-[130px] whitespace-nowrap">ໝວດໝູ່ & ທິດທາງ</th>
                   <th className="px-3.5 py-3 w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">ຝ່າຍ</th>
                   <th className="px-3.5 py-3 w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">ພະແນກ</th>
                   <th className="px-3.5 py-3 w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
@@ -883,12 +883,12 @@ export function DocumentsView({
                       }`}
                     >
                       {/* Seq No */}
-                      <td className="whitespace-nowrap px-3.5 py-3 w-12 min-w-[48px] text-center font-medium text-slate-400 tabular-nums align-top">
+                      <td className="whitespace-nowrap px-3.5 py-3 w-12 min-w-[48px] text-center font-medium text-slate-400 tabular-nums align-middle">
                         {(page - 1) * PAGE_SIZE + idx + 1}
                       </td>
 
                       {/* 1 — ວັນທີ & ເວລາອັບໂຫຼດ */}
-                      <td className="whitespace-nowrap px-3.5 py-3 w-[150px] min-w-[140px] align-top">
+                      <td className="whitespace-nowrap px-3.5 py-3 w-[150px] min-w-[140px] align-middle">
                         <div className="font-medium text-slate-900">
                           {stamp.date}
                           {stamp.time ? <span className="text-slate-500">, {stamp.time}</span> : null}
@@ -912,8 +912,8 @@ export function DocumentsView({
                       </td>
 
                       {/* 2 — ເອກະສານ */}
-                      <td className="px-3.5 py-3 align-top min-w-[280px] max-w-[340px]">
-                        <div className="flex items-start gap-2.5">
+                      <td className="px-3.5 py-3 align-middle min-w-[260px] max-w-[340px]">
+                        <div className="flex items-start gap-2.5 max-w-[320px]">
                           <span
                             className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ${
                               doc.fileType === 'pdf'
@@ -956,7 +956,7 @@ export function DocumentsView({
                             <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
                               <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                               {place.length > 0 ? (
-                                <span className="truncate max-w-[240px] text-slate-600" title={place.join(' › ')}>
+                                <span className="truncate max-w-[220px] text-slate-600" title={place.join(' › ')}>
                                   {place.join(' › ')}
                                 </span>
                               ) : (
@@ -996,16 +996,18 @@ export function DocumentsView({
                         </div>
                       </td>
 
-                      {/* 3 — ທິດທາງ & ໝວດໝູ່ */}
-                      <td className="px-3.5 py-3 align-top w-[170px] min-w-[160px] whitespace-nowrap">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <DirectionBadge direction={doc.direction} category={doc.category} />
+                      {/* 3 — ໝວດໝູ່ & ທິດທາງ */}
+                      <td className="px-3.5 py-3 align-middle w-[140px] min-w-[130px] whitespace-nowrap">
+                        <div className="flex flex-col items-start gap-1">
                           <CategoryBadge category={doc.category} />
+                          {doc.direction ? (
+                            <DirectionBadge direction={doc.direction} category={doc.category} />
+                          ) : null}
                         </div>
                       </td>
 
                       {/* 4 — ຝ່າຍ */}
-                      <td className="px-3.5 py-3 align-top w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">
+                      <td className="px-3.5 py-3 align-middle w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">
                         {doc.division ? (
                           <span
                             className="inline-flex max-w-[160px] items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
@@ -1020,7 +1022,7 @@ export function DocumentsView({
                       </td>
 
                       {/* 5 — ພະແນກ */}
-                      <td className="px-3.5 py-3 align-top w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">
+                      <td className="px-3.5 py-3 align-middle w-[170px] min-w-[150px] max-w-[180px] whitespace-nowrap">
                         {doc.department ? (
                           <span
                             className="inline-flex max-w-[160px] items-center gap-1.5 rounded-lg bg-indigo-50/80 px-2.5 py-1 text-xs font-medium text-indigo-700"
@@ -1035,7 +1037,7 @@ export function DocumentsView({
                       </td>
 
                       {/* 6 — ຜູ້ອັບໂຫຼດ */}
-                      <td className="px-3.5 py-3 align-top w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">
+                      <td className="px-3.5 py-3 align-middle w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <UserAvatar
                             name={doc.uploadedBy || '—'}
@@ -1062,7 +1064,7 @@ export function DocumentsView({
                       </td>
 
                       {/* 7 — ສະຖານະ */}
-                      <td className="px-3.5 py-3 align-top w-[110px] min-w-[100px] text-center whitespace-nowrap">
+                      <td className="px-3.5 py-3 align-middle w-[110px] min-w-[100px] text-center whitespace-nowrap">
                         <span
                           className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[doc.status]}`}
                         >
@@ -1071,7 +1073,7 @@ export function DocumentsView({
                       </td>
 
                       {/* 8 — ການກະທຳ */}
-                      <td className="px-3.5 py-3 align-top w-[140px] min-w-[130px] whitespace-nowrap text-right">
+                      <td className="px-3.5 py-3 align-middle w-[140px] min-w-[130px] whitespace-nowrap text-right">
                         <div className={`inline-flex items-center justify-end gap-1.5 ${
                           activeDropdownId === doc.id ? 'relative z-50' : 'relative z-0'
                         }`}>
