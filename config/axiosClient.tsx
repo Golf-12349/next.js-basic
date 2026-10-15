@@ -24,7 +24,9 @@ axiosClient.interceptors.request.use(
 
     // Add Bearer Token if it exists
     const token =
-      typeof window !== 'undefined' ? sessionStorage.getItem('token') : null;
+      typeof window !== 'undefined'
+        ? sessionStorage.getItem('token') || localStorage.getItem('token')
+        : null;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
