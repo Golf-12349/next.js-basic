@@ -184,6 +184,7 @@ const menuSections: MenuSection[] = [
 ];
 
 const SIDEBAR_STORAGE_KEY = 'dms_sidebar_expanded_menus';
+const SIDEBAR_SCROLL_KEY = 'dms_sidebar_scroll_top';
 
 function findParentMenuHref(pathname: string): string | null {
   for (const section of menuSections) {
@@ -318,6 +319,57 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const [, setCurrentQuery] = useState('');
   const [activeArchiveLevel, setActiveArchiveLevel] = useState<string>('warehouses');
   const [activeTransferTab, setActiveTransferTab] = useState<string>('incoming');
+
+  const sidebarRef = useRef<HTMLElement | null>(null);
+
+  // Restore sidebar scroll position across navigation
+  useEffect(() => {
+    const el = sidebarRef.current;
+    if (!el) return;
+
+    const restore = () => {
+      try {
+        const saved = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+        if (saved !== null) {
+          const top = parseInt(saved, 10);
+          if (!isNaN(top)) {
+            el.scrollTop = top;
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      // If no saved position, ensure active menu item is scrolled into view smoothly
+      const activeEl = el.querySelector<HTMLElement>('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+      }
+    };
+
+    restore();
+    const frameId = requestAnimationFrame(restore);
+    return () => cancelAnimationFrame(frameId);
+  }, [pathname]);
+
+  const handleSidebarScroll = (e: React.UIEvent<HTMLElement>) => {
+    try {
+      sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(e.currentTarget.scrollTop));
+    } catch {
+      // ignore
+    }
+  };
+
+  const saveSidebarScroll = () => {
+    if (sidebarRef.current) {
+      try {
+        sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(sidebarRef.current.scrollTop));
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   // ── Responsive shell: ຈໍນ້ອຍ (ມືຖື/ແທັບເລັດ) ໃຊ້ off-canvas drawer ສຳລັບເມນູ ──
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -557,6 +609,8 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
 
       {/* Sidebar — ຈໍໃຫຍ່ (lg+) ສະແດງຄົງທີ່ · ຈໍນ້ອຍ ເປັນ drawer ເລື່ອນເຂົ້າ-ອອກ */}
       <aside
+        ref={sidebarRef}
+        onScroll={handleSidebarScroll}
         className={`no-scrollbar fixed inset-y-0 left-0 z-50 flex w-64 max-w-[80vw] flex-col justify-between overscroll-contain overflow-y-auto bg-slate-950 p-4 text-slate-100 shadow-2xl transition-transform duration-300 ease-out lg:static lg:z-auto lg:max-w-none lg:shrink-0 lg:translate-x-0 ${
           mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -641,7 +695,10 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                           <div key={item.name} className="space-y-1">
                             <button
                               type="button"
-                              onClick={() => toggleExpand(item.href)}
+                              onClick={() => {
+                                saveSidebarScroll();
+                                toggleExpand(item.href);
+                              }}
                               className={`group flex w-full items-center justify-between gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors select-none ${
                                 isParentActive
                                   ? 'bg-indigo-600 text-white font-semibold shadow-sm'
@@ -689,7 +746,10 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                                     <Link
                                       key={child.name}
                                       href={child.href}
+                                      scroll={false}
+                                      data-active={isChildActive ? 'true' : undefined}
                                       onClick={(e) => {
+                                        saveSidebarScroll();
                                         setExpandedMenus((prev) => {
                                           const updated = { ...prev, [item.href]: true };
                                           try {
@@ -744,7 +804,12 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
                         <Link
                           key={item.name}
                           href={item.href}
-                          onClick={() => setMobileNavOpen(false)}
+                          scroll={false}
+                          data-active={isParentActive ? 'true' : undefined}
+                          onClick={() => {
+                            saveSidebarScroll();
+                            setMobileNavOpen(false);
+                          }}
                           className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
                             isParentActive
                               ? 'bg-indigo-600 text-white shadow-md shadow-indigo-700/30'
