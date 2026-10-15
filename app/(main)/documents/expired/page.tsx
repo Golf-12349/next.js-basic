@@ -15,6 +15,7 @@ import SelectStorageLocationModal from '@/app/components/documents/SelectStorage
 import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
 import Pagination from '@/app/components/ui/Pagination'
 import { pushToast } from '@/app/components/ui/Toast'
+import { downloadDocumentFile } from '@/lib/dms/documentService'
 import {
   CalendarX,
   RefreshCw,
@@ -169,12 +170,12 @@ export default function ExpiredDocumentsPage() {
     return edlStructure[filterDivision] || []
   }, [filterDivision])
 
-  function handleDownload(doc: Document) {
-    const url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
-    if (url && url !== '#') {
-      window.open(url, '_blank', 'noopener,noreferrer')
-    } else {
-      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })
+  async function handleDownload(doc: Document) {
+    try {
+      pushToast({ title: 'ກຳລັງກຽມດາວໂຫຼດເອກະສານ...' })
+      await downloadDocumentFile(doc)
+    } catch {
+      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ ຫຼື ໄຟລ໌ໝົດອາຍຸ' })
     }
   }
 

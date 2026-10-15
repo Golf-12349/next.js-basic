@@ -1,7 +1,8 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import type { Document } from '@/types/document'
 import { Download, ExternalLink, FileSpreadsheet, FileText, FileWarning, Loader2 } from 'lucide-react'
+import { fetchDocumentById } from '@/lib/dms/documentService'
 
 function isPdf(fileType: Document['fileType'], url: string): boolean {
   if (fileType === 'pdf') return true
@@ -35,13 +36,59 @@ export default function DocumentPreview({
   const [pdfError, setPdfError] = useState(false)
   const [imgError, setImgError] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(true)
+  const [currentUrl, setCurrentUrl] = useState<string>(doc.pdfUrl?.trim() || doc.fileUrl?.trim() || '')
+  const [refreshing, setRefreshing] = useState(false)
 
-  const url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
+  // Fetch fresh signed URL from backend on mount so expired tokens are automatically renewed
+  useEffect(() => {
+    let cancelled = false
+    const initial = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
+
+    async function loadFreshSignedUrl() {
+      if (!doc.id) return
+      setRefreshing(true)
+      try {
+        const fresh = await fetchDocumentById(doc.id)
+        if (!cancelled) {
+          const freshUrl = fresh.pdfUrl?.trim() || fresh.fileUrl?.trim() || ''
+          if (freshUrl && freshUrl !== '#') {
+            setCurrentUrl(freshUrl)
+            setPdfError(false)
+            setImgError(false)
+          }
+        }
+      } catch {
+        // Fallback to initial if backend query fails
+      } finally {
+        if (!cancelled) {
+          setRefreshing(false)
+        }
+      }
+    }
+
+    loadFreshSignedUrl()
+    return () => {
+      cancelled = true
+    }
+  }, [doc.id, doc.fileUrl, doc.pdfUrl])
+
+  const url = currentUrl
   const hasUrl = !!url && url !== '#'
   const showPdf = hasUrl && isPdf(doc.fileType, url)
   const showImage = hasUrl && !showPdf && isImage(doc.fileType, url)
   const showWord = hasUrl && !showPdf && !showImage && isDocx(doc.fileType, url)
   const showExcel = hasUrl && !showPdf && !showImage && isExcel(url)
+
+  if (refreshing && !url) {
+    return (
+      <div className={`w-full ${heightClassName} border border-dashed border-gray-300 rounded bg-gray-50 flex items-center justify-center ${className}`}>
+        <div className="flex flex-col items-center text-gray-400">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-2" />
+          <p className="text-xs font-medium text-slate-500">ກຳລັງດຶງຂໍ້ມູນໄຟລ໌ລ່າສຸດ...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!hasUrl || (showPdf && pdfError) || (showImage && imgError)) {
     return (
@@ -72,7 +119,7 @@ export default function DocumentPreview({
         {pdfLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
             <div className="flex flex-col items-center text-gray-400">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
               <p className="mt-2 text-xs">ກຳລັງໂຫຼດ PDF...</p>
             </div>
           </div>

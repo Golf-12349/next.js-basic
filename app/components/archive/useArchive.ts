@@ -2,6 +2,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { pushToast } from '@/app/components/ui/Toast'
+import { downloadDocumentFile } from '@/lib/dms/documentService'
 import type { Cabinet, Document, Folder, Shelf, Warehouse } from '@/types/document'
 import type { CurrentUser } from '@/types/user'
 import type { DeleteTarget } from './ArchiveModals'
@@ -304,13 +305,12 @@ export function useArchive(
     setConfirmDelete(null);
   }
 
-  function handleDownload(doc: Document) {
-    const url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || '#';
-    if (url && url !== '#') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-      pushToast({ title: 'ກຳລັງດາວໂຫຼດເອກະສານ' });
-    } else {
-      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' });
+  async function handleDownload(doc: Document) {
+    try {
+      pushToast({ title: 'ກຳລັງກຽມດາວໂຫຼດເອກະສານ...' });
+      await downloadDocumentFile(doc);
+    } catch {
+      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ ຫຼື ໄຟລ໌ໝົດອາຍຸ' });
     }
   }
 

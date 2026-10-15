@@ -26,6 +26,7 @@ import SelectStorageLocationModal from '@/app/components/documents/SelectStorage
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
 import { addDays, LAO_MONTHS, percentage, toDateKey } from '@/app/components/dashboard/dashboard-utils'
+import { downloadDocumentFile } from '@/lib/dms/documentService'
 import {
   Archive,
   Building2,
@@ -404,21 +405,13 @@ export function DocumentsView({
     setCurrentPage(1)
   }
 
-  function handleDownload(doc: Document) {
-    const url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
-    if (!url || url === '#') {
-      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })
-      return
+  async function handleDownload(doc: Document) {
+    try {
+      pushToast({ title: 'ກຳລັງກຽມດາວໂຫຼດເອກະສານ...' })
+      await downloadDocumentFile(doc)
+    } catch {
+      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ ຫຼື ໄຟລ໌ໝົດອາຍຸ' })
     }
-    const a = document.createElement('a')
-    a.href = url
-    a.download = doc.title ? `${doc.title}.${doc.fileType || 'pdf'}` : 'document'
-    a.target = '_blank'
-    a.rel = 'noopener noreferrer'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    pushToast({ title: 'ກຳລັງດາວໂຫຼດເອກະສານ' })
   }
 
   function handleDelete(doc: Document) {

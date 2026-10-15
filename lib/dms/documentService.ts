@@ -283,3 +283,48 @@ export async function fetchExpiredSummary(): Promise<{
   }>('/documents/expired/summary')
   return res.data
 }
+
+export async function getFreshDocumentUrl(doc: Document): Promise<string> {
+  if (doc.id) {
+    try {
+      const fresh = await fetchDocumentById(doc.id)
+      const freshUrl = fresh.pdfUrl?.trim() || fresh.fileUrl?.trim() || ''
+      if (freshUrl && freshUrl !== '#') {
+        return freshUrl
+      }
+    } catch {
+      // Fallback
+    }
+  }
+  return doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
+}
+
+export async function downloadDocumentFile(doc: Document): Promise<void> {
+  let url = doc.pdfUrl?.trim() || doc.fileUrl?.trim() || ''
+
+  if (doc.id) {
+    try {
+      const fresh = await fetchDocumentById(doc.id)
+      const freshUrl = fresh.pdfUrl?.trim() || fresh.fileUrl?.trim() || ''
+      if (freshUrl && freshUrl !== '#') {
+        url = freshUrl
+      }
+    } catch {
+      // Fallback to existing
+    }
+  }
+
+  if (!url || url === '#' || url === '') {
+    throw new Error('ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ')
+  }
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = doc.fileName || (doc.title ? `${doc.title}.${doc.fileType || 'pdf'}` : 'document')
+  a.target = '_blank'
+  a.rel = 'noopener noreferrer'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}
+

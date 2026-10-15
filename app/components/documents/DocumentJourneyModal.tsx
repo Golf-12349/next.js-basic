@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Modal from '@/app/components/ui/Modal'
 import type { Document, DocumentTransfer } from '@/types/document'
-import { fetchDocumentTransfers } from '@/lib/dms/documentService'
+import { fetchDocumentTransfers, fetchDocumentById } from '@/lib/dms/documentService'
 import {
   CheckCircle2,
   Clock,
@@ -60,28 +60,42 @@ function DocumentJourneyContent({
   document?: Document | null
 }) {
   const [transfers, setTransfers] = useState<DocumentTransfer[]>([])
+  const [doc, setDoc] = useState<Document | null>(initialDoc || null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
+    if (!initialDoc && documentId) {
+      fetchDocumentById(documentId)
+        .then((fetched) => {
+          if (!cancelled && fetched) setDoc(fetched)
+        })
+        .catch(() => {})
+    } else if (initialDoc) {
+      setDoc(initialDoc)
+    }
+
     fetchDocumentTransfers(documentId)
       .then((data) => {
         if (!cancelled) {
           // Sort chronological (oldest transfer first) for clear journey timeline
-          const sorted = [...data].sort((a, b) => {
+          const sorted = [...(data || [])].sort((a, b) => {
             const timeA = new Date(a.createdAt || 0).getTime()
             const timeB = new Date(b.createdAt || 0).getTime()
             return timeA - timeB
           })
           setTransfers(sorted)
+          if (!doc && sorted.length > 0 && sorted[0].document) {
+            setDoc(sorted[0].document)
+          }
         }
       })
       .catch((err) => {
         if (!cancelled) {
           console.error('Failed to load document transfers:', err)
-          setError('ບໍ່ສາມາດໂຫຼດປະຫວັດເສັ້ນທາງເອກະສານໄດ້')
+          setTransfers([])
         }
       })
       .finally(() => {
@@ -91,9 +105,8 @@ function DocumentJourneyContent({
     return () => {
       cancelled = true
     }
-  }, [documentId])
+  }, [documentId, initialDoc])
 
-  const doc = initialDoc || (transfers.length > 0 ? transfers[0].document : null)
   const docTitle = doc?.title || `ເອກະສານ #${documentId.slice(0, 8)}`
   const docNumber = doc?.docNumber || ''
 

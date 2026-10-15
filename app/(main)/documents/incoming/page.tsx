@@ -15,6 +15,7 @@ import {
   approveTransfer,
   cancelTransfer,
   rejectTransfer,
+  downloadDocumentFile,
 } from '@/lib/dms/documentService'
 import { toFrontendDocument } from '@/lib/dms/types'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -863,16 +864,20 @@ export default function IncomingDocumentsPage() {
                 >
                   ປິດ
                 </button>
-                {previewDoc.fileUrl && previewDoc.fileUrl !== '#' && (
-                  <a
-                    href={previewDoc.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 transition inline-flex items-center gap-1.5"
-                  >
-                    ດາວໂຫຼດໄຟລ໌
-                  </a>
-                )}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      pushToast({ title: 'ກຳລັງກຽມດາວໂຫຼດເອກະສານ...' })
+                      await downloadDocumentFile(previewDoc)
+                    } catch {
+                      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ ຫຼື ໄຟລ໌ໝົດອາຍຸ' })
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 transition inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  ດາວໂຫຼດໄຟລ໌
+                </button>
               </div>
             )
           }

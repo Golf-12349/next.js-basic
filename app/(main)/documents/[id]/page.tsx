@@ -13,7 +13,7 @@ import TransferDocumentModal from '@/app/components/documents/TransferDocumentMo
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
-import { fetchDocumentById } from '@/lib/dms/documentService'
+import { fetchDocumentById, downloadDocumentFile, getFreshDocumentUrl } from '@/lib/dms/documentService'
 import { Pencil, Route } from 'lucide-react'
 import DocumentJourneyModal from '@/app/components/documents/DocumentJourneyModal'
 
@@ -127,6 +127,30 @@ export default function DocumentDetailPage() {
     if (!doc) return
     void updateDocument(doc.id, { status: 'draft' })
     pushToast({ title: 'ເອກະສານຖືກປະຕິເສດ ແລະ ສົ່ງກັບໄປເປັນຮ່າງ' })
+  }
+
+  async function handleViewFile() {
+    if (!doc) return
+    try {
+      const freshUrl = await getFreshDocumentUrl(doc)
+      if (freshUrl && freshUrl !== '#') {
+        window.open(freshUrl, '_blank', 'noopener,noreferrer')
+      } else {
+        pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })
+      }
+    } catch {
+      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })
+    }
+  }
+
+  async function handleDownload() {
+    if (!doc) return
+    try {
+      pushToast({ title: 'ກຳລັງກຽມດາວໂຫຼດເອກະສານ...' })
+      await downloadDocumentFile(doc)
+    } catch {
+      pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ ຫຼື ໄຟລ໌ໝົດອາຍຸ' })
+    }
   }
 
   const pendingTransfer = doc.transfers && doc.transfers.length > 0 && doc.transfers[0].status === 'pending'
@@ -321,44 +345,21 @@ export default function DocumentDetailPage() {
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <h3 className="text-base font-bold text-gray-900">ການກະທຳ</h3>
               <div className="mt-3 space-y-3">
-                {doc.fileUrl && doc.fileUrl !== '#' ? (
-                  <a
-                    href={doc.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm"
-                  >
-                    ເບິ່ງໄຟລ໌
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })}
-                    type="button"
-                    className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
-                  >
-                    ເບິ່ງໄຟລ໌
-                  </button>
-                )}
+                <button
+                  onClick={handleViewFile}
+                  type="button"
+                  className="w-full text-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+                >
+                  ເບິ່ງໄຟລ໌
+                </button>
 
-                {doc.fileUrl && doc.fileUrl !== '#' ? (
-                  <a
-                    href={doc.fileUrl}
-                    download={doc.fileName || doc.title}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    ດາວໂຫຼດ
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })}
-                    type="button"
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    ດາວໂຫຼດ
-                  </button>
-                )}
+                <button
+                  onClick={handleDownload}
+                  type="button"
+                  className="w-full text-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  ດາວໂຫຼດ
+                </button>
 
                 {/* Edit document button */}
                 <button

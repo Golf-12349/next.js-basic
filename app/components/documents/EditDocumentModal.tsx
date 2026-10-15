@@ -8,6 +8,7 @@ import { pushToast } from '@/app/components/ui/Toast'
 import type { Document, DocumentDirection, DocumentFileType, DocumentStatus } from '@/types/document'
 import { edlStructure } from '@/types/user'
 import { DEFAULT_CATEGORIES } from '@/lib/dms/constants'
+import { getFreshDocumentUrl } from '@/lib/dms/documentService'
 import {
   Pencil,
   X,
@@ -703,14 +704,24 @@ function EditDocumentContent({
                   </div>
 
                   {doc.fileUrl && (
-                    <a
-                      href={doc.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition shrink-0"
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const url = await getFreshDocumentUrl(doc)
+                          if (url && url !== '#') {
+                            window.open(url, '_blank', 'noopener,noreferrer')
+                          } else {
+                            pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })
+                          }
+                        } catch {
+                          pushToast({ title: 'ບໍ່ພົບລິ້ງໄຟລ໌ຂອງເອກະສານ' })
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 transition shrink-0 cursor-pointer"
                     >
                       <span>ເປີດເບິ່ງ</span>
-                    </a>
+                    </button>
                   )}
                 </div>
               ) : (
