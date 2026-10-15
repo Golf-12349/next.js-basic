@@ -449,9 +449,9 @@ export default function DashboardPage() {
           </div>
 
           {/* COLUMN 2: Department Distribution Leaderboard */}
-          <div className="space-y-5">
+          <div className="h-full">
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col h-full">
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 shrink-0">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-slate-900">ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)</h3>
@@ -463,13 +463,13 @@ export default function DashboardPage() {
                 </div>
                 <Link
                   href="/master-data/divisions"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center shrink-0"
                 >
                   ເບິ່ງທຸກຝ່າຍ <ArrowRight className="w-3 h-3 ml-1" />
                 </Link>
               </div>
 
-              <div className="space-y-2.5 flex-1 max-h-[580px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
+              <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
                 {topDivisions.map((dept) => (
                   <div
                     key={dept.rank}
