@@ -18,12 +18,15 @@ import {
 } from 'lucide-react';
 import { DashboardLayout } from '@/app/components/dashboard-layout';
 import { useDocuments } from '@/app/(main)/context/DocumentsContext';
+import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext';
 import { useMasterData } from '@/app/(main)/context/MasterDataContext';
 import { fetchDashboardAnalytics, type DashboardAnalyticsResponse } from '@/lib/dms/dashboardService';
 
 export default function DashboardPage() {
   const { documents } = useDocuments();
   const { divisions } = useMasterData();
+  const { user } = useCurrentUser();
+  const isDeptAdmin = user?.role === 'DepartmentAdmin';
 
   const [serverData, setServerData] = useState<DashboardAnalyticsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -377,7 +380,7 @@ export default function DashboardPage() {
            ========================================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
           {/* COLUMN 1: File Formats (GitHub-Style Segmented Bar) & Document Direction */}
-          <div className="space-y-5 flex flex-col justify-between">
+          <div className={!isDeptAdmin ? 'space-y-5 flex flex-col justify-between' : 'contents'}>
             {/* Box 1: File Format Breakdown */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
@@ -466,82 +469,84 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* COLUMN 2: Department Distribution Leaderboard */}
-          <div className="flex flex-col h-full min-h-0">
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col h-full max-h-[520px]">
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 shrink-0">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900">ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)</h3>
-                    <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
-                      {topDivisions.length} ລາຍການ
-                    </span>
+          {/* COLUMN 2: Department Distribution Leaderboard (SuperAdmin & DivisionAdmin only) */}
+          {!isDeptAdmin && (
+            <div className="flex flex-col h-full min-h-0">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col h-full max-h-[520px]">
+                <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 shrink-0">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-slate-900">ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)</h3>
+                      <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
+                        {topDivisions.length} ລາຍການ
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">ຈັດອັນດັບທຸກຝ່າຍທີ່ມີປະລິມານເອກະສານໃນລະບົບ (ເລື່ອນເບິ່ງໄດ້)</p>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">ຈັດອັນດັບທຸກຝ່າຍທີ່ມີປະລິມານເອກະສານໃນລະບົບ (ເລື່ອນເບິ່ງໄດ້)</p>
                 </div>
-              </div>
 
-              <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
-                {topDivisions.map((dept) => {
-                  const isUnassigned = dept.name === 'ເອກະສານບໍ່ໄດ້ລະບຸຝ່າຍ';
-                  return (
-                    <div
-                      key={dept.name}
-                      className={`flex items-center gap-3 p-2.5 rounded-xl border transition ${
-                        isUnassigned
-                          ? 'border-amber-200/90 bg-amber-50/40 hover:bg-amber-50/70'
-                          : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
-                      }`}
-                    >
+                <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
+                  {topDivisions.map((dept) => {
+                    const isUnassigned = dept.name === 'ເອກະສານບໍ່ໄດ້ລະບຸຝ່າຍ';
+                    return (
                       <div
-                        className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 font-mono ${
+                        key={dept.name}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl border transition ${
                           isUnassigned
-                            ? 'bg-amber-100 text-amber-800'
-                            : dept.rank === 1
-                            ? 'bg-amber-100 text-amber-800'
-                            : dept.rank === 2
-                            ? 'bg-slate-200 text-slate-700'
-                            : dept.rank === 3
-                            ? 'bg-amber-50 text-amber-700'
-                            : 'bg-slate-100 text-slate-500'
+                            ? 'border-amber-200/90 bg-amber-50/40 hover:bg-amber-50/70'
+                            : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
                         }`}
                       >
-                        {dept.rank}
-                      </div>
+                        <div
+                          className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 font-mono ${
+                            isUnassigned
+                              ? 'bg-amber-100 text-amber-800'
+                              : dept.rank === 1
+                              ? 'bg-amber-100 text-amber-800'
+                              : dept.rank === 2
+                              ? 'bg-slate-200 text-slate-700'
+                              : dept.rank === 3
+                              ? 'bg-amber-50 text-amber-700'
+                              : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          {dept.rank}
+                        </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span
-                            className={`font-semibold truncate flex items-center gap-1.5 ${
-                              isUnassigned ? 'text-amber-900' : 'text-slate-800'
-                            }`}
-                          >
-                            {isUnassigned && <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />}
-                            {dept.name}
-                          </span>
-                          <span
-                            className={`font-bold tabular-nums ${
-                              isUnassigned ? 'text-amber-800' : 'text-slate-900'
-                            }`}
-                          >
-                            {dept.count} ສະບັບ
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              isUnassigned ? 'bg-amber-500' : 'bg-blue-600'
-                            }`}
-                            style={{ width: `${dept.ratio}%` }}
-                          />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span
+                              className={`font-semibold truncate flex items-center gap-1.5 ${
+                                isUnassigned ? 'text-amber-900' : 'text-slate-800'
+                              }`}
+                            >
+                              {isUnassigned && <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />}
+                              {dept.name}
+                            </span>
+                            <span
+                              className={`font-bold tabular-nums ${
+                                isUnassigned ? 'text-amber-800' : 'text-slate-900'
+                              }`}
+                            >
+                              {dept.count} ສະບັບ
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                isUnassigned ? 'bg-amber-500' : 'bg-blue-600'
+                              }`}
+                              style={{ width: `${dept.ratio}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
