@@ -454,14 +454,13 @@ export default function ExpiredDocumentsPage() {
                   <th className="px-3.5 py-3">ເລກທີ</th>
                   <th className="px-3.5 py-3">ວັນທີໝົດອາຍຸ</th>
                   <th className="px-3.5 py-3">ຜູ້ອັບໂຫຼດ</th>
-                  <th className="px-3.5 py-3">ສະຖານະ</th>
                   <th className="px-3.5 py-3 text-center">ການກະທຳ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {paginatedDocs.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center">
+                    <td colSpan={7} className="py-16 text-center">
                       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                         <CheckCircle2 className="h-8 w-8" />
                       </div>
@@ -552,19 +551,6 @@ export default function ExpiredDocumentsPage() {
 
                         {/* Uploaded By */}
                         <td className="px-3 py-2.5 text-xs text-gray-600">{doc.uploadedBy}</td>
-
-                        {/* Status */}
-                        <td className="px-3 py-2.5">
-                          {isExpired ? (
-                            <span className="inline-flex rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-700">
-                              🔴 ໝົດອາຍຸ
-                            </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                              ອະນຸມັດ
-                            </span>
-                          )}
-                        </td>
 
                         {/* Action Buttons */}
                         <td className="px-3 py-2.5 text-center">
