@@ -10,6 +10,7 @@ import { normalizeCurrentUser } from '@/types/user'
 import { pushToast } from '@/app/components/ui/Toast'
 import type { User, UserRole, UserStatus } from '@/types/user'
 import { adminResetPassword } from '@/lib/dms/userService'
+import { useMasterData } from '@/app/(main)/context/MasterDataContext'
 import {
   UserDetailModal,
   UserFormModal,
@@ -21,6 +22,7 @@ import {
   statusStyles,
   statusLabels,
   UserAvatar,
+  findDivisionForDepartment,
   type UserFormValues,
 } from '@/app/components/users/UserModals'
 import { Search, Users as UsersIcon, ShieldCheck, UserCheck, Eye, Pencil, Lock, Unlock, Trash2, KeyRound, ChevronDown } from 'lucide-react'
@@ -30,12 +32,14 @@ const ALL = 'ທັງໝົດ'
 export default function UsersPage() {
   const { users, addUser, updateUser, removeUser, toggleUserStatus } = useUsers()
   const { user: currentUser, setCurrentUser } = useCurrentUser()
+  const { divisions: masterDivisions, departmentsByDivision, getDepartments } = useMasterData()
   const router = useRouter()
 
   const currentUserRole = currentUser?.role ?? 'DepartmentAdmin'
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebounce(query, 250)
   const [filterRole, setFilterRole] = useState<'ທັງໝົດ' | UserRole>(ALL)
+  const [filterDivision, setFilterDivision] = useState<string>(ALL)
   const [filterDepartment, setFilterDepartment] = useState<string>(ALL)
   const [filterStatus, setFilterStatus] = useState<'ທັງໝົດ' | UserStatus>(ALL)
 
@@ -47,10 +51,29 @@ export default function UsersPage() {
   const [resetPasswordTarget, setResetPasswordTarget] = useState<User | null>(null)
   const [activeDropdownUserId, setActiveDropdownUserId] = useState<string | null>(null)
 
-  const departments = useMemo(() => {
-    const set = new Set(users.map((u) => u.department).filter(Boolean))
+  const divisions = useMemo(() => {
+    const userDivisions = users
+      .map((u) => u.division || findDivisionForDepartment(u.department))
+      .filter(Boolean) as string[]
+    const set = new Set([...masterDivisions, ...userDivisions])
     return Array.from(set)
-  }, [users])
+  }, [masterDivisions, users])
+
+  const departments = useMemo(() => {
+    if (filterDivision === ALL) {
+      const userDepts = users.map((u) => u.department).filter(Boolean)
+      const allMasterDepts = getDepartments()
+      const set = new Set([...allMasterDepts, ...userDepts])
+      return Array.from(set)
+    }
+    const deptsInDivision = departmentsByDivision[filterDivision] || []
+    const userDeptsInDiv = users
+      .filter((u) => (u.division || findDivisionForDepartment(u.department)) === filterDivision)
+      .map((u) => u.department)
+      .filter(Boolean)
+    const set = new Set([...deptsInDivision, ...userDeptsInDiv])
+    return Array.from(set)
+  }, [filterDivision, departmentsByDivision, getDepartments, users])
 
   const stats = useMemo(() => {
     return {
@@ -66,28 +89,32 @@ export default function UsersPage() {
   const PAGE_SIZE = 30
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the users table with the current role scope
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the users table with current filter state
     setCurrentPage(1)
-  }, [debouncedQuery, filterRole, filterDepartment, filterStatus])
+  }, [debouncedQuery, filterRole, filterDivision, filterDepartment, filterStatus])
 
   const visible = useMemo(() => {
     const q = debouncedQuery.trim().toLowerCase()
     return users.filter((u) => {
+      const userDiv = u.division || findDivisionForDepartment(u.department) || ''
       if (
         q &&
         !(
           u.name.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
-          (u.position && u.position.toLowerCase().includes(q))
+          (u.position && u.position.toLowerCase().includes(q)) ||
+          userDiv.toLowerCase().includes(q) ||
+          (u.department && u.department.toLowerCase().includes(q))
         )
       )
         return false
       if (filterRole !== ALL && u.role !== filterRole) return false
+      if (filterDivision !== ALL && userDiv !== filterDivision) return false
       if (filterDepartment !== ALL && u.department !== filterDepartment) return false
       if (filterStatus !== ALL && u.status !== filterStatus) return false
       return true
     })
-  }, [users, debouncedQuery, filterRole, filterDepartment, filterStatus])
+  }, [users, debouncedQuery, filterRole, filterDivision, filterDepartment, filterStatus])
 
   const totalPages = Math.ceil(visible.length / PAGE_SIZE) || 1
   const paginatedUsers = useMemo(() => {
@@ -270,15 +297,15 @@ export default function UsersPage() {
 
         {/* Search & filter bar */}
         <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="md:col-span-1">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+            <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">ຄົ້ນຫາ</label>
               <div className="relative">
                 <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="ຊື່ ຫຼື ອີເມວ"
+                  placeholder="ຊື່, ອີເມວ ຫຼື ຕຳແໜ່ງ"
                   className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-800 outline-none placeholder:text-gray-400 focus:border-indigo-400"
                 />
               </div>
@@ -295,6 +322,26 @@ export default function UsersPage() {
                 <option value="SuperAdmin">SuperAdmin</option>
                 <option value="DivisionAdmin">Admin ຝ່າຍ</option>
                 <option value="DepartmentAdmin">Admin ພະແນກ</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">ຝ່າຍ</label>
+              <select
+                value={filterDivision}
+                onChange={(e) => {
+                  const nextDiv = e.target.value
+                  setFilterDivision(nextDiv)
+                  setFilterDepartment(ALL)
+                }}
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 outline-none focus:border-indigo-400"
+              >
+                <option value={ALL}>ທັງໝົດ</option>
+                {divisions.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -336,18 +383,19 @@ export default function UsersPage() {
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
                   <th className="px-3.5 py-3 w-12 text-center text-gray-500 whitespace-nowrap">ລ/ດ</th>
-                  <th className="px-3.5 py-3 min-w-[220px]">ຜູ້ໃຊ້ງານ</th>
-                  <th className="px-3.5 py-3 min-w-[140px]">ພະແນກ</th>
-                  <th className="px-3.5 py-3 w-40 min-w-[140px] whitespace-nowrap">ສິດນຳໃຊ້</th>
-                  <th className="px-3.5 py-3 w-36 min-w-[130px] whitespace-nowrap">ສະຖານະ</th>
-                  <th className="px-3.5 py-3 w-44 min-w-[150px] whitespace-nowrap">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
+                  <th className="px-3.5 py-3 min-w-[200px]">ຜູ້ໃຊ້ງານ</th>
+                  <th className="px-3.5 py-3 min-w-[160px]">ຝ່າຍ</th>
+                  <th className="px-3.5 py-3 min-w-[160px]">ພະແນກ</th>
+                  <th className="px-3.5 py-3 w-36 min-w-[130px] whitespace-nowrap">ສິດນຳໃຊ້</th>
+                  <th className="px-3.5 py-3 w-32 min-w-[110px] whitespace-nowrap">ສະຖານະ</th>
+                  <th className="px-3.5 py-3 w-40 min-w-[140px] whitespace-nowrap">ເຂົ້າສູ່ລະບົບລ່າສຸດ</th>
                   <th className="px-3.5 py-3 text-center w-28 min-w-[100px] whitespace-nowrap">ຈັດການ</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">
                       ບໍ່ພົບຜູ້ໃຊ້ງານທີ່ຕົງກັບການຄົ້ນຫາ
                     </td>
                   </tr>
@@ -389,7 +437,10 @@ export default function UsersPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-2.5 text-sm text-gray-700 whitespace-nowrap">{u.department}</td>
+                          <td className="px-3 py-2.5 text-sm text-gray-700 whitespace-nowrap">
+                            {u.division || findDivisionForDepartment(u.department) || '-'}
+                          </td>
+                          <td className="px-3 py-2.5 text-sm text-gray-700 whitespace-nowrap">{u.department || '-'}</td>
                           <td className="px-3 py-2.5 whitespace-nowrap">
                             <span className={`inline-flex items-center justify-center min-w-[110px] rounded-full px-2.5 py-1 text-xs font-medium text-center ${roleStyles[u.role]}`}>
                               {roleLabels[u.role]}
