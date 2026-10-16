@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const { documents } = useDocuments();
   const { divisions, getDepartments } = useMasterData();
   const { user } = useCurrentUser();
+  const isDivisionAdmin = user?.role === 'DivisionAdmin';
   const isDeptAdmin = user?.role === 'DepartmentAdmin';
 
   const [serverData, setServerData] = useState<DashboardAnalyticsResponse | null>(null);
@@ -225,9 +226,9 @@ export default function DashboardPage() {
     return divisions[0] || 'ຝ່າຍເຕັກໂນໂລຊີ ການສື່ສານ ຂໍ້ມູນຂ່າວສານ';
   }, [user, divisions]);
 
-  // Department Distribution (for DepartmentAdmin)
+  // Department Distribution (for DivisionAdmin)
   const topDepartments = useMemo(() => {
-    if (!isDeptAdmin) return [];
+    if (!isDivisionAdmin) return [];
     const deptsFromMaster = getDepartments(userDivision);
     const knownDeptNames = deptsFromMaster.length > 0
       ? deptsFromMaster
@@ -430,7 +431,7 @@ export default function DashboardPage() {
            ========================================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
           {/* COLUMN 1: File Formats (GitHub-Style Segmented Bar) & Document Direction */}
-          <div className="space-y-5 flex flex-col justify-between">
+          <div className={!isDeptAdmin ? 'space-y-5 flex flex-col justify-between' : 'contents'}>
             {/* Box 1: File Format Breakdown */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
@@ -519,112 +520,114 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* COLUMN 2: Department or Division Distribution Leaderboard */}
-          <div className="flex flex-col h-full min-h-0">
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col h-full max-h-[520px]">
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 shrink-0">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900">
-                      {isDeptAdmin
-                        ? `ການແຈກຢາຍຕາມພະແນກ (${userDivision})`
-                        : 'ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)'}
-                    </h3>
-                    <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
-                      {isDeptAdmin ? `${topDepartments.length} ພະແນກ` : `${topDivisions.length} ລາຍການ`}
-                    </span>
+          {/* COLUMN 2: Department or Division Distribution Leaderboard (SuperAdmin & DivisionAdmin only) */}
+          {!isDeptAdmin && (
+            <div className="flex flex-col h-full min-h-0">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col h-full max-h-[520px]">
+                <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 shrink-0">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-slate-900">
+                        {isDivisionAdmin
+                          ? `ການແຈກຢາຍຕາມພະແນກ (${userDivision})`
+                          : 'ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)'}
+                      </h3>
+                      <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
+                        {isDivisionAdmin ? `${topDepartments.length} ພະແນກ` : `${topDivisions.length} ລາຍການ`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {isDivisionAdmin
+                        ? `ຈັດອັນດັບທຸກພະແນກພາຍໃນ ${userDivision} (ເລື່ອນເບິ່ງໄດ້)`
+                        : 'ຈັດອັນດັບທຸກຝ່າຍທີ່ມີປະລິມານເອກະສານໃນລະບົບ (ເລື່ອນເບິ່ງໄດ້)'}
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {isDeptAdmin
-                      ? `ຈັດອັນດັບທຸກພະແນກພາຍໃນ ${userDivision} (ເລື່ອນເບິ່ງໄດ້)`
-                      : 'ຈັດອັນດັບທຸກຝ່າຍທີ່ມີປະລິມານເອກະສານໃນລະບົບ (ເລື່ອນເບິ່ງໄດ້)'}
-                  </p>
                 </div>
-              </div>
 
-              <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
-                {(isDeptAdmin ? topDepartments : topDivisions).map((item) => {
-                  const isUnassigned = item.name.includes('ບໍ່ໄດ້ລະບຸ');
-                  const isCurrent = 'isCurrent' in item && Boolean(item.isCurrent);
-                  return (
-                    <div
-                      key={item.name}
-                      className={`flex items-center gap-3 p-2.5 rounded-xl border transition ${
-                        isCurrent
-                          ? 'border-indigo-300 bg-indigo-50/50 hover:bg-indigo-50/80 ring-1 ring-indigo-200/60'
-                          : isUnassigned
-                          ? 'border-amber-200/90 bg-amber-50/40 hover:bg-amber-50/70'
-                          : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
-                      }`}
-                    >
+                <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
+                  {(isDivisionAdmin ? topDepartments : topDivisions).map((item) => {
+                    const isUnassigned = item.name.includes('ບໍ່ໄດ້ລະບຸ');
+                    const isCurrent = 'isCurrent' in item && Boolean(item.isCurrent);
+                    return (
                       <div
-                        className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 font-mono ${
+                        key={item.name}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl border transition ${
                           isCurrent
-                            ? 'bg-indigo-600 text-white shadow-xs'
+                            ? 'border-indigo-300 bg-indigo-50/50 hover:bg-indigo-50/80 ring-1 ring-indigo-200/60'
                             : isUnassigned
-                            ? 'bg-amber-100 text-amber-800'
-                            : item.rank === 1
-                            ? 'bg-amber-100 text-amber-800'
-                            : item.rank === 2
-                            ? 'bg-slate-200 text-slate-700'
-                            : item.rank === 3
-                            ? 'bg-amber-50 text-amber-700'
-                            : 'bg-slate-100 text-slate-500'
+                            ? 'border-amber-200/90 bg-amber-50/40 hover:bg-amber-50/70'
+                            : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
                         }`}
                       >
-                        {item.rank}
-                      </div>
+                        <div
+                          className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 font-mono ${
+                            isCurrent
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : isUnassigned
+                              ? 'bg-amber-100 text-amber-800'
+                              : item.rank === 1
+                              ? 'bg-amber-100 text-amber-800'
+                              : item.rank === 2
+                              ? 'bg-slate-200 text-slate-700'
+                              : item.rank === 3
+                              ? 'bg-amber-50 text-amber-700'
+                              : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          {item.rank}
+                        </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span
-                            className={`font-semibold truncate flex items-center gap-1.5 ${
-                              isCurrent
-                                ? 'text-indigo-950 font-bold'
-                                : isUnassigned
-                                ? 'text-amber-900'
-                                : 'text-slate-800'
-                            }`}
-                          >
-                            {isUnassigned && <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />}
-                            <span className="truncate">{item.name}</span>
-                            {isCurrent && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 shrink-0 border border-indigo-200/60">
-                                ພະແນກຂອງທ່ານ
-                              </span>
-                            )}
-                          </span>
-                          <span
-                            className={`font-bold tabular-nums shrink-0 ml-2 ${
-                              isCurrent
-                                ? 'text-indigo-700'
-                                : isUnassigned
-                                ? 'text-amber-800'
-                                : 'text-slate-900'
-                            }`}
-                          >
-                            {item.count} ສະບັບ
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              isCurrent
-                                ? 'bg-indigo-600'
-                                : isUnassigned
-                                ? 'bg-amber-500'
-                                : 'bg-blue-600'
-                            }`}
-                            style={{ width: `${item.ratio}%` }}
-                          />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span
+                              className={`font-semibold truncate flex items-center gap-1.5 ${
+                                isCurrent
+                                  ? 'text-indigo-950 font-bold'
+                                  : isUnassigned
+                                  ? 'text-amber-900'
+                                  : 'text-slate-800'
+                              }`}
+                            >
+                              {isUnassigned && <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />}
+                              <span className="truncate">{item.name}</span>
+                              {isCurrent && (
+                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 shrink-0 border border-indigo-200/60">
+                                  ພະແນກຂອງທ່ານ
+                                </span>
+                              )}
+                            </span>
+                            <span
+                              className={`font-bold tabular-nums shrink-0 ml-2 ${
+                                isCurrent
+                                  ? 'text-indigo-700'
+                                  : isUnassigned
+                                  ? 'text-amber-800'
+                                  : 'text-slate-900'
+                              }`}
+                            >
+                              {item.count} ສະບັບ
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                isCurrent
+                                  ? 'bg-indigo-600'
+                                  : isUnassigned
+                                  ? 'bg-amber-500'
+                                  : 'bg-blue-600'
+                              }`}
+                              style={{ width: `${item.ratio}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
