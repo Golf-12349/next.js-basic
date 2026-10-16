@@ -24,10 +24,12 @@ import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import RenewExpiryModal from '@/app/components/documents/RenewExpiryModal'
 import EditDocumentModal from '@/app/components/documents/EditDocumentModal'
+import TransferDocumentModal from '@/app/components/documents/TransferDocumentModal'
 import { addDays, LAO_MONTHS, percentage, toDateKey } from '@/app/components/dashboard/dashboard-utils'
 import { downloadDocumentFile } from '@/lib/dms/documentService'
 import {
   Archive,
+  ArrowRightLeft,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -194,6 +196,7 @@ export function DocumentsView({
   const [storageDoc, setStorageDoc] = useState<Document | null>(null)
   const [renewDoc, setRenewDoc] = useState<Document | null>(null)
   const [editDoc, setEditDoc] = useState<Document | null>(null)
+  const [transferDoc, setTransferDoc] = useState<Document | null>(null)
   const [journeyDoc, setJourneyDoc] = useState<Document | null>(null)
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const [detailDoc, setDetailDoc] = useState<Document | null>(null)
@@ -1081,6 +1084,18 @@ export function DocumentsView({
                                 >
                                   <Archive className="h-4 w-4 text-blue-500" />
                                   <span>ບ່ອນຈັດເກັບໃນຄັງ</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveDropdownId(null)
+                                    setTransferDoc(doc)
+                                  }}
+                                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 transition cursor-pointer"
+                                >
+                                  <ArrowRightLeft className="h-4 w-4 text-amber-600" />
+                                  <span>ໂອນຍ້າຍເອກະສານ</span>
                                 </button>
 
                                 <button
@@ -1434,6 +1449,18 @@ export function DocumentsView({
           doc={editDoc}
           onClose={() => setEditDoc(null)}
           onSuccess={() => void reload()}
+        />
+
+        {/* ── Transfer Document Modal ──────────────────────────── */}
+        <TransferDocumentModal
+          open={Boolean(transferDoc)}
+          doc={transferDoc}
+          currentUser={currentUser}
+          onClose={() => setTransferDoc(null)}
+          onSuccess={() => {
+            setTransferDoc(null)
+            void reload()
+          }}
         />
 
         {/* ── Document Journey Modal ───────────────────────────── */}
