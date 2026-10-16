@@ -120,6 +120,9 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       if (incomingTransfers.length > 0) {
         localStorage.setItem(INCOMING_STORAGE_KEY, JSON.stringify(incomingTransfers))
         sessionStorage.setItem(INCOMING_STORAGE_KEY, JSON.stringify(incomingTransfers))
+      } else {
+        localStorage.removeItem(INCOMING_STORAGE_KEY)
+        sessionStorage.removeItem(INCOMING_STORAGE_KEY)
       }
     } catch {}
   }, [incomingTransfers])
@@ -130,6 +133,9 @@ export function DocumentsProvider({ children }: { children: React.ReactNode }) {
       if (transferHistory.length > 0) {
         localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(transferHistory))
         sessionStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(transferHistory))
+      } else {
+        localStorage.removeItem(HISTORY_STORAGE_KEY)
+        sessionStorage.removeItem(HISTORY_STORAGE_KEY)
       }
     } catch {}
   }, [transferHistory])

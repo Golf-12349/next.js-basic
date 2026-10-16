@@ -43,6 +43,7 @@ import { useNotifications } from '../(main)/context/NotificationsContext';
 import apiClient from '@/config/axiosClient';
 import { useCurrentUser } from '../(main)/context/CurrentUserContext';
 import { roleLabel } from '@/types/user';
+import type { DocumentTransfer } from '@/types/document';
 import { BrandLogo } from './brand-logo';
 import { UserAvatar } from './users/UserModals';
 
@@ -246,7 +247,24 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
   const router = useRouter();
   const { user: currentUser, clearUser } = useCurrentUser();
   const { documents, incomingTransfers } = useDocuments();
-  const incomingTransferCount = incomingTransfers.length;
+  const isSuperAdmin = currentUser?.role === 'SuperAdmin';
+  const isDivisionAdmin = currentUser?.role === 'DivisionAdmin';
+  const isDeptAdmin = currentUser?.role === 'DepartmentAdmin';
+  const userDept = currentUser?.department?.trim().toLowerCase();
+  const userDiv = currentUser?.division?.trim().toLowerCase();
+
+  const incomingTransferCount = useMemo(() => {
+    return incomingTransfers.filter((item: DocumentTransfer) => {
+      if (isSuperAdmin) return true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toDept = (typeof item.toDepartment === 'object' && item.toDepartment !== null && 'name' in item.toDepartment ? (item.toDepartment as any).name : item.toDepartment || '').trim().toLowerCase();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const toDiv = (typeof item.toDivision === 'object' && item.toDivision !== null && 'name' in item.toDivision ? (item.toDivision as any).name : item.toDivision || '').trim().toLowerCase();
+      if (isDeptAdmin && userDept) return toDept === userDept;
+      if (isDivisionAdmin && userDiv) return toDiv === userDiv;
+      return false;
+    }).length;
+  }, [incomingTransfers, isSuperAdmin, isDeptAdmin, isDivisionAdmin, userDept, userDiv]);
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
   // eslint-disable-next-line react-hooks/purity -- sidebar expiry window derived from the current date
@@ -519,8 +537,12 @@ export function DashboardLayout({ children, title = 'Dashboard', showSearch }: D
     clearUser();
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('data');
+    sessionStorage.removeItem('dms_incoming_transfers');
+    sessionStorage.removeItem('dms_history_transfers');
     localStorage.removeItem('token');
     localStorage.removeItem('data');
+    localStorage.removeItem('dms_incoming_transfers');
+    localStorage.removeItem('dms_history_transfers');
     window.location.replace('/');
   }
 

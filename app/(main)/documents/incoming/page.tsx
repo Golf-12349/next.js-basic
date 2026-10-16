@@ -114,33 +114,60 @@ export default function IncomingDocumentsPage() {
 
   const userDept = currentUser?.department?.trim().toLowerCase()
   const userDiv = currentUser?.division?.trim().toLowerCase()
+  const isSuperAdmin = currentUser?.role === 'SuperAdmin'
+  const isDivisionAdmin = currentUser?.role === 'DivisionAdmin'
+  const isDeptAdmin = currentUser?.role === 'DepartmentAdmin'
+
+  // 0. Filtered data for PENDING incoming transfers
+  const pendingIncomingList = useMemo(() => {
+    return incomingTransfers.filter((item) => {
+      if (isSuperAdmin) return true
+      const toDept = getField(item.toDepartment).trim().toLowerCase()
+      const toDiv = getField(item.toDivision).trim().toLowerCase()
+      if (isDeptAdmin && userDept) return toDept === userDept
+      if (isDivisionAdmin && userDiv) return toDiv === userDiv
+      return false
+    })
+  }, [incomingTransfers, isSuperAdmin, isDeptAdmin, isDivisionAdmin, userDept, userDiv])
 
   // 1. Filtered data for INCOMING history
   const incomingHistoryList = useMemo(() => {
     return transferHistory.filter((item) => {
+      if (isSuperAdmin) return true
       const toDept = getField(item.toDepartment).trim().toLowerCase()
       const toDiv = getField(item.toDivision).trim().toLowerCase()
-      if (userDept) return toDept === userDept
-      if (userDiv) return toDiv === userDiv
-      return true
+      if (isDeptAdmin && userDept) return toDept === userDept
+      if (isDivisionAdmin && userDiv) return toDiv === userDiv
+      return false
     })
-  }, [transferHistory, userDept, userDiv])
+  }, [transferHistory, isSuperAdmin, isDeptAdmin, isDivisionAdmin, userDept, userDiv])
 
   // 2. Filtered data for OUTGOING transfers
   const outgoingList = useMemo(() => {
     return transferHistory.filter((item) => {
+      if (isSuperAdmin) return true
       const fromDept = getField(item.fromDepartment).trim().toLowerCase()
       const fromDiv = getField(item.fromDivision).trim().toLowerCase()
-      if (userDept) return fromDept === userDept || item.senderId === currentUser?.id
-      if (userDiv) return fromDiv === userDiv || item.senderId === currentUser?.id
-      return true
+      if (isDeptAdmin && userDept) return fromDept === userDept || item.senderId === currentUser?.id
+      if (isDivisionAdmin && userDiv) return fromDiv === userDiv || item.senderId === currentUser?.id
+      return false
     })
-  }, [transferHistory, currentUser, userDept, userDiv])
+  }, [transferHistory, isSuperAdmin, isDeptAdmin, isDivisionAdmin, currentUser?.id, userDept, userDiv])
 
   // 3. Filtered data for REJECTED transfers
   const rejectedList = useMemo(() => {
-    return transferHistory.filter((item) => item.status === 'rejected')
-  }, [transferHistory])
+    return transferHistory.filter((item) => {
+      if (item.status !== 'rejected') return false
+      if (isSuperAdmin) return true
+      const fromDept = getField(item.fromDepartment).trim().toLowerCase()
+      const fromDiv = getField(item.fromDivision).trim().toLowerCase()
+      const toDept = getField(item.toDepartment).trim().toLowerCase()
+      const toDiv = getField(item.toDivision).trim().toLowerCase()
+      if (isDeptAdmin && userDept) return fromDept === userDept || toDept === userDept || item.senderId === currentUser?.id
+      if (isDivisionAdmin && userDiv) return fromDiv === userDiv || toDiv === userDiv || item.senderId === currentUser?.id
+      return false
+    })
+  }, [transferHistory, isSuperAdmin, isDeptAdmin, isDivisionAdmin, currentUser?.id, userDept, userDiv])
 
   // Current active list based on active section and filters
   const currentList = useMemo(() => {
@@ -148,7 +175,20 @@ export default function IncomingDocumentsPage() {
 
     if (section === 'incoming') {
       if (incomingSubTab === 'pending') {
-        return incomingTransfers
+        return pendingIncomingList.filter((item) => {
+          if (q) {
+            const title = item.document?.title?.toLowerCase() || ''
+            const docNum = item.document?.docNumber?.toLowerCase() || ''
+            const fromDept = getField(item.fromDepartment).toLowerCase()
+            const toDept = getField(item.toDepartment).toLowerCase()
+            const sender = (item.sender?.name || '').toLowerCase()
+            const note = (item.note || '').toLowerCase()
+            if (!title.includes(q) && !docNum.includes(q) && !fromDept.includes(q) && !toDept.includes(q) && !sender.includes(q) && !note.includes(q)) {
+              return false
+            }
+          }
+          return true
+        })
       } else {
         return incomingHistoryList.filter((item) => {
           if (incomingHistoryFilter !== 'all' && item.status !== incomingHistoryFilter) return false
@@ -316,11 +356,11 @@ export default function IncomingDocumentsPage() {
             >
               <Clock className="h-4 w-4" />
               <span>ເອກະສານລໍຖ້າຮັບ</span>
-              {incomingTransfers.length > 0 && (
+              {pendingIncomingList.length > 0 && (
                 <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                   incomingSubTab === 'pending' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
                 }`}>
-                  {incomingTransfers.length}
+                  {pendingIncomingList.length}
                 </span>
               )}
             </button>
