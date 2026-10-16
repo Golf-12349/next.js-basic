@@ -145,7 +145,31 @@ export default function DashboardPage() {
   // Department Leaderboard
   const topDivisions = useMemo(() => {
     if (serverData?.topDivisions?.length) {
-      return serverData.topDivisions;
+      const hasUnassigned = serverData.topDivisions.some((d) => d.name === 'ເອກະສານບໍ່ໄດ້ລະບຸຝ່າຍ');
+      if (hasUnassigned) {
+        return serverData.topDivisions;
+      }
+
+      const unassignedCount = activeDocs.filter(
+        (d) => !d.division || d.division.trim() === ''
+      ).length;
+
+      const merged = [
+        ...serverData.topDivisions,
+        {
+          rank: serverData.topDivisions.length + 1,
+          name: 'ເອກະສານບໍ່ໄດ້ລະບຸຝ່າຍ',
+          count: unassignedCount,
+          ratio: 0,
+        },
+      ].sort((a, b) => b.count - a.count);
+
+      const maxCount = Math.max(1, ...merged.map((c) => c.count));
+      return merged.map((dept, index) => ({
+        ...dept,
+        rank: index + 1,
+        ratio: Math.round((dept.count / maxCount) * 100),
+      }));
     }
 
     const knownDivNames = divisions.length > 0
@@ -164,7 +188,18 @@ export default function DashboardPage() {
     const counts = knownDivNames.map((name) => {
       const count = activeDocs.filter((d) => d.division === name).length;
       return { name, count };
-    }).sort((a, b) => b.count - a.count);
+    });
+
+    const unassignedCount = activeDocs.filter(
+      (d) => !d.division || d.division.trim() === ''
+    ).length;
+
+    counts.push({
+      name: 'ເອກະສານບໍ່ໄດ້ລະບຸຝ່າຍ',
+      count: unassignedCount,
+    });
+
+    counts.sort((a, b) => b.count - a.count);
 
     const maxCount = Math.max(1, ...counts.map((c) => c.count));
     return counts.map((dept, index) => ({
@@ -439,7 +474,7 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-slate-900">ການແຈກຢາຍຕາມຝ່າຍ (Department Leaderboard)</h3>
                     <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
-                      {topDivisions.length} ຝ່າຍ
+                      {topDivisions.length} ລາຍການ
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">ຈັດອັນດັບທຸກຝ່າຍທີ່ມີປະລິມານເອກະສານໃນລະບົບ (ເລື່ອນເບິ່ງໄດ້)</p>
@@ -447,39 +482,63 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
-                {topDivisions.map((dept) => (
-                  <div
-                    key={dept.rank}
-                    className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50/50 transition"
-                  >
+                {topDivisions.map((dept) => {
+                  const isUnassigned = dept.name === 'ເອກະສານບໍ່ໄດ້ລະບຸຝ່າຍ';
+                  return (
                     <div
-                      className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 font-mono ${
-                        dept.rank === 1
-                          ? 'bg-amber-100 text-amber-800'
-                          : dept.rank === 2
-                          ? 'bg-slate-200 text-slate-700'
-                          : dept.rank === 3
-                          ? 'bg-amber-50 text-amber-700'
-                          : 'bg-slate-100 text-slate-500'
+                      key={dept.name}
+                      className={`flex items-center gap-3 p-2.5 rounded-xl border transition ${
+                        isUnassigned
+                          ? 'border-amber-200/90 bg-amber-50/40 hover:bg-amber-50/70'
+                          : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
                       }`}
                     >
-                      {dept.rank}
-                    </div>
+                      <div
+                        className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 font-mono ${
+                          isUnassigned
+                            ? 'bg-amber-100 text-amber-800'
+                            : dept.rank === 1
+                            ? 'bg-amber-100 text-amber-800'
+                            : dept.rank === 2
+                            ? 'bg-slate-200 text-slate-700'
+                            : dept.rank === 3
+                            ? 'bg-amber-50 text-amber-700'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {dept.rank}
+                      </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="font-semibold text-slate-800 truncate">{dept.name}</span>
-                        <span className="font-bold text-slate-900 tabular-nums">{dept.count} ສະບັບ</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-blue-600 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${dept.ratio}%` }}
-                        />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span
+                            className={`font-semibold truncate flex items-center gap-1.5 ${
+                              isUnassigned ? 'text-amber-900' : 'text-slate-800'
+                            }`}
+                          >
+                            {isUnassigned && <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />}
+                            {dept.name}
+                          </span>
+                          <span
+                            className={`font-bold tabular-nums ${
+                              isUnassigned ? 'text-amber-800' : 'text-slate-900'
+                            }`}
+                          >
+                            {dept.count} ສະບັບ
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isUnassigned ? 'bg-amber-500' : 'bg-blue-600'
+                            }`}
+                            style={{ width: `${dept.ratio}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
