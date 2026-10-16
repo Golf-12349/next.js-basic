@@ -1030,7 +1030,7 @@ export function DocumentsView({
                                   type="button"
                                   onClick={() => {
                                     setActiveDropdownId(null)
-                                    setDetailDoc(doc)
+                                    router.push(`/documents/${doc.id}`)
                                   }}
                                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition cursor-pointer"
                                 >
