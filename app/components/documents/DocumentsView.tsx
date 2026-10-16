@@ -11,7 +11,6 @@ import { useDocuments } from '@/app/(main)/context/DocumentsContext'
 import { useUploadModal } from '@/app/(main)/context/UploadModalContext'
 import { useArchive } from '@/app/(main)/context/ArchiveContext'
 import { useCurrentUser } from '@/app/(main)/context/CurrentUserContext'
-import { useMasterData } from '@/app/(main)/context/MasterDataContext'
 import { useUsers } from '@/app/(main)/context/UsersContext'
 import Modal from '@/app/components/ui/Modal'
 import DocumentPreview from '@/app/components/ui/DocumentPreview'
@@ -138,7 +137,6 @@ export function DocumentsView({
   const { documents, categories, addCategory, removeCategory, deleteDocument, reload } = useDocuments()
   const { user: currentUser } = useCurrentUser()
   const { warehouses, cabinets, assignDocument } = useArchive()
-  const { tags: masterTags } = useMasterData()
   const { users } = useUsers()
 
   useEffect(() => {
@@ -187,7 +185,6 @@ export function DocumentsView({
   const [filterCabinet, setFilterCabinet] = useState('ທັງໝົດ')
   const [filterDivision, setFilterDivision] = useState('ທັງໝົດ')
   const [filterDepartment, setFilterDepartment] = useState('ທັງໝົດ')
-  const [filterTag, setFilterTag] = useState('ທັງໝົດ')
   const [filterDateRange, setFilterDateRange] = useState<DateRangeFilter>('all')
 
   const [currentPage, setCurrentPage] = useState(1)
@@ -326,8 +323,7 @@ export function DocumentsView({
       .filter((d) => {
         if (q) {
           const matchesTitleOrNum = d.title.toLowerCase().includes(q) || d.docNumber.toLowerCase().includes(q)
-          const matchesTag = Array.isArray(d.tags) && d.tags.some((t) => t.toLowerCase().includes(q))
-          if (!matchesTitleOrNum && !matchesTag) return false
+          if (!matchesTitleOrNum) return false
         }
         if (filterDirection !== 'ALL' && resolveDirection(d) !== filterDirection) return false
         if (filterWarehouse !== 'ທັງໝົດ') {
@@ -349,9 +345,6 @@ export function DocumentsView({
         }
         if (filterCategory !== 'ທັງໝົດ' && d.category !== filterCategory) return false
         if (filterCabinet !== 'ທັງໝົດ' && d.cabinetId !== filterCabinet) return false
-        if (filterTag !== 'ທັງໝົດ') {
-          if (!Array.isArray(d.tags) || !d.tags.includes(filterTag)) return false
-        }
         if (filterDivision !== 'ທັງໝົດ' && d.division !== filterDivision) return false
         if (filterDepartment !== 'ທັງໝົດ' && d.department !== filterDepartment) return false
         if (filterDateRange === 'today' && d.uploadDate !== today) return false
@@ -367,7 +360,6 @@ export function DocumentsView({
     filterWarehouse,
     filterCategory,
     filterCabinet,
-    filterTag,
     filterDivision,
     filterDepartment,
     filterDateRange,
@@ -388,7 +380,6 @@ export function DocumentsView({
     filterCabinet !== 'ທັງໝົດ' ||
     filterDivision !== 'ທັງໝົດ' ||
     filterDepartment !== 'ທັງໝົດ' ||
-    filterTag !== 'ທັງໝົດ' ||
     filterDateRange !== 'all'
   )
 
@@ -400,7 +391,6 @@ export function DocumentsView({
     setFilterCabinet('ທັງໝົດ')
     setFilterDivision('ທັງໝົດ')
     setFilterDepartment('ທັງໝົດ')
-    setFilterTag('ທັງໝົດ')
     setFilterDateRange('all')
     setCurrentPage(1)
   }
@@ -759,24 +749,6 @@ export function DocumentsView({
               </select>
             </div>
 
-            {/* Tag Filter */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">ແທັກ</label>
-              <select
-                value={filterTag}
-                onChange={(e) => {
-                  setFilterTag(e.target.value)
-                  setCurrentPage(1)
-                }}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
-              >
-                <option value="ທັງໝົດ">ແທັກທັງໝົດ ({masterTags.length})</option>
-                {masterTags.map((t) => (
-                  <option key={t.id} value={t.name}>🏷️ {t.name}</option>
-                ))}
-              </select>
-            </div>
-
             {/* Date Range Filter */}
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">ຊ່ວງວັນທີ</label>
@@ -934,26 +906,6 @@ export function DocumentsView({
                               )}
                             </div>
 
-                            {/* Tags */}
-                            {doc.tags && doc.tags.length > 0 && (
-                              <div className="mt-1.5 flex flex-wrap gap-1">
-                                {doc.tags.map((tagName, i) => {
-                                  const tagObj = masterTags.find((t) => t.name === tagName)
-                                  return (
-                                    <span
-                                      key={i}
-                                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200/60"
-                                    >
-                                      <span
-                                        className="h-1.5 w-1.5 rounded-full shrink-0"
-                                        style={{ backgroundColor: tagObj?.color || '#6366f1' }}
-                                      />
-                                      <span>{tagName}</span>
-                                    </span>
-                                  )
-                                })}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </td>
@@ -1407,32 +1359,6 @@ export function DocumentsView({
                   </button>
                 )}
               </div>
-
-              {/* Tags */}
-              {detailDoc.tags && detailDoc.tags.length > 0 && (
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    ປ້າຍກຳກັບ / ແທັກ (Tags)
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {detailDoc.tags.map((tagName, i) => {
-                      const tagObj = masterTags.find((t) => t.name === tagName)
-                      return (
-                        <span
-                          key={i}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold bg-white border border-gray-200 text-gray-800 shadow-2xs"
-                        >
-                          <span
-                            className="h-2 w-2 rounded-full shrink-0"
-                            style={{ backgroundColor: tagObj?.color || '#6366f1' }}
-                          />
-                          <span>{tagName}</span>
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </Modal>

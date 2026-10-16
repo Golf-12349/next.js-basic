@@ -8,19 +8,11 @@ import type { ApiDivision } from '@/lib/dms/orgService'
 const STORAGE_KEY = 'dms_master_org_structure'
 const POSITIONS_KEY = 'dms_master_positions'
 const RETENTION_KEY = 'dms_master_retention'
-const TAGS_KEY = 'dms_master_tags'
 
 export interface RetentionPeriod {
   id: string
   name: string
   durationMonths: number
-  description?: string
-}
-
-export interface DocumentTag {
-  id: string
-  name: string
-  color: string
   description?: string
 }
 
@@ -31,15 +23,6 @@ export const DEFAULT_RETENTION_PERIODS: RetentionPeriod[] = [
   { id: 'ret-4', name: '5 ປີ', durationMonths: 60, description: 'ເອກະສານບັນຊີການເງິນ, ບົດລາຍງານມາດຕະຖານ' },
   { id: 'ret-5', name: '10 ປີ', durationMonths: 120, description: 'ສັນຍາສຳຄັນ, ເອກະສານນິຕິກຳ ແລະ ອົງກອນ' },
   { id: 'ret-6', name: 'ເກັບຮັກສາຖາວອນ', durationMonths: 0, description: 'ເອກະສານປະຫວັດສາດ ແລະ ກົດໝາຍທີ່ບໍ່ມີກຳນົດທຳລາຍ' },
-]
-
-export const DEFAULT_TAGS: DocumentTag[] = [
-  { id: 'tag-1', name: 'ສັນຍາ', color: '#2563eb', description: 'ສັນຍາຮ່ວມທຶນ, ສັນຍາຈັດຊື້ຈັດຈ້າງ' },
-  { id: 'tag-2', name: 'ໃບສະເໜີ', color: '#059669', description: 'ໃບສະເໜີຂໍອະນຸມັດ ແລະ ໂຄງການ' },
-  { id: 'tag-3', name: 'ບົດລາຍງານ', color: '#7c3aed', description: 'ບົດລາຍງານປະຈຳເດືອນ, ງວດ, ປີ' },
-  { id: 'tag-4', name: 'ການເງິນ', color: '#d97706', description: 'ເອກະສານບັນຊີ ແລະ ການເງິນ' },
-  { id: 'tag-5', name: 'ແຈ້ງການ', color: '#db2777', description: 'ແຈ້ງການພາຍໃນ ແລະ ພາຍນອກ' },
-  { id: 'tag-6', name: 'ດ່ວນທີ່ສຸດ', color: '#dc2626', description: 'ເອກະສານດ່ວນທີ່ຕ້ອງດຳເນີນການທັນທີ' },
 ]
 
 export const DEFAULT_POSITIONS: string[] = [
@@ -79,12 +62,6 @@ export interface MasterDataContextValue {
   deleteRetentionPeriod: (id: string) => { success: boolean; message?: string }
   resetRetentionPeriods: () => void
 
-  // ── ປ້າຍກຳກັບ / ແທັກ (Tags) ──
-  tags: DocumentTag[]
-  addTag: (item: Omit<DocumentTag, 'id'>) => { success: boolean; message?: string }
-  updateTag: (id: string, item: Partial<Omit<DocumentTag, 'id'>>) => { success: boolean; message?: string }
-  deleteTag: (id: string) => { success: boolean; message?: string }
-  resetTags: () => void
 }
 
 const MasterDataContext = createContext<MasterDataContextValue | undefined>(undefined)
@@ -419,66 +396,6 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
     setRetentionPeriods(DEFAULT_RETENTION_PERIODS)
   }, [])
 
-  // ── ປ້າຍກຳກັບ / ແທັກ (Tags) State & Actions ─────────────────────────
-  const [tags, setTags] = useState<DocumentTag[]>(() => {
-    if (typeof window === 'undefined') return DEFAULT_TAGS
-    try {
-      const stored = localStorage.getItem(TAGS_KEY) || sessionStorage.getItem(TAGS_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {}
-    return DEFAULT_TAGS
-  })
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(TAGS_KEY, JSON.stringify(tags))
-      sessionStorage.setItem(TAGS_KEY, JSON.stringify(tags))
-    } catch {}
-  }, [tags])
-
-  const addTag = useCallback((item: Omit<DocumentTag, 'id'>) => {
-    const trimmed = item.name.trim()
-    if (!trimmed) return { success: false, message: 'ກະລຸນາປ້ອນຊື່ແທັກ' }
-    if (tags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())) {
-      return { success: false, message: 'ຊື່ແທັກນີ້ມີຢູ່ແລ້ວ' }
-    }
-    const newTag: DocumentTag = {
-      id: `tag-${Date.now()}`,
-      name: trimmed,
-      color: item.color || '#3b82f6',
-      description: item.description?.trim(),
-    }
-    setTags((prev) => [...prev, newTag])
-    return { success: true }
-  }, [tags])
-
-  const updateTag = useCallback((id: string, patch: Partial<Omit<DocumentTag, 'id'>>) => {
-    setTags((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t
-        return {
-          ...t,
-          ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
-          ...(patch.color !== undefined ? { color: patch.color } : {}),
-          ...(patch.description !== undefined ? { description: patch.description.trim() } : {}),
-        }
-      })
-    )
-    return { success: true }
-  }, [])
-
-  const deleteTag = useCallback((id: string) => {
-    setTags((prev) => prev.filter((t) => t.id !== id))
-    return { success: true }
-  }, [])
-
-  const resetTags = useCallback(() => {
-    setTags(DEFAULT_TAGS)
-  }, [])
-
   const value = useMemo(
     () => ({
       divisions,
@@ -507,13 +424,6 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       updateRetentionPeriod,
       deleteRetentionPeriod,
       resetRetentionPeriods,
-
-      // Tags
-      tags,
-      addTag,
-      updateTag,
-      deleteTag,
-      resetTags,
     }),
     [
       divisions,
@@ -538,11 +448,6 @@ export function MasterDataProvider({ children }: { children: React.ReactNode }) 
       updateRetentionPeriod,
       deleteRetentionPeriod,
       resetRetentionPeriods,
-      tags,
-      addTag,
-      updateTag,
-      deleteTag,
-      resetTags,
     ]
   )
 

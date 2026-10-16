@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { DashboardLayout } from '@/app/components/dashboard-layout'
 import { useDocuments } from '../context/DocumentsContext'
 import { useMasterData } from '../context/MasterDataContext'
-import { Bookmark, Briefcase, Building2, Clock, Layers, Tag } from 'lucide-react'
+import { Briefcase, Building2, Clock, Layers, Tag } from 'lucide-react'
 
 export default function MasterDataPage() {
   const { categories } = useDocuments()
@@ -12,7 +12,6 @@ export default function MasterDataPage() {
     divisions,
     departmentsByDivision,
     retentionPeriods,
-    tags,
     positions,
   } = useMasterData()
 
@@ -53,14 +52,6 @@ export default function MasterDataPage() {
       description: 'ກຳນົດນະໂຍບາຍອາຍຸເອກະສານ ເພື່ອແຈ້ງເຕືອນການໝົດອາຍຸອັດຕະໂນມັດ',
       count: `${retentionPeriods.length} ໄລຍະເວລາ`,
       color: 'bg-amber-50 text-amber-600',
-    },
-    {
-      href: '/master-data/tags',
-      icon: <Bookmark className="h-6 w-6" />,
-      title: 'ປ້າຍກຳກັບ / ແທັກ (Tags)',
-      description: 'ກຳນົດແທັກ ແລະ ຄຳຄົ້ນຫາສຳລັບຈັດໝວດໝູ່ເອກະສານເພີ່ມເຕີມ',
-      count: `${tags.length} ແທັກ`,
-      color: 'bg-purple-50 text-purple-600',
     },
     {
       href: '/master-data/positions',

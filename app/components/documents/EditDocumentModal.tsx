@@ -66,7 +66,6 @@ function EditDocumentContent({
 }) {
   const { updateDocument, uploadFile, categories } = useDocuments()
   const { warehouses, cabinets, shelves, folders } = useArchive()
-  const { tags: masterTags } = useMasterData()
 
   // Form states
   const [title, setTitle] = useState(doc.title || '')
@@ -86,7 +85,6 @@ function EditDocumentContent({
   )
   const [status, setStatus] = useState<DocumentStatus>(doc.status || 'draft')
   const [expiresAt, setExpiresAt] = useState(doc.expiresAt ? doc.expiresAt.slice(0, 10) : '')
-  const [selectedTags, setSelectedTags] = useState<string[]>(Array.isArray(doc.tags) ? doc.tags : [])
 
   // Storage states
   const [warehouseId, setWarehouseId] = useState(doc.warehouseId || '')
@@ -242,7 +240,6 @@ function EditDocumentContent({
         shelfName: selShelf?.name || '',
         folderId: folderId || '',
         folderName: selFolder?.name || '',
-        tags: selectedTags,
         ...fileMeta,
       }
 
@@ -402,53 +399,6 @@ function EditDocumentContent({
                     <option value="expired">ໝົດອາຍຸ (Expired)</option>
                     <option value="archived">ເກັບເຂົ້າຄັງ (Archived)</option>
                   </select>
-                </div>
-
-                {/* ປ້າຍກຳກັບ / ແທັກ (Tags) */}
-                <div className="sm:col-span-2">
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <label className="block text-xs font-semibold text-slate-700">
-                      ປ້າຍກຳກັບ / ແທັກ (Tags) <span className="text-xs text-slate-400 font-normal">(ເລືອກໄດ້ຫຼາຍອັນ)</span>
-                    </label>
-                    {selectedTags.length > 0 && (
-                      <span className="text-[11px] text-indigo-600 font-medium">
-                        ເລືອກແລ້ວ {selectedTags.length} ແທັກ
-                      </span>
-                    )}
-                  </div>
-                  {masterTags && masterTags.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-slate-50/50 p-2.5">
-                      {masterTags.map((tag) => {
-                        const isSelected = selectedTags.includes(tag.name)
-                        return (
-                          <button
-                            type="button"
-                            key={tag.id}
-                            onClick={() => {
-                              setSelectedTags((prev) =>
-                                prev.includes(tag.name)
-                                  ? prev.filter((t) => t !== tag.name)
-                                  : [...prev, tag.name],
-                              )
-                            }}
-                            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-                              isSelected
-                                ? 'bg-indigo-600 text-white shadow-xs'
-                                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-                            }`}
-                          >
-                            <span
-                              className="h-2 w-2 rounded-full shrink-0"
-                              style={{ backgroundColor: tag.color || '#6366f1' }}
-                            />
-                            <span>{tag.name}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-400">ບໍ່ມີແທັກໃນລະບົບ (ສາມາດເພີ່ມໄດ້ທີ່ ຂໍ້ມູນພື້ນຖານ &gt; ແທັກ)</p>
-                  )}
                 </div>
               </div>
             </div>
