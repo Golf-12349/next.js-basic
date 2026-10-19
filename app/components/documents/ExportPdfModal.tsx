@@ -201,7 +201,6 @@ export default function ExportPdfModal({
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        foreignObjectRendering: true,
       });
 
       const imgData = canvas.toDataURL('image/png');
