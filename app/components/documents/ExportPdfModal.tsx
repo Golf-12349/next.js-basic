@@ -818,7 +818,7 @@ export default function ExportPdfModal({
                       </div>
 
                       {/* Metadata */}
-                      <div className="grid grid-cols-3 gap-2 py-3 border-b border-slate-200 text-[10px] text-slate-600 bg-slate-50/60 px-3 my-3 rounded-lg">
+                      <div className="grid grid-cols-3 gap-2 py-3 border-b border-slate-200 text-[10px] text-slate-600 px-3 my-3 rounded-lg" style={{ backgroundColor: 'rgba(248, 250, 252, 0.6)' }}>
                         <div>
                           <span className="font-bold text-slate-700 block">ວັນທີອອກບົດລາຍງານ:</span>
                           <span>{reportGenerateDate}</span>
@@ -848,17 +848,17 @@ export default function ExportPdfModal({
                             <span className="text-[9px] uppercase font-bold text-slate-500 block">ເອກະສານທັງໝົດ</span>
                             <span className="text-sm font-bold text-slate-900">{stats.total}</span>
                           </div>
-                          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5 text-center">
-                            <span className="text-[9px] uppercase font-bold text-emerald-700 block">ອະນຸມັດແລ້ວ</span>
-                            <span className="text-sm font-bold text-emerald-800">{stats.approved}</span>
+                          <div className="rounded-lg border p-2.5 text-center" style={{ backgroundColor: 'rgba(236, 253, 245, 0.5)', borderColor: '#a7f3d0' }}>
+                            <span className="text-[9px] uppercase font-bold block" style={{ color: '#047857' }}>ອະນຸມັດແລ້ວ</span>
+                            <span className="text-sm font-bold" style={{ color: '#065f46' }}>{stats.approved}</span>
                           </div>
-                          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-2.5 text-center">
-                            <span className="text-[9px] uppercase font-bold text-amber-700 block">ລໍຖ້າອະນຸມັດ</span>
-                            <span className="text-sm font-bold text-amber-800">{stats.pending}</span>
+                          <div className="rounded-lg border p-2.5 text-center" style={{ backgroundColor: 'rgba(255, 251, 235, 0.5)', borderColor: '#fde68a' }}>
+                            <span className="text-[9px] uppercase font-bold block" style={{ color: '#b45309' }}>ລໍຖ້າອະນຸມັດ</span>
+                            <span className="text-sm font-bold" style={{ color: '#92400e' }}>{stats.pending}</span>
                           </div>
-                          <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-2.5 text-center">
-                            <span className="text-[9px] uppercase font-bold text-blue-700 block">ຈັດເກັບໃນຄັງແລ້ວ</span>
-                            <span className="text-sm font-bold text-blue-800">{stats.assigned}</span>
+                          <div className="rounded-lg border p-2.5 text-center" style={{ backgroundColor: 'rgba(239, 246, 255, 0.5)', borderColor: '#bfdbfe' }}>
+                            <span className="text-[9px] uppercase font-bold block" style={{ color: '#1d4ed8' }}>ຈັດເກັບໃນຄັງແລ້ວ</span>
+                            <span className="text-sm font-bold" style={{ color: '#1e40af' }}>{stats.assigned}</span>
                           </div>
                         </div>
                       )}
@@ -887,7 +887,11 @@ export default function ExportPdfModal({
                               </tr>
                             ) : (
                               filteredDocs.map((doc, idx) => (
-                                <tr key={doc.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}>
+                                <tr
+                                  key={doc.id}
+                                  className={idx % 2 === 0 ? 'bg-white' : ''}
+                                  style={idx % 2 === 0 ? undefined : { backgroundColor: 'rgba(248, 250, 252, 0.4)' }}
+                                >
                                   {columns.seq && (
                                     <td className="p-2 text-center text-slate-400 font-mono">{idx + 1}</td>
                                   )}
@@ -915,13 +919,14 @@ export default function ExportPdfModal({
                                   {columns.status && (
                                     <td className="p-2">
                                       <span
-                                        className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                                        className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold"
+                                        style={
                                           doc.status === 'approved'
-                                            ? 'bg-emerald-100 text-emerald-800'
+                                            ? { backgroundColor: '#d1fae5', color: '#065f46' }
                                             : doc.status === 'pending'
-                                            ? 'bg-amber-100 text-amber-800'
-                                            : 'bg-slate-100 text-slate-600'
-                                        }`}
+                                            ? { backgroundColor: '#fef3c7', color: '#92400e' }
+                                            : { backgroundColor: '#f1f5f9', color: '#475569' }
+                                        }
                                       >
                                         {getStatusText(doc.status)}
                                       </span>
@@ -1021,4 +1026,3 @@ export default function ExportPdfModal({
     </div>
   );
 }
-
