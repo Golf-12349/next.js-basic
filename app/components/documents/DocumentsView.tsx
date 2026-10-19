@@ -18,7 +18,7 @@ import Pagination from '@/app/components/ui/Pagination'
 import { pushToast } from '@/app/components/ui/Toast'
 import DirectionBadge, { resolveDirection } from '@/app/components/documents/DirectionBadge'
 import CategoryBadge from '@/app/components/documents/CategoryBadge'
-import { UserAvatar, roleLabels, roleStyles } from '@/app/components/users/UserModals'
+import { roleLabels, roleStyles } from '@/app/components/users/UserModals'
 import DocumentJourneyModal from '@/app/components/documents/DocumentJourneyModal'
 import ManageCategoryModal from '@/app/components/documents/ManageCategoryModal'
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
@@ -30,7 +30,6 @@ import { downloadDocumentFile } from '@/lib/dms/documentService'
 import {
   Archive,
   ArrowRightLeft,
-  Building2,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -109,12 +108,6 @@ function formatUploadStamp(uploadedAt?: string, uploadDate?: string): { date: st
   const hh = String(parsed.getHours()).padStart(2, '0')
   const mi = String(parsed.getMinutes()).padStart(2, '0')
   return { date: `${dd}/${mm}/${yyyy}`, time: hasTime ? `${hh}:${mi}` : null }
-}
-
-function locationParts(doc: Document): string[] {
-  return [doc.warehouseName, doc.cabinetName, doc.shelfName, doc.folderName]
-    .map((part) => (typeof part === 'string' ? part.trim() : ''))
-    .filter(Boolean)
 }
 
 function sortKey(doc: Document): string {
@@ -204,26 +197,25 @@ export function DocumentsView({
   const [manageCategoryOpen, setManageCategoryOpen] = useState(false)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
-  // ຜູ້ໃຊ້ສຳລັບສະແດງ Avatar + ບົດບາດ ໃນຕາຕະລາງ
   const usersById = useMemo(() => {
     const map = new Map<string, User>()
-    users.forEach((u) => map.set(u.id, u))
+    users.forEach((user) => map.set(user.id, user))
     return map
   }, [users])
 
   const usersByName = useMemo(() => {
     const map = new Map<string, User>()
-    users.forEach((u) => {
-      if (u.name) map.set(u.name.trim().toLowerCase(), u)
-      if (u.email) map.set(u.email.trim().toLowerCase(), u)
+    users.forEach((user) => {
+      if (user.name) map.set(user.name.trim().toLowerCase(), user)
+      if (user.email) map.set(user.email.trim().toLowerCase(), user)
     })
     return map
   }, [users])
 
   function resolveUploader(doc: Document): User | undefined {
     if (doc.uploadedById) {
-      const byId = usersById.get(doc.uploadedById)
-      if (byId) return byId
+      const user = usersById.get(doc.uploadedById)
+      if (user) return user
     }
     const key = typeof doc.uploadedBy === 'string' ? doc.uploadedBy.trim().toLowerCase() : ''
     return key ? usersByName.get(key) : undefined
@@ -801,7 +793,7 @@ export function DocumentsView({
                   <th className="px-3.5 py-3 w-[150px] min-w-[140px] whitespace-nowrap">ວັນທີ & ເວລາອັບໂຫຼດ</th>
                   <th className="px-3.5 py-3 min-w-[260px] max-w-[340px]">ເອກະສານ</th>
                   <th className="px-3.5 py-3 w-[140px] min-w-[130px] whitespace-nowrap">ໝວດໝູ່ & ທິດທາງ</th>
-                  <th className="px-3.5 py-3 w-[200px] min-w-[180px] max-w-[220px] whitespace-nowrap">ສັງກັດ (ຝ່າຍ / ພະແນກ)</th>
+                  <th className="px-3.5 py-3 w-[200px] min-w-[180px] max-w-[220px] whitespace-nowrap">ພະແນກ</th>
                   <th className="px-3.5 py-3 w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
                   <th className="px-3.5 py-3 w-[140px] min-w-[130px] whitespace-nowrap text-right">ການກະທຳ</th>
                 </tr>
@@ -809,7 +801,6 @@ export function DocumentsView({
               <tbody className="divide-y divide-slate-100">
                 {paginatedDocs.map((doc, idx) => {
                   const stamp = formatUploadStamp(doc.uploadedAt, doc.uploadDate)
-                  const place = locationParts(doc)
                   const uploader = resolveUploader(doc)
 
                   return (
@@ -886,29 +877,7 @@ export function DocumentsView({
                             </div>
                             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                               <span className="font-mono font-medium text-slate-600">{doc.docNumber || '—'}</span>
-                              <span>{doc.fileSize && doc.fileSize !== '-' ? doc.fileSize : '—'}</span>
                             </div>
-
-                            {/* Storage location or pulsing prompt */}
-                            <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
-                              <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                              {place.length > 0 ? (
-                                <span className="truncate max-w-[220px] text-slate-600" title={place.join(' › ')}>
-                                  {place.join(' › ')}
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setStorageDoc(doc)}
-                                  title="ກົດເພື່ອເລືອກບ່ອນຈັດເກັບໃນຄັງ"
-                                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 transition hover:bg-amber-100 cursor-pointer"
-                                >
-                                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                  <span>ບໍ່ມີບ່ອນເກັບ — ກົດເພື່ອລະບຸ</span>
-                                </button>
-                              )}
-                            </div>
-
                           </div>
                         </div>
                       </td>
@@ -923,29 +892,12 @@ export function DocumentsView({
                         </div>
                       </td>
 
-                      {/* 4 — ສັງກັດ (ຝ່າຍ / ພະແນກ) */}
+                      {/* 4 — ພະແນກ */}
                       <td className="px-3.5 py-3 align-middle w-[200px] min-w-[180px] max-w-[220px]">
-                        {doc.division || doc.department ? (
-                          <div className="flex flex-col gap-1">
-                            {doc.division ? (
-                              <span
-                                className="inline-flex max-w-[190px] items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
-                                title={doc.division}
-                              >
-                                <span className="shrink-0 text-[11px]">🏢</span>
-                                <span className="truncate">{doc.division}</span>
-                              </span>
-                            ) : null}
-                            {doc.department ? (
-                              <span
-                                className="inline-flex max-w-[190px] items-center gap-1.5 rounded-lg bg-indigo-50/80 px-2 py-0.5 text-xs font-medium text-indigo-700"
-                                title={doc.department}
-                              >
-                                <span className="shrink-0 text-[11px]">🏬</span>
-                                <span className="truncate">{doc.department}</span>
-                              </span>
-                            ) : null}
-                          </div>
+                        {doc.department ? (
+                          <span className="block truncate text-xs text-slate-700" title={doc.department}>
+                            {doc.department}
+                          </span>
                         ) : (
                           <span className="text-xs text-slate-400">—</span>
                         )}
@@ -953,28 +905,17 @@ export function DocumentsView({
 
                       {/* 6 — ຜູ້ອັບໂຫຼດ */}
                       <td className="px-3.5 py-3 align-middle w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <UserAvatar
-                            name={doc.uploadedBy || '—'}
-                            avatarUrl={uploader?.avatarUrl}
-                            avatarClassName="h-9 w-9 bg-indigo-100 text-indigo-700 shrink-0"
-                            textClassName="text-xs font-bold"
-                          />
-                          <div className="min-w-0 max-w-[130px]">
-                            <div className="truncate text-sm font-medium text-slate-900" title={doc.uploadedBy || '—'}>
-                              {doc.uploadedBy || '—'}
-                            </div>
-                            <div className="truncate text-xs text-slate-500" title={uploader?.email || '—'}>
-                              {uploader?.email || '—'}
-                            </div>
-                            {uploader ? (
-                              <span
-                                className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${roleStyles[uploader.role]}`}
-                              >
-                                {roleLabels[uploader.role]}
-                              </span>
-                            ) : null}
+                        <div className="min-w-0 max-w-[180px]">
+                          <div className="truncate text-sm font-medium text-slate-900" title={doc.uploadedBy || '—'}>
+                            {doc.uploadedBy || '—'}
                           </div>
+                          {uploader ? (
+                            <span
+                              className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${roleStyles[uploader.role]}`}
+                            >
+                              {roleLabels[uploader.role]}
+                            </span>
+                          ) : null}
                         </div>
                       </td>
 
