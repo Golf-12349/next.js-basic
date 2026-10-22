@@ -682,8 +682,6 @@ export default function DocumentView({
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
-                {shelf ? `ຢູ່ໃນ 🪜 ${shelf.name} · ` : ''}
-                {cabinet ? `🗄️ ${cabinet.name} · ` : ''}
                 ມີທັງໝົດ{' '}
                 <span className="font-semibold text-indigo-700">{documents.length}</span> ເອກະສານໃນແຟ້ມນີ້
               </p>
@@ -772,7 +770,7 @@ export default function DocumentView({
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-0.5">
-              ລວມເອກະສານທັງໝົດ {documents.length} ສະບັບ · ສະແດງຕາມສາຍທາງ: ຄັງ ➡️ ຕູ້ ➡️ ຊັ້ນວາງ ➡️ ແຟ້ມ
+              ລວມເອກະສານທັງໝົດ {documents.length} ສະບັບ
             </p>
           </div>
         </div>

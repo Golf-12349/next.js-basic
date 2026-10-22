@@ -390,9 +390,7 @@ export default function CabinetView({
   }, [sortedCabinets, currentPage]);
 
   const viewTitle = warehouse ? `ຕູ້ເອກະສານໃນ ${warehouse.name}` : 'ຕູ້ເອກະສານທັງໝົດ';
-  const viewSubtitle = warehouse
-    ? `ຄັງ: ${warehouse.name} • ລວມ ${filteredCabinets.length} ຕູ້`
-    : `ລວມທັງໝົດ ${filteredCabinets.length} ຕູ້`;
+  const viewSubtitle = `ລວມທັງໝົດ ${filteredCabinets.length} ຕູ້`;
 
   return (
     <>

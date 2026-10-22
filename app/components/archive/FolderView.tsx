@@ -382,11 +382,7 @@ export default function FolderView({
   }, [sortedFolders, currentPage]);
 
   const viewTitle = shelf ? `ແຟ້ມໃນ ${shelf.name}` : cabinet ? `ແຟ້ມໃນຕູ້ ${cabinet.name}` : 'ແຟ້ມເກັບເອກະສານທັງໝົດ';
-  const viewSubtitle = shelf
-    ? `ຕູ້: ${cabinet?.name || '—'} • ລວມ ${filteredFolders.length} ແຟ້ມ`
-    : cabinet
-    ? `${cabinet.department} • ລວມ ${filteredFolders.length} ແຟ້ມ`
-    : `ລວມທັງໝົດ ${filteredFolders.length} ແຟ້ມ`;
+  const viewSubtitle = `ລວມທັງໝົດ ${filteredFolders.length} ແຟ້ມ`;
 
   return (
     <>
