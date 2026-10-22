@@ -160,7 +160,10 @@ export function DocumentsView({
     }
   }
 
-  const canViewAll = currentUser?.role === 'SuperAdmin' || currentUser?.role === 'DivisionAdmin'
+  const isSuperAdmin = currentUser?.role === 'SuperAdmin'
+  const isDivisionAdmin = currentUser?.role === 'DivisionAdmin'
+  const isDeptAdmin = currentUser?.role === 'DepartmentAdmin'
+  const canViewAll = isSuperAdmin || isDivisionAdmin
   const effectiveScope: Scope = canViewAll ? scope : (scope === 'mine' ? 'mine' : 'all')
 
   // Search parameter sync
@@ -707,42 +710,46 @@ export function DocumentsView({
             </div>
 
             {/* Division Filter */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">ຝ່າຍ</label>
-              <select
-                value={filterDivision}
-                onChange={(e) => {
-                  setFilterDivision(e.target.value)
-                  setFilterDepartment('ທັງໝົດ')
-                  setCurrentPage(1)
-                }}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
-              >
-                <option value="ທັງໝົດ">ຝ່າຍທັງໝົດ</option>
-                {divisions.map((div) => (
-                  <option key={div} value={div}>{div}</option>
-                ))}
-              </select>
-            </div>
+            {!isDeptAdmin && (
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">ຝ່າຍ</label>
+                <select
+                  value={filterDivision}
+                  onChange={(e) => {
+                    setFilterDivision(e.target.value)
+                    setFilterDepartment('ທັງໝົດ')
+                    setCurrentPage(1)
+                  }}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  <option value="ທັງໝົດ">ຝ່າຍທັງໝົດ</option>
+                  {divisions.map((div) => (
+                    <option key={div} value={div}>{div}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Department Filter */}
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">ພະແນກ</label>
-              <select
-                value={filterDepartment}
-                onChange={(e) => {
-                  setFilterDepartment(e.target.value)
-                  setCurrentPage(1)
-                }}
-                disabled={filterDivision === 'ທັງໝົດ' && departments.length === 0}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <option value="ທັງໝົດ">ພະແນກທັງໝົດ</option>
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
-            </div>
+            {!isDeptAdmin && (
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">ພະແນກ</label>
+                <select
+                  value={filterDepartment}
+                  onChange={(e) => {
+                    setFilterDepartment(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  disabled={filterDivision === 'ທັງໝົດ' && departments.length === 0}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="ທັງໝົດ">ພະແນກທັງໝົດ</option>
+                  {departments.map((dept) => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Date Range Filter */}
             <div>
@@ -793,7 +800,9 @@ export function DocumentsView({
                   <th className="px-3.5 py-3 w-[150px] min-w-[140px] whitespace-nowrap">ວັນທີ & ເວລາອັບໂຫຼດ</th>
                   <th className="px-3.5 py-3 min-w-[260px] max-w-[340px]">ເອກະສານ</th>
                   <th className="px-3.5 py-3 w-[140px] min-w-[130px] whitespace-nowrap">ໝວດໝູ່ & ທິດທາງ</th>
-                  <th className="px-3.5 py-3 w-[200px] min-w-[180px] max-w-[220px] whitespace-nowrap">ພະແນກ</th>
+                  {!isDeptAdmin && (
+                    <th className="px-3.5 py-3 w-[200px] min-w-[180px] max-w-[220px] whitespace-nowrap">ພະແນກ</th>
+                  )}
                   <th className="px-3.5 py-3 w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">ຜູ້ອັບໂຫຼດ</th>
                   <th className="px-3.5 py-3 w-[140px] min-w-[130px] whitespace-nowrap text-right">ການກະທຳ</th>
                 </tr>
@@ -893,16 +902,17 @@ export function DocumentsView({
                       </td>
 
                       {/* 4 — ພະແນກ */}
-                      <td className="px-3.5 py-3 align-middle w-[200px] min-w-[180px] max-w-[220px]">
-                        {doc.department ? (
-                          <span className="block truncate text-xs text-slate-700" title={doc.department}>
-                            {doc.department}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400">—</span>
-                        )}
-                      </td>
-
+                      {!isDeptAdmin && (
+                        <td className="px-3.5 py-3 align-middle w-[200px] min-w-[180px] max-w-[220px]">
+                          {doc.department ? (
+                            <span className="block truncate text-xs text-slate-700" title={doc.department}>
+                              {doc.department}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
+                        </td>
+                      )}
                       {/* 6 — ຜູ້ອັບໂຫຼດ */}
                       <td className="px-3.5 py-3 align-middle w-[190px] min-w-[180px] max-w-[210px] whitespace-nowrap">
                         <div className="min-w-0 max-w-[180px]">
