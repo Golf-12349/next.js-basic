@@ -644,7 +644,7 @@ export default function UploadDocumentModal({
                       value={docNumber}
                       onChange={(e) => setDocNumber(e.target.value)}
                       title="ເລກທີເອກະສານຖືກສ້າງຂຶ້ນອັດຕະໂນມັດ ບໍ່ສາມາດແກ້ໄຂໄດ້"
-                      className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm font-mono font-bold text-indigo-300 outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-mono text-slate-100 outline-none focus:border-indigo-400"
                     />
                     <button
                       type="button"
