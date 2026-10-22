@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import Link from 'next/link'
 import { useState, useMemo, useEffect } from 'react'
 import {
@@ -244,20 +244,6 @@ function DocumentRow({
                 🔄 ກຳລັງໂອນຍ້າຍຫາ: {doc.transfers[0].toDepartment}{doc.transfers[0].keepCopy && ' (ເກັບສຳເນົາ)'}
               </span>
             )}
-            {folderName ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
-                📁 ແຟ້ມ: {folderName}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600 border border-rose-200">
-                ⚠️ ຍັງບໍ່ມີແຟ້ມ
-              </span>
-            )}
-            {shelfName && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200">
-                🪜 ຊັ້ນວາງ: {shelfName}
-              </span>
-            )}
             {cabinetName && (
               <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 border border-indigo-200">
                 🗄️ ຕູ້: {cabinetName}
@@ -272,7 +258,7 @@ function DocumentRow({
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
             <span>📅 {formatDate(doc.uploadDate)}</span>
-            <span>📦 {doc.fileSize}</span>
+            
             <span>👤 ໂດຍ: {doc.uploadedBy}</span>
             {doc.category && <span>🏷️ {doc.category}</span>}
           </div>
