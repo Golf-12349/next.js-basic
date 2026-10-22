@@ -244,16 +244,6 @@ function DocumentRow({
                 🔄 ກຳລັງໂອນຍ້າຍຫາ: {doc.transfers[0].toDepartment}{doc.transfers[0].keepCopy && ' (ເກັບສຳເນົາ)'}
               </span>
             )}
-            {cabinetName && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 border border-indigo-200">
-                🗄️ ຕູ້: {cabinetName}
-              </span>
-            )}
-            {warehouseName && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700 border border-purple-200">
-                🏛️ ຄັງ: {warehouseName}
-              </span>
-            )}
           </div>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
