@@ -13,7 +13,6 @@ import type { Document, DocumentTransfer, TransferStatus } from '@/types/documen
 import SelectStorageLocationModal from '@/app/components/documents/SelectStorageLocationModal'
 import {
   approveTransfer,
-  cancelTransfer,
   rejectTransfer,
   downloadDocumentFile,
 } from '@/lib/dms/documentService'
@@ -89,7 +88,6 @@ export default function IncomingDocumentsPage() {
   const [transferToReject, setTransferToReject] = useState<DocumentTransfer | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [journeyTarget, setJourneyTarget] = useState<{ id: string; doc?: Document | null } | null>(null)
 
   const debouncedQuery = useDebounce(query, 250)
@@ -292,21 +290,6 @@ export default function IncomingDocumentsPage() {
       pushToast({ title: 'ບໍ່ສາມາດປະຕິເສດໄດ້', description: msg })
     } finally {
       setRejecting(false)
-    }
-  }
-
-  async function handleCancel(transferId: string) {
-    if (!confirm('ທ່ານແນ່ໃຈບໍ່ว่าຕ້ອງການຍົກເລີກການສົ່ງຕໍ່ນີ້?')) return
-    setCancellingId(transferId)
-    try {
-      await cancelTransfer(transferId)
-      pushToast({ title: 'ຍົກເລີກສຳເລັດ' })
-      void reload()
-      void reloadTransfers()
-    } catch {
-      pushToast({ title: 'ບໍ່ສາມາດຍົກເລີກໄດ້' })
-    } finally {
-      setCancellingId(null)
     }
   }
 
@@ -706,17 +689,6 @@ export default function IncomingDocumentsPage() {
                                 ຕີກັບ
                               </button>
                             </>
-                          )}
-
-                          {(section === 'incoming' || section === 'outgoing') && t.status === 'pending' && t.senderId === currentUser?.id && (
-                            <button
-                              type="button"
-                              onClick={() => void handleCancel(t.id)}
-                              disabled={cancellingId === t.id}
-                              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
-                            >
-                              {cancellingId === t.id ? '...' : 'ຍົກເລີກ'}
-                            </button>
                           )}
                         </div>
                       </td>
