@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import Modal from '@/app/components/ui/Modal'
 import { pushToast } from '@/app/components/ui/Toast'
+import { UserAvatar } from '@/app/components/users/UserModals'
 import { useUsers } from '@/app/(main)/context/UsersContext'
 import { edlStructure, roleLabel, type CurrentUser, type User } from '@/types/user'
 import type { Document } from '@/types/document'
@@ -409,9 +410,7 @@ export default function TransferDocumentModal({
                                   isCurrent ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-50'
                                 }`}
                               >
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
-                                  {initialsOf(person.name)}
-                                </span>
+                                <UserAvatar name={person.name} avatarUrl={person.avatarUrl} avatarClassName="h-9 w-9" textClassName="text-xs" />
                                 <span className="min-w-0 flex-1">
                                   <span className="block truncate text-sm font-semibold text-gray-900">
                                     {person.name}
@@ -576,9 +575,7 @@ export default function TransferDocumentModal({
                   </span>
                 </div>
                 <div className="mt-2 flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">
-                    {initialsOf(selectedApprover.user.name)}
-                  </span>
+                  <UserAvatar name={selectedApprover.user.name} avatarUrl={selectedApprover.user.avatarUrl} avatarClassName="h-10 w-10" textClassName="text-xs" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-gray-900">{selectedApprover.user.name}</p>
                     <p className="truncate text-xs text-gray-600">
@@ -619,9 +616,7 @@ export default function TransferDocumentModal({
                           .slice(0, 8)
                           .map((m: User) => (
                             <li key={m.id} className="flex items-center gap-2 text-xs">
-                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[9px] font-bold text-gray-700">
-                                {initialsOf(m.name)}
-                              </span>
+                              <UserAvatar name={m.name} avatarUrl={m.avatarUrl} avatarClassName="h-6 w-6" textClassName="text-[9px]" />
                               <span className="min-w-0 flex-1 truncate font-medium text-gray-800">
                                 {m.name}
                               </span>
