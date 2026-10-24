@@ -6,8 +6,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
    ```bash
    cp .env.local.example .env.local
    ```
-   ค่า default ชี้ไปที่ backend บน Render (`dms-backend`) ใช้งานได้ทันทีโดยไม่ต้องรัน backend local
-   ถ้ากำลังแก้โค้ด backend อยู่ ให้เปลี่ยน `NEXT_PUBLIC_API_URL` ใน `.env.local` เป็น `http://localhost:3000/api` แล้วรัน backend (`dms-backend`) เอง
+   หลังจากคัดลอกแล้ว ให้แก้ค่า `NEXT_PUBLIC_API_URL` ใน `.env.local` ให้เป็น URL ของ backend ที่คุณใช้งานจริง
+   (เช่น `https://your-backend-service.onrender.com/api` หรือ `http://localhost:3000/api` หากรันแบบ local)
 
 First, run the development server:
 
