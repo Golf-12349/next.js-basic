@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import type { User } from "@/types/user";
@@ -79,7 +79,7 @@ export default function PersonalProfilePage() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // â”€â”€ Password Strength (mirrors login page rules) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Password Strength (mirrors login page rules) ─────────────
   type PasswordStrengthChecks = {
     length: boolean;
     lowercase: boolean;
@@ -103,15 +103,15 @@ export default function PersonalProfilePage() {
     let barColor = "";
     if (pwd.length > 0) {
       if (score <= 2) {
-        label = "à¸­à¹ˆà¸­à¸™à¹à¸­";
+        label = "ອ່ອນ";
         color = "text-rose-600";
         barColor = "bg-rose-500";
       } else if (score <= 4) {
-        label = "à¸›à¸²à¸™à¸à¸¥à¸²à¸‡";
+        label = "ປານກາງ";
         color = "text-amber-600";
         barColor = "bg-amber-500";
       } else {
-        label = "à¹à¸‚à¹‡à¸‡à¹à¸£à¸‡";
+        label = "ແຂງແຮງ";
         color = "text-emerald-600";
         barColor = "bg-emerald-500";
       }
@@ -135,7 +135,7 @@ export default function PersonalProfilePage() {
       setAvatarUrl(compressed);
     } catch (err) {
       console.error("Avatar compression error:", err);
-      pushToast({ title: "àºšà»à»ˆàºªàº²àº¡àº²àº”à»‚àº«àº¼àº”àº®àº¹àºšàºžàº²àºšà»„àº”à»‰", description: "àºàº°àº¥àº¸àº™àº²à»€àº¥àº·àº­àºà»„àºŸàº¥à»Œàº®àº¹àºšàºžàº²àºšàº—àºµà»ˆàº–àº·àºàº•à»‰àº­àº‡" });
+      pushToast({ title: "ບໍ່ສາມາດໂຫຼດຮູບພາບໄດ້", description: "ກະລຸນາເລືອກໄຟລ໌ຮູບພາບທີ່ຖືກຕ້ອງ" });
     } finally {
       e.target.value = "";
     }
@@ -158,7 +158,7 @@ export default function PersonalProfilePage() {
   // ---- Handlers ----
   async function handleSaveProfile() {
     if (!name.trim() || !email.trim()) {
-      pushToast({ title: "àºàº°àº¥àº¸àº™àº²àº›à»‰àº­àº™àºŠàº·à»ˆ à»àº¥àº° àº­àºµà»€àº¡àº§ à»ƒàº«à»‰àº„àº»àºšàº–à»‰àº§àº™" });
+      pushToast({ title: "ກະລຸນາປ້ອນຊື່ ແລະ ອີເມວ ໃຫ້ຄົບຖ້ວນ" });
       return;
     }
 
@@ -184,31 +184,31 @@ export default function PersonalProfilePage() {
     }
 
     if (result.ok) {
-      pushToast({ title: "àºšàº±àº™àº—àº¶àºàº‚à»à»‰àº¡àº¹àº™à»‚àº›àº£à»„àºŸàº¥à»Œàºªàº³à»€àº¥àº±àº”à»àº¥à»‰àº§" });
+      pushToast({ title: "ບັນທຶກຂໍ້ມູນໂປຣໄຟລ໌ສຳເລັດແລ້ວ" });
     } else {
-      setFormError(result.error ?? "àºšàº±àº™àº—àº¶àºàºšà»à»ˆàºªàº³à»€àº¥àº±àº”");
-      pushToast({ title: result.error ?? "àºšàº±àº™àº—àº¶àºàºšà»à»ˆàºªàº³à»€àº¥àº±àº”" });
+      setFormError(result.error ?? "ບັນທຶກບໍ່ສຳເລັດ");
+      pushToast({ title: result.error ?? "ບັນທຶກບໍ່ສຳເລັດ" });
     }
     setSaving(false);
   }
 
   async function handleUpdatePassword() {
     if (role === "DivisionAdmin" || role === "DepartmentAdmin") {
-      setPasswordError("Admin àºà»ˆàº²àº à»àº¥àº° Admin àºžàº°à»àº™àº àºšà»à»ˆàºªàº²àº¡àº²àº”àº›à»ˆàº½àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àº‚àº­àº‡àº•àº»àº™à»€àº­àº‡à»„àº”à»‰");
+      setPasswordError("Admin ຝ່າຍ ແລະ Admin ພະແນກ ບໍ່ສາມາດປ່ຽນລະຫັດຜ່ານຂອງຕົນເອງໄດ້");
       return;
     }
 
     const err: string[] = [];
-    if (!currentPassword) err.push("àºàº°àº¥àº¸àº™àº²àº›à»‰àº­àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àº›àº±àº”àºˆàº¸àºšàº±àº™");
-    if (!passwordStrength.checks.length) err.push("àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆàº•à»‰àº­àº‡àº¡àºµàº¢à»ˆàº²àº‡à»œà»‰àº­àº 8 à»‚àº•àº­àº±àºàºªàº­àº™");
-    if (!passwordStrength.checks.lowercase) err.push("àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆàº•à»‰àº­àº‡àº­à¹ˆàº·àº•àºªàº­àº™");
-    if (!passwordStrength.checks.uppercase) err.push("àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆàº•à»‰àº­àº‡àº­à¹ˆàº·àº•àºªàº­àº™àº”à¹‡àº™");
-    if (!passwordStrength.checks.number) err.push("àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆàº•à»‰àº­àº‡àº•àº»àº§àº­àº±àºàºªàº­àº™");
-    if (!passwordStrength.checks.special) err.push("àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆàº•à»‰àº­àº‡àº­à¹ˆàº·àº—àº±àº‚à»‡àºàº™àº²àº‡");
-
+    if (!currentPassword) err.push("ກະລຸນາປ້ອນລະຫັດຜ່ານປັດຈຸບັນ");
+    if (!passwordStrength.checks.length) err.push("ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ");
+    if (!passwordStrength.checks.lowercase) err.push("ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຕົວອັກສອນນ້ອຍ");
+    if (!passwordStrength.checks.uppercase) err.push("ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຕົວອັກສອນໃຫຍ່");
+    if (!passwordStrength.checks.number) err.push("ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຕົວເລກ");
+    if (!passwordStrength.checks.special) err.push("ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຕົວອັກສອນພິເສດ");
+    if (newPassword !== confirmPassword) err.push("ລະຫັດຜ່ານໃໝ່ ແລະ ຢືນຢັນບໍ່ກົງກັນ");
 
     if (err.length > 0) {
-      setPasswordError(err.join(" â€¢ "));
+      setPasswordError(err.join(" • "));
       setTimeout(() => setPasswordError(""), 4000);
       return;
     }
@@ -218,8 +218,8 @@ export default function PersonalProfilePage() {
       await userService.updateOwnPassword(currentPassword, newPassword);
     } catch (apiErr: unknown) {
       const message = isAxiosError<{ message?: string }>(apiErr)
-        ? apiErr.response?.data?.message ?? "àº­àº±àºšà»€àº”àº”àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àºšà»à»ˆàºªàº³à»€àº¥àº±àº”"
-        : "àº­àº±àºšà»€àº”àº”àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àºšà»à»ˆàºªàº³à»€àº¥àº±àº”";
+        ? apiErr.response?.data?.message ?? "ອັບເດດລະຫັດຜ່ານບໍ່ສຳເລັດ"
+        : "ອັບເດດລະຫັດຜ່ານບໍ່ສຳເລັດ";
       setPasswordError(message);
       setTimeout(() => setPasswordError(""), 4000);
       setIsUpdatingPassword(false);
@@ -231,24 +231,24 @@ export default function PersonalProfilePage() {
     setNewPassword("");
     setConfirmPassword("");
     setIsUpdatingPassword(false);
-    pushToast({ title: "àº­àº±àºšà»€àº”àº”àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆàºªàº³à»€àº¥àº±àº”à»àº¥à»‰àº§", description: "àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àº‚àº­àº‡àº—à»ˆàº²àº™àº–àº·àºàº›à»ˆàº½àº™à»àº¥à»‰àº§" });
+    pushToast({ title: "ອັບເດດລະຫັດຜ່ານໃໝ່ສຳເລັດແລ້ວ", description: "ລະຫັດຜ່ານຂອງທ່ານຖືກປ່ຽນແລ້ວ" });
   }
 
   const inputBase =
     "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
 
   return (
-    <DashboardLayout title="àºàº²àº™àº•àº±à»‰àº‡àº„à»ˆàº²àºªà»ˆàº§àº™àº•àº»àº§">
+    <DashboardLayout title="ການຕັ້ງຄ່າສ່ວນຕົວ">
       <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Page Header */}
         <div className="mb-4">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigo-600">
             <Sparkles className="h-4 w-4" />
-            <span>àºšàº±àº™àºŠàºµàºœàº¹à»‰à»ƒàºŠà»‰àº‡àº²àº™</span>
+            <span>ບັນຊີຜູ້ໃຊ້ງານ</span>
           </div>
-          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">àºàº²àº™àº•àº±à»‰àº‡àº„à»ˆàº²àºªà»ˆàº§àº™àº•àº»àº§</h1>
+          <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">ການຕັ້ງຄ່າສ່ວນຕົວ</h1>
           <p className="mt-1.5 text-sm sm:text-base text-gray-500">
-            àºˆàº±àº”àºàº²àº™àº‚à»à»‰àº¡àº¹àº™à»‚àº›àº£à»„àºŸàº¥à»Œ, àº®àº¹àºšàºžàº²àºšàº•àº»àº§à»àº—àº™, à»àº¥àº° àº„àº§àº²àº¡àº›àº­àº”à»„àºžàº‚àº­àº‡àºšàº±àº™àºŠàºµàº‚àº­àº‡àº—à»ˆàº²àº™
+            ຈັດການຂໍ້ມູນໂປຣໄຟລ໌, ຮູບພາບຕົວແທນ, ແລະ ຄວາມປອດໄພຂອງບັນຊີຂອງທ່ານ
           </p>
         </div>
 
@@ -273,7 +273,7 @@ export default function PersonalProfilePage() {
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-xl font-bold">{currentUser?.name || "àºœàº¹à»‰à»ƒàºŠà»‰àº‡àº²àº™"}</h2>
+                  <h2 className="truncate text-xl font-bold">{currentUser?.name || "ຜູ້ໃຊ້ງານ"}</h2>
                   {currentUser?.position && (
                     <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-2.5 py-0.5 text-xs font-semibold text-white">
                       {currentUser.position}
@@ -285,12 +285,12 @@ export default function PersonalProfilePage() {
                 </div>
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-indigo-200">
                   <Mail className="h-3.5 w-3.5" />
-                  <span>{currentUser?.email || "â€”"}</span>
+                  <span>{currentUser?.email || "—"}</span>
                 </p>
                 {(division || department) && (
                   <p className="mt-1 flex items-center gap-1.5 text-xs text-indigo-300">
                     <Building className="h-3.5 w-3.5" />
-                    <span>{division ? `${division} â€¢ ` : ""}{department}</span>
+                    <span>{division ? `${division} • ` : ""}{department}</span>
                   </p>
                 )}
               </div>
@@ -298,17 +298,17 @@ export default function PersonalProfilePage() {
 
             <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-4 sm:border-0 sm:pt-0">
               <div className="rounded-xl bg-white/10 px-4 py-2 backdrop-blur-sm">
-                <div className="text-[11px] font-medium text-indigo-200">àºªàº°àº–àº²àº™àº°àºšàº±àº™àºŠàºµ</div>
+                <div className="text-[11px] font-medium text-indigo-200">ສະຖານະບັນຊີ</div>
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
                   <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
-                  <span>à»€àº›àºµàº”à»ƒàºŠà»‰àº‡àº²àº™àº›àº»àºàºàº°àº•àº´</span>
+                  <span>ເປີດໃຊ້ງານປົກກະຕິ</span>
                 </div>
               </div>
               <div className="rounded-xl bg-white/10 px-4 py-2 backdrop-blur-sm">
-                <div className="text-[11px] font-medium text-indigo-200">àº§àº±àº™àº—àºµà»€àº‚àº»à»‰àº²àº®à»ˆàº§àº¡</div>
+                <div className="text-[11px] font-medium text-indigo-200">ວັນທີເຂົ້າຮ່ວມ</div>
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
                   <Calendar className="h-3.5 w-3.5 text-indigo-300" />
-                  <span>{currentUser?.joinDate || "â€”"}</span>
+                  <span>{currentUser?.joinDate || "—"}</span>
                 </div>
               </div>
             </div>
@@ -327,7 +327,7 @@ export default function PersonalProfilePage() {
             }`}
           >
             <UserIcon className="h-4 w-4" />
-            <span>àº‚à»à»‰àº¡àº¹àº™àºªà»ˆàº§àº™àº•àº»àº§</span>
+            <span>ຂໍ້ມູນສ່ວນຕົວ</span>
           </button>
           <button
             type="button"
@@ -339,7 +339,7 @@ export default function PersonalProfilePage() {
             }`}
           >
             <ShieldCheck className="h-4 w-4" />
-            <span>àº„àº§àº²àº¡àº›àº­àº”à»„àºž & àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™</span>
+            <span>ຄວາມປອດໄພ & ລະຫັດຜ່ານ</span>
           </button>
           <button
             type="button"
@@ -351,7 +351,7 @@ export default function PersonalProfilePage() {
             }`}
           >
             <Bell className="h-4 w-4" />
-            <span>àºàº²àº™à»àºˆà»‰àº‡à»€àº•àº·àº­àº™ & àº¥àº°àºšàº»àºš</span>
+            <span>ການແຈ້ງເຕືອນ & ລະບົບ</span>
           </button>
         </div>
 
@@ -361,8 +361,8 @@ export default function PersonalProfilePage() {
             <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-4">
                 <div>
-                  <h2 className="text-base font-bold text-gray-900">àº‚à»à»‰àº¡àº¹àº™à»‚àº›àº£à»„àºŸàº¥à»Œàº‚àº­àº‡àº—à»ˆàº²àº™</h2>
-                  <p className="text-sm text-gray-500">àº­àº±àºšà»€àº”àº”àºŠàº·à»ˆ, àº­àºµà»€àº¡àº§, à»€àºšàºµà»‚àº—àº¥àº°àºªàº±àºš à»àº¥àº° àº®àº¹àºšàºžàº²àºšàº•àº»àº§à»àº—àº™</p>
+                  <h2 className="text-base font-bold text-gray-900">ຂໍ້ມູນໂປຣໄຟລ໌ຂອງທ່ານ</h2>
+                  <p className="text-sm text-gray-500">ອັບເດດຊື່, ອີເມວ, ເບີໂທລະສັບ ແລະ ຮູບພາບຕົວແທນ</p>
                 </div>
               </div>
 
@@ -387,7 +387,7 @@ export default function PersonalProfilePage() {
                       <button
                         type="button"
                         onClick={() => setAvatarUrl("")}
-                        aria-label="àº¥àº¶àºšàº®àº¹àºš"
+                        aria-label="ລຶບຮູບ"
                         className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-rose-500 text-white shadow-sm hover:bg-rose-600"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -400,7 +400,7 @@ export default function PersonalProfilePage() {
                     className="flex cursor-pointer items-center gap-2 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
                   >
                     <Camera className="h-3.5 w-3.5" />
-                    <span>àº­àº±àºšà»‚àº«àº¼àº”àº®àº¹àºšàºžàº²àºšà»ƒà»à»ˆ</span>
+                    <span>ອັບໂຫຼດຮູບພາບໃໝ່</span>
                   </label>
                   <input
                     id="avatar-upload-profile"
@@ -412,14 +412,14 @@ export default function PersonalProfilePage() {
 
                   {/* Preset Colors */}
                   <div className="mt-2 w-full border-t border-gray-200 pt-3">
-                    <span className="mb-2 block text-xs font-medium text-gray-500">àº«àº¼àº· à»€àº¥àº·àº­àºàºªàºµàºžàº·à»‰àº™àº«àº¼àº±àº‡:</span>
+                    <span className="mb-2 block text-xs font-medium text-gray-500">ຫຼື ເລືອກສີພື້ນຫຼັງ:</span>
                     <div className="flex flex-wrap justify-center gap-2">
                       {avatarColors.map((c) => (
                         <button
                           key={c}
                           type="button"
                           onClick={() => setAvatarUrl(c)}
-                          aria-label={`à»€àº¥àº·àº­àºàºªàºµ ${c}`}
+                          aria-label={`ເລືອກສີ ${c}`}
                           className={`h-6 w-6 rounded-full border-2 transition ${
                             avatarUrl === c
                               ? "scale-110 border-indigo-600 ring-2 ring-indigo-600/30"
@@ -436,7 +436,7 @@ export default function PersonalProfilePage() {
                 <div className="grid flex-1 gap-4 md:grid-cols-2">
                   <div className="md:col-span-2">
                     <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                      àºŠàº·à»ˆ à»àº¥àº° àº™àº²àº¡àºªàº°àºàº¸àº™ <span className="text-rose-500">*</span>
+                      ຊື່ ແລະ ນາມສະກຸນ <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -445,14 +445,14 @@ export default function PersonalProfilePage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className={`${inputBase} pl-10`}
-                        placeholder="àº›à»‰àº­àº™àºŠàº·à»ˆ à»àº¥àº° àº™àº²àº¡àºªàº°àºàº¸àº™"
+                        placeholder="ປ້ອນຊື່ ແລະ ນາມສະກຸນ"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                      àº­àºµà»€àº¡àº§ <span className="text-rose-500">*</span>
+                      ອີເມວ <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -468,7 +468,7 @@ export default function PersonalProfilePage() {
 
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                      à»€àºšàºµà»‚àº—àº¥àº°àºªàº±àºš
+                      ເບີໂທລະສັບ
                     </label>
                     <div className="relative">
                       <Phone className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -483,28 +483,28 @@ export default function PersonalProfilePage() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">àºªàº´àº”àº™àº³à»ƒàºŠà»‰ (Role)</label>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">ສິດນຳໃຊ້ (Role)</label>
                     <div className="flex h-[42px] items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5">
                       <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${roleBadgeClass}`}>
                         {roleLabel(role)}
                       </span>
-                      <span className="text-xs text-gray-400">(àºˆàº±àº”àºàº²àº™à»‚àº”àº Admin)</span>
+                      <span className="text-xs text-gray-400">(ຈັດການໂດຍ Admin)</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">àº•àº³à»à»œà»ˆàº‡ (Position)</label>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຕຳແໜ່ງ (Position)</label>
                     <div className="flex h-[42px] items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-700">
                       <Briefcase className="h-4 w-4 text-gray-400" />
-                      <span>{currentUser?.position || "â€”"}</span>
+                      <span>{currentUser?.position || "—"}</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">àºªàº±àº‡àºàº±àº” (àºžàº°à»àº™àº / àºà»ˆàº²àº)</label>
+                    <label className="mb-1.5 block text-sm font-semibold text-gray-700">ສັງກັດ (ພະແນກ / ຝ່າຍ)</label>
                     <div className="flex h-[42px] items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-700">
                       <Building className="h-4 w-4 text-gray-400" />
-                      <span className="truncate">{division ? `${division} â€¢ ` : ""}{department || "àº—àº»à»ˆàº§à»„àº›"}</span>
+                      <span className="truncate">{division ? `${division} • ` : ""}{department || "ທົ່ວໄປ"}</span>
                     </div>
                   </div>
 
@@ -522,7 +522,7 @@ export default function PersonalProfilePage() {
                       className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/30 transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Check className="h-4 w-4" />
-                      <span>{saving ? "àºàº³àº¥àº±àº‡àºšàº±àº™àº—àº¶àº..." : "àºšàº±àº™àº—àº¶àºàºàº²àº™àº›à»ˆàº½àº™à»àº›àº‡"}</span>
+                      <span>{saving ? "ກຳລັງບັນທຶກ..." : "ບັນທຶກການປ່ຽນແປງ"}</span>
                     </button>
                   </div>
                 </div>
@@ -539,8 +539,8 @@ export default function PersonalProfilePage() {
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-gray-900">àº›à»ˆàº½àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™</h2>
-                <p className="text-sm text-gray-500">àº›à»ˆàº½àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆà»€àºžàº·à»ˆàº­àº„àº§àº²àº¡àº›àº­àº”à»„àºžàº‚àº­àº‡àºšàº±àº™àºŠàºµàº—à»ˆàº²àº™</p>
+                <h2 className="text-base font-bold text-gray-900">ປ່ຽນລະຫັດຜ່ານ</h2>
+                <p className="text-sm text-gray-500">ປ່ຽນລະຫັດຜ່ານໃໝ່ເພື່ອຄວາມປອດໄພຂອງບັນຊີທ່ານ</p>
               </div>
             </div>
 
@@ -552,13 +552,13 @@ export default function PersonalProfilePage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-amber-900">
-                      àºšà»à»ˆàº­àº°àº™àº¸àºàº²àº”à»ƒàº«à»‰àº›à»ˆàº½àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àº”à»‰àº§àºàº•àº»àº™à»€àº­àº‡
+                      ບໍ່ອະນຸຍາດໃຫ້ປ່ຽນລະຫັດຜ່ານດ້ວຍຕົນເອງ
                     </h3>
                     <p className="mt-1 text-xs leading-relaxed text-amber-800">
-                      àºšàº±àº™àºŠàºµàº¥àº°àº”àº±àºš {role === "DivisionAdmin" ? "Admin àºà»ˆàº²àº" : "Admin àºžàº°à»àº™àº"} àºšà»à»ˆàºªàº²àº¡àº²àº”àº›à»ˆàº½àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àº”à»‰àº§àºàº•àº»àº™à»€àº­àº‡à»„àº”à»‰àº•àº²àº¡àº™àº°à»‚àºàºšàº²àºàº„àº§àº²àº¡àº›àº­àº”à»„àºžàº‚àº­àº‡àº¥àº°àºšàº»àºš.
+                      ບັນຊີລະດັບ {role === "DivisionAdmin" ? "Admin ຝ່າຍ" : "Admin ພະແນກ"} ບໍ່ສາມາດປ່ຽນລະຫັດຜ່ານດ້ວຍຕົນເອງໄດ້ຕາມນະໂຍບາຍຄວາມປອດໄພຂອງລະບົບ.
                       {role === "DivisionAdmin"
-                        ? " àº«àº²àºàº•à»‰àº­àº‡àºàº²àº™àº›à»ˆàº½àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™ àºàº°àº¥àº¸àº™àº²àº•àº´àº”àº•à»à»ˆ àºœàº¹à»‰àº”àº¹à»àº¥àº¥àº°àºšàº»àºšàºªàº¹àº‡àºªàº¸àº” (SuperAdmin)."
-                        : " àº«àº²àºàº•à»‰àº­àº‡àºàº²àº™àº›à»ˆàº½àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™ àºàº°àº¥àº¸àº™àº²àº•àº´àº”àº•à»à»ˆ Admin àºà»ˆàº²àº àº«àº¼àº· àºœàº¹à»‰àº”àº¹à»àº¥àº¥àº°àºšàº»àºšàºªàº¹àº‡àºªàº¸àº” (SuperAdmin)."}
+                        ? " ຫາກຕ້ອງການປ່ຽນລະຫັດຜ່ານ ກະລຸນາຕິດຕໍ່ ຜູ້ດູແລລະບົບສູງສຸດ (SuperAdmin)."
+                        : " ຫາກຕ້ອງການປ່ຽນລະຫັດຜ່ານ ກະລຸນາຕິດຕໍ່ Admin ຝ່າຍ ຫຼື ຜູ້ດູແລລະບົບສູງສຸດ (SuperAdmin)."}
                     </p>
                   </div>
                 </div>
@@ -567,7 +567,7 @@ export default function PersonalProfilePage() {
               <div className="max-w-xl space-y-4">
                 {/* Current Password */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™àº›àº±àº”àºˆàº¸àºšàº±àº™</label>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານປັດຈຸບັນ</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
@@ -575,7 +575,7 @@ export default function PersonalProfilePage() {
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       className={`${inputBase} pl-10 pr-10`}
-                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                      placeholder="••••••••"
                     />
                     <button
                       type="button"
@@ -589,7 +589,7 @@ export default function PersonalProfilePage() {
 
                 {/* New Password */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆ</label>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ລະຫັດຜ່ານໃໝ່</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
@@ -597,7 +597,7 @@ export default function PersonalProfilePage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className={`${inputBase} pl-10 pr-10`}
-                      placeholder="àº¢à»ˆàº²àº‡à»œà»‰àº­àº 8 àº•àº»àº§àº­àº±àºàºªàº­àº™"
+                      placeholder="ຢ່າງໜ້ອຍ 8 ຕົວອັກສອນ"
                     />
                     <button
                       type="button"
@@ -607,36 +607,35 @@ export default function PersonalProfilePage() {
                       {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                </div>
-
                 {/* Password Strength Indicator */}
                 {newPassword.length > 0 && (
                   <div className="mt-1">
-                    <div className="flex items-center justify-between mb-0.5 text-xs font-medium text-gray-500">
-                      <span>ຄວາມແຂ້ງກ່ອງລະຫັດຜ່ານ</span>
+                    <div className="mb-0.5 flex items-center justify-between text-xs font-medium text-gray-500">
+                      <span>ຄວາມແຂງແຮງຂອງລະຫັດຜ່ານ</span>
                       <span className={`font-semibold ${passwordStrength.color}`}>
                         {passwordStrength.label}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                       <div
                         className={`h-full ${passwordStrength.barColor} transition-all duration-300`}
                         style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                       />
                     </div>
-                    <div className="mt-1 flex gap-1 text-[10px]">
+                    <div className="mt-1 flex flex-wrap gap-1 text-[10px]">
                       {!passwordStrength.checks.length && <span className="text-rose-500">• 8 ຕົວອັກສອນຂຶ້ນໄປ</span>}
-                      {!passwordStrength.checks.lowercase && <span className="text-rose-500">• ตัวพิมพ์เล็ก</span>}
-                      {!passwordStrength.checks.uppercase && <span className="text-rose-500">• ตัวพิมพ์ใหญ่</span>}
-                      {!passwordStrength.checks.number && <span className="text-rose-500">• ตัวเลข</span>}
-                      {!passwordStrength.checks.special && <span className="text-rose-500">• ตัวอักษรพิเศษ</span>}
+                      {!passwordStrength.checks.lowercase && <span className="text-rose-500">• ຕົວອັກສອນນ້ອຍ (a-z)</span>}
+                      {!passwordStrength.checks.uppercase && <span className="text-rose-500">• ຕົວອັກສອນໃຫຍ່ (A-Z)</span>}
+                      {!passwordStrength.checks.number && <span className="text-rose-500">• ຕົວເລກ (0-9)</span>}
+                      {!passwordStrength.checks.special && <span className="text-rose-500">• ຕົວອັກສອນພິເສດ (!@#$...)</span>}
                     </div>
                   </div>
                 )}
+                </div>
 
                 {/* Confirm Password */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">àº¢àº·àº™àº¢àº±àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆ</label>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">ຢືນຢັນລະຫັດຜ່ານໃໝ່</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
@@ -644,7 +643,7 @@ export default function PersonalProfilePage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className={`${inputBase} pl-10 pr-10`}
-                      placeholder="àº¢àº·àº™àº¢àº±àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™à»ƒà»à»ˆàº­àºµàºàº„àº±à»‰àº‡"
+                      placeholder="ຢືນຢັນລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ"
                     />
                     <button
                       type="button"
@@ -670,7 +669,7 @@ export default function PersonalProfilePage() {
                     className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/30 transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Lock className="h-4 w-4" />
-                    <span>{isUpdatingPassword ? "àºàº³àº¥àº±àº‡àº›à»ˆàº½àº™à»àº›àº‡..." : "àº›à»ˆàº½àº™àº¥àº°àº«àº±àº”àºœà»ˆàº²àº™"}</span>
+                    <span>{isUpdatingPassword ? "ກຳລັງປ່ຽນແປງ..." : "ປ່ຽນລະຫັດຜ່ານ"}</span>
                   </button>
                 </div>
               </div>
@@ -687,16 +686,16 @@ export default function PersonalProfilePage() {
                   <Bell className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-900">àºàº²àº™à»àºˆà»‰àº‡à»€àº•àº·àº­àº™</h2>
-                  <p className="text-sm text-gray-500">àº•àº±à»‰àº‡àº„à»ˆàº²àºàº²àº™àº®àº±àºšà»àºˆà»‰àº‡à»€àº•àº·àº­àº™ à»àº¥àº° àºªàº½àº‡à»ƒàº™àº¥àº°àºšàº»àºš</p>
+                  <h2 className="text-base font-bold text-gray-900">ການແຈ້ງເຕືອນ</h2>
+                  <p className="text-sm text-gray-500">ຕັ້ງຄ່າການຮັບແຈ້ງເຕືອນ ແລະ ສຽງໃນລະບົບ</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/50 p-4">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">à»àºˆà»‰àº‡à»€àº•àº·àº­àº™à»€àº­àºàº°àºªàº²àº™àº¥à»àº–à»‰àº²àº­àº°àº™àº¸àº¡àº±àº”</div>
-                    <div className="text-xs text-gray-500">àº®àº±àºšàºàº²àº™à»àºˆà»‰àº‡à»€àº•àº·àº­àº™à»€àº¡àº·à»ˆàº­àº¡àºµà»€àº­àºàº°àºªàº²àº™à»ƒà»à»ˆàº–àº·àºàº­àº±àºšà»‚àº«àº¼àº”àº¥à»àº–à»‰àº²àºàº§àº”àºªàº­àºš</div>
+                    <div className="text-sm font-semibold text-gray-900">ແຈ້ງເຕືອນເອກະສານລໍຖ້າອະນຸມັດ</div>
+                    <div className="text-xs text-gray-500">ຮັບການແຈ້ງເຕືອນເມື່ອມີເອກະສານໃໝ່ຖືກອັບໂຫຼດລໍຖ້າກວດສອບ</div>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
@@ -711,8 +710,8 @@ export default function PersonalProfilePage() {
 
                 <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/50 p-4">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">à»àºˆà»‰àº‡à»€àº•àº·àº­àº™à»€àº¡àº·à»ˆàº­à»€àº­àºàº°àºªàº²àº™àº–àº·àºàº­àº°àº™àº¸àº¡àº±àº”</div>
-                    <div className="text-xs text-gray-500">àº®àº±àºšàºàº²àº™à»àºˆà»‰àº‡à»€àº•àº·àº­àº™àº—àº±àº™àº—àºµà»€àº¡àº·à»ˆàº­à»€àº­àºàº°àºªàº²àº™àº‚àº­àº‡àº—à»ˆàº²àº™àºœà»ˆàº²àº™àºàº²àº™àº­àº°àº™àº¸àº¡àº±àº”</div>
+                    <div className="text-sm font-semibold text-gray-900">ແຈ້ງເຕືອນເມື່ອເອກະສານຖືກອະນຸມັດ</div>
+                    <div className="text-xs text-gray-500">ຮັບການແຈ້ງເຕືອນທັນທີເມື່ອເອກະສານຂອງທ່ານຜ່ານການອະນຸມັດ</div>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
@@ -727,8 +726,8 @@ export default function PersonalProfilePage() {
 
                 <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/50 p-4">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">àºªàº½àº‡à»àºˆà»‰àº‡à»€àº•àº·àº­àº™à»ƒàº™àº¥àº°àºšàº»àºš</div>
-                    <div className="text-xs text-gray-500">à»€àº›àºµàº”àºªàº½àº‡à»àºˆà»‰àº‡à»€àº•àº·àº­àº™à»€àº¡àº·à»ˆàº­àº¡àºµà»€àº«àº”àºàº²àº™ Real-time à»€àºàºµàº”àº‚àº¶à»‰àº™</div>
+                    <div className="text-sm font-semibold text-gray-900">ສຽງແຈ້ງເຕືອນໃນລະບົບ</div>
+                    <div className="text-xs text-gray-500">ເປີດສຽງແຈ້ງເຕືອນເມື່ອມີເຫດການ Real-time ເກີດຂຶ້ນ</div>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
@@ -749,21 +748,21 @@ export default function PersonalProfilePage() {
                   <Globe className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-gray-900">àºžàº²àºªàº²àº¥àº°àºšàº»àºš</h2>
-                  <p className="text-sm text-gray-500">àºàº²àº™àºªàº°à»àº”àº‡àºœàº»àº™àºžàº²àºªàº²àº‚àº­àº‡àº¥àº°àºšàº»àºš DMS</p>
+                  <h2 className="text-base font-bold text-gray-900">ພາສາລະບົບ</h2>
+                  <p className="text-sm text-gray-500">ການສະແດງຜົນພາສາຂອງລະບົບ DMS</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">ðŸ‡±ðŸ‡¦</span>
+                  <span className="text-xl">🇱🇦</span>
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">àºžàº²àºªàº²àº¥àº²àº§ (Lao)</div>
-                    <div className="text-xs text-gray-500">àºžàº²àºªàº²àº«àº¼àº±àºàº—àºµà»ˆà»ƒàºŠà»‰à»ƒàº™àº¥àº°àºšàº»àºšàº—àº±àº‡à»àº»àº”</div>
+                    <div className="text-sm font-semibold text-gray-900">ພາສາລາວ (Lao)</div>
+                    <div className="text-xs text-gray-500">ພາສາຫຼັກທີ່ໃຊ້ໃນລະບົບທັງໝົດ</div>
                   </div>
                 </div>
                 <span className="inline-flex items-center rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
-                  à»€àº¥àº·àº­àºà»àº¥à»‰àº§
+                  ເລືອກແລ້ວ
                 </span>
               </div>
             </section>
@@ -773,5 +772,4 @@ export default function PersonalProfilePage() {
     </DashboardLayout>
   );
 }
-
 
